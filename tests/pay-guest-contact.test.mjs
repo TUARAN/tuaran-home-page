@@ -8,6 +8,7 @@ const createRoute = await readFile(new URL('../app/api/pay/create/route.js', imp
 const statusRoute = await readFile(new URL('../app/api/pay/status/route.js', import.meta.url), 'utf8')
 const contactRoute = await readFile(new URL('../app/api/pay/contact/route.js', import.meta.url), 'utf8')
 const orders = await readFile(new URL('../lib/pay/orders.js', import.meta.url), 'utf8')
+const settle = await readFile(new URL('../lib/pay/settle.mjs', import.meta.url), 'utf8')
 const migration = await readFile(new URL('../migrations/0136_paid_order_contact.sql', import.meta.url), 'utf8')
 const payConsole = await readFile(new URL('../app/(admin)/admin/pay/PayConsole.jsx', import.meta.url), 'utf8')
 
@@ -66,8 +67,10 @@ test('状态轮询与留邮箱接口都识别游客身份，且不开放订单�
 })
 
 test('游客订单不写权益表，联系邮箱落在 paid_orders', () => {
+  // guest 守卫实现在 settle.mjs，回调与主动查单兜底共用
   assert.match(orders, /grantIfAccount/)
-  assert.match(orders, /startsWith\('guest:'\)/)
+  assert.match(settle, /grantIfAccount/)
+  assert.match(settle, /startsWith\('guest:'\)/)
   assert.match(orders, /returnTo/)
   assert.match(orders, /UPDATE paid_orders SET contact_email/)
   assert.match(migration, /ALTER TABLE paid_orders ADD COLUMN contact_email TEXT/)

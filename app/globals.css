@@ -7919,6 +7919,14 @@
     font-size: 10px;
   }
 
+  .community-xh-pay-status {
+    margin: 0.5rem 0 0;
+    color: var(--site-faint);
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
   .community-xh-pay-order {
     margin: 0.5rem 0 0;
     color: var(--site-faint);

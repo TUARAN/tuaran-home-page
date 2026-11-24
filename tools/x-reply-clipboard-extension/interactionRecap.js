@@ -204,8 +204,18 @@
     const operations = document.querySelector("#x-reply-clipboard-panel [data-xrc-experiments]");
     if (operations && box.parentElement !== operations) operations.append(box);
   }
-  mount();
-  const mountTimer = setInterval(mount, 1000);
+  // 面板一出现就停轮询，不再每秒查一次 DOM。
+  let mountTimer = 0;
+  function mountOnce() {
+    mount();
+    if (!mountTimer) return;
+    if (document.querySelector("#x-reply-clipboard-panel [data-xrc-experiments]")) {
+      clearInterval(mountTimer);
+      mountTimer = 0;
+    }
+  }
+  mountOnce();
+  mountTimer = setInterval(mountOnce, 1000);
   window.addEventListener("pagehide", () => clearInterval(mountTimer), { once: true });
 
   function setBusy(value) {

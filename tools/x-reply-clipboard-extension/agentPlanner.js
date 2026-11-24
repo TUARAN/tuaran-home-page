@@ -2,8 +2,8 @@
   "use strict";
 
   // Planning fallback is independent from the writing chain.
-  // Writing stays MobileOffice → DeepSeek → NAS → B.AI in background.js.
-  const PROVIDER_ORDER = Object.freeze(["deepseek", "bai", "mobileoffice", "nas"]);
+  // Writing stays DeepSeek → B.AI → NAS → MobileOffice in background.js.
+  const PROVIDER_ORDER = Object.freeze(["deepseek", "bai", "nas", "mobileoffice"]);
   const PROVIDER_NAMES = Object.freeze({ deepseek: "DeepSeek", bai: "B.AI", mobileoffice: "MobileOffice", nas: "NAS" });
   const PROMPT_FIELD = "plannerSystemPrompt";
   // Role text the person may rewrite in settings. It sits under the fixed principles

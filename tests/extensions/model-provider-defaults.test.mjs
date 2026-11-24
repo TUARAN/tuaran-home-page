@@ -6,14 +6,16 @@ import vm from 'node:vm'
 const contentPromise = readFile(new URL('../../tools/x-reply-clipboard-extension/content.js', import.meta.url), 'utf8')
 const backgroundPromise = readFile(new URL('../../tools/x-reply-clipboard-extension/background.js', import.meta.url), 'utf8')
 
+const PROVIDER_ORDER = ['deepseek', 'bai', 'nas', 'mobileoffice']
+
 function modelFunctions(source, values = {}) {
   const start = source.indexOf('  function resolveReplyProviders(settings) {')
   const end = source.indexOf('  function showModelSaveNotice(', start)
-  const saveStart = source.indexOf('  async function saveSingleApiKey(panel, which) {')
+  const saveStart = source.indexOf('  function providerLabel(which) {')
   const saveEnd = source.indexOf('  async function saveConfigForm(', saveStart)
   assert.ok(start >= 0 && end > start && saveStart >= 0 && saveEnd > saveStart)
   const context = {
-    REPLY_PROVIDER_ORDER: ['mobileoffice', 'deepseek', 'nas', 'bai'],
+    REPLY_PROVIDER_ORDER: PROVIDER_ORDER,
     DEFAULT_REPLY_PROVIDERS: [],
     validDeepSeekApiKey: (value) => /^sk-\S{8,}$/u.test(value),
     ...values,
@@ -30,9 +32,9 @@ function modelLoader(source, values = {}) {
   const loadEnd = source.indexOf('  async function loadSchedulePace(', loadStart)
   assert.ok(resolveStart >= 0 && resolveEnd > resolveStart && loadStart >= 0 && loadEnd > loadStart)
   const context = {
-    REPLY_PROVIDER_ORDER: ['mobileoffice', 'deepseek', 'nas', 'bai'],
+    REPLY_PROVIDER_ORDER: PROVIDER_ORDER,
     DEFAULT_REPLY_PROVIDERS: [],
-    REPLY_PROVIDERS_DEFAULT_VERSION: 2,
+    REPLY_PROVIDERS_DEFAULT_VERSION: 3,
     validDeepSeekApiKey: (value) => /^sk-\S{8,}$/u.test(value),
     validReplyMode: (value) => value,
     setTimeout,
@@ -44,39 +46,48 @@ function modelLoader(source, values = {}) {
   return context
 }
 
-test('a new install starts with no reply provider selected and uses a general setup prompt', async () => {
+test('a new install starts with no reply provider and keeps the fixed fallback order', async () => {
   const content = await contentPromise
+  const background = await backgroundPromise
   assert.match(content, /const DEFAULT_REPLY_PROVIDERS = \[\]/)
+  assert.match(content, /const REPLY_PROVIDER_ORDER = \["deepseek", "bai", "nas", "mobileoffice"\]/)
+  assert.match(background, /const REPLY_PROVIDER_ORDER = \["deepseek", "bai", "nas", "mobileoffice"\]/)
   assert.match(content, /replyProviders: \[\]/)
-  for (const provider of ['mobileoffice', 'deepseek', 'nas', 'bai']) {
-    const input = content.match(new RegExp(`<input[^>]*data-xrc-reply-provider="${provider}"[^>]*>`))?.[0]
-    assert.ok(input, `missing ${provider} checkbox`)
-    assert.doesNotMatch(input, /\bchecked\b/)
-  }
   assert.match(content, /尚未启用回复模型 · 点击前往模型设置/)
   assert.doesNotMatch(content, /尚未配置 DeepSeek API Key · 点击前往模型设置/)
-  const model = content.slice(content.indexOf('data-xrc-config-section="model"'))
-  const deepseekBox = model.indexOf('data-xrc-reply-provider="deepseek"')
-  const deepseekKey = model.indexOf('data-xrc-config-key')
-  const nasBox = model.indexOf('data-xrc-reply-provider="nas"')
-  const nasKey = model.indexOf('data-xrc-nas-secret')
-  const baiBox = model.indexOf('data-xrc-reply-provider="bai"')
-  const baiKey = model.indexOf('data-xrc-config-bai-key')
-  assert.ok(deepseekBox < deepseekKey && deepseekKey < nasBox)
-  assert.ok(nasBox < nasKey && nasKey < baiBox && baiBox < baiKey)
 })
 
-test('a saved check and key are used, while a key or receipt alone does not turn a model on', async () => {
+test('model settings drop the checkbox and enable on save', async () => {
+  const content = await contentPromise
+  assert.doesNotMatch(content, /data-xrc-reply-provider/)
+  for (const provider of PROVIDER_ORDER) {
+    assert.match(content, new RegExp(`data-xrc-provider-state="${provider}"`), `missing ${provider} state chip`)
+    assert.match(content, new RegExp(`data-xrc-provider-off="${provider}"`), `missing ${provider} stop button`)
+    assert.match(content, new RegExp(`data-xrc-key-save="${provider}"[^>]*>保存并启用<`), `missing ${provider} save button`)
+  }
+  const model = content.slice(content.indexOf('data-xrc-config-section="model"'))
+  const deepseekKey = model.indexOf('data-xrc-config-key')
+  const baiKey = model.indexOf('data-xrc-config-bai-key')
+  const nasKey = model.indexOf('data-xrc-nas-secret')
+  const mobileOffice = model.indexOf('data-xrc-mobileoffice-token')
+  assert.ok(deepseekKey < baiKey && baiKey < nasKey && nasKey < mobileOffice, 'provider rows must follow the fallback order')
+  assert.match(content, /保存即启用，不需要另外勾选/)
+})
+
+test('a saved key turns the provider on, while a stop keeps the key but drops it from the chain', async () => {
   const { resolveReplyProviders } = modelFunctions(await contentPromise)
   assert.deepEqual(Array.from(resolveReplyProviders({}).providers), [])
-  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: [] }).providers), [])
-  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true }).providers), ['deepseek'])
-  assert.equal(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true }).persist, false)
-  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true, replyProvidersDisabled: ['deepseek'] }).providers), [])
-  assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh', replyProviders: ['bai'], replyProvidersManual: true }).providers), ['bai'])
-  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'] }).providers), [])
-  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true }).providers), ['nas'])
-  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true, replyProvidersDisabled: ['nas'] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: [] }).providers), ['deepseek'])
+  const derived = resolveReplyProviders({ apiKey: 'sk-12345678' })
+  assert.deepEqual(Array.from(derived.providers), ['deepseek'])
+  assert.equal(derived.persist, true)
+  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersDisabled: ['deepseek'] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', baiApiKey: 'sk-abcdefgh', replyProviders: ['deepseek', 'bai'] }).providers), ['deepseek', 'bai'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh' }).providers), ['bai'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ mobileOfficeToken: 'token-value', replyProviders: ['mobileoffice'] }).providers), ['mobileoffice'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'] }).providers), ['nas'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersDisabled: ['nas'] }).providers), [])
 })
 
 test('background model selection agrees with the panel for saved keys and opt-outs', async () => {
@@ -84,52 +95,70 @@ test('background model selection agrees with the panel for saved keys and opt-ou
   const start = source.indexOf('function resolveReplyProviders(settings) {')
   const end = source.indexOf('async function readAiSettings()', start)
   assert.ok(start >= 0 && end > start)
-  const context = { REPLY_PROVIDER_ORDER: ['mobileoffice', 'deepseek', 'nas', 'bai'], DEFAULT_REPLY_PROVIDERS: [] }
+  const context = { REPLY_PROVIDER_ORDER: PROVIDER_ORDER, DEFAULT_REPLY_PROVIDERS: [] }
   vm.createContext(context)
   vm.runInContext(source.slice(start, end), context)
-  const saved = { apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true }
-  assert.deepEqual(Array.from(context.resolveReplyProviders(saved).providers), ['deepseek'])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ ...saved, replyProvidersDisabled: ['deepseek'] }).providers), [])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'] }).providers), [])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true }).providers), ['nas'])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true, replyProvidersDisabled: ['nas'] }).providers), [])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: [] }).providers), ['deepseek'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersDisabled: ['deepseek'] }).providers), [])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ apiKey: 'sk-12345678', baiApiKey: 'sk-abcdefgh', replyProviders: ['deepseek', 'bai'] }).providers), ['deepseek', 'bai'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ mobileOfficeToken: 'token-value', replyProviders: ['mobileoffice'] }).providers), ['mobileoffice'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true }).providers), [])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'] }).providers), ['nas'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersDisabled: ['nas'] }).providers), [])
 })
 
-for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['bai', '[data-xrc-config-bai-key]']]) {
-  test(`saving a valid ${provider} key also selects its model in storage and the open panel`, async () => {
+for (const [provider, keySelector, value] of [['deepseek', '[data-xrc-config-key]', 'sk-12345678'], ['bai', '[data-xrc-config-bai-key]', 'sk-abcdefgh']]) {
+  test(`saving a valid ${provider} key turns it on without a checkbox, and stopping turns it off`, async () => {
     let settings = { replyProviders: [], replyProvidersDisabled: [provider] }
     let renders = 0
     const chrome = { storage: { local: {
       get: async () => ({ xrcAiSettings: settings }),
       set: async ({ xrcAiSettings }) => { settings = xrcAiSettings },
     } } }
-    const state = { replyProviders: [], aiSettingsStatus: 'loading' }
+    const state = { replyProviders: [], aiSettingsStatus: 'ready' }
     const loadAiSettings = async () => {
       state.replyProviders = settings.replyProviders
       state.aiSettingsStatus = 'ready'
     }
-    const { saveSingleApiKey } = modelFunctions(await contentPromise, {
+    const { saveSingleApiKey, stopReplyProvider } = modelFunctions(await contentPromise, {
       chrome, globalThis: { chrome }, state, loadAiSettings, renderPanel: () => { renders += 1 },
     })
-    const checkbox = { checked: false }
     const panel = { querySelector: (selector) => {
-      if (selector === keySelector) return { value: 'sk-12345678' }
-      if (selector === `[data-xrc-reply-provider="${provider}"]`) return checkbox
+      if (selector === keySelector) return { value }
       return { textContent: '' }
     } }
 
     assert.equal(await saveSingleApiKey(panel, provider), true)
-    assert.deepEqual(Array.from(settings.replyProviders), [])
-    checkbox.checked = true
-    assert.equal(await saveSingleApiKey(panel, provider), true)
     assert.deepEqual(Array.from(settings.replyProviders), [provider])
     assert.deepEqual(Array.from(state.replyProviders), [provider])
-    assert.equal(settings.replyProvidersManual, true)
     assert.deepEqual(Array.from(settings.replyProvidersDisabled), [])
-    assert.equal(checkbox.checked, true)
+    assert.equal(settings.replyProvidersManual, undefined)
+
+    assert.equal(await stopReplyProvider(panel, provider), true)
+    assert.deepEqual(Array.from(settings.replyProviders), [])
+    assert.deepEqual(Array.from(state.replyProviders), [])
+    assert.deepEqual(Array.from(settings.replyProvidersDisabled), [provider])
     assert.equal(renders, 2)
   })
 }
+
+test('saving an invalid key is refused instead of turning the provider on', async () => {
+  let settings = {}
+  const chrome = { storage: { local: {
+    get: async () => ({ xrcAiSettings: settings }),
+    set: async ({ xrcAiSettings }) => { settings = xrcAiSettings },
+  } } }
+  const { saveSingleApiKey } = modelFunctions(await contentPromise, {
+    chrome,
+    globalThis: { chrome },
+    state: { replyProviders: [] },
+    loadAiSettings: async () => {},
+    renderPanel: () => {},
+  })
+  const panel = { querySelector: (selector) => (selector === '[data-xrc-config-key]' ? { value: 'not-a-key' } : { textContent: '' }) }
+  assert.equal(await saveSingleApiKey(panel, 'deepseek'), false)
+  assert.deepEqual(settings, {})
+})
 
 test('the home prompt waits until saved keys and receipt settings finish loading', async () => {
   let finishStorage
@@ -155,7 +184,7 @@ test('the home prompt waits until saved keys and receipt settings finish loading
   finishReceipt('saved-receipt-secret')
   await loading
   assert.equal(state.aiSettingsStatus, 'ready')
-  assert.deepEqual(Array.from(state.replyProviders), [])
+  assert.deepEqual(Array.from(state.replyProviders), ['deepseek'])
   assert.equal(state.aiKeySaved, true)
   assert.equal(state.nasSecretAvailable, true)
 })

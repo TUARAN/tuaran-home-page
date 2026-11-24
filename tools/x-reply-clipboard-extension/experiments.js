@@ -123,5 +123,17 @@
     }
     status = box.querySelector('[data-capture-status]');
   }
-  setInterval(mount, 1500); mount();
+  // 面板挂上后停轮询，避免每个 X 标签页长期 1.5 秒扫一次 DOM。
+  let mountTimer = 0;
+  function mountUntilReady() {
+    mount();
+    if (!mountTimer) return;
+    if (document.querySelector('#x-reply-clipboard-panel [data-xrc-hub] .xrc-docs-content')) {
+      clearInterval(mountTimer);
+      mountTimer = 0;
+    }
+  }
+  mountUntilReady();
+  mountTimer = setInterval(mountUntilReady, 1500);
+  window.addEventListener('pagehide', () => clearInterval(mountTimer), { once: true });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

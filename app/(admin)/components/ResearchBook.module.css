@@ -117,11 +117,12 @@
   .spineText { font-size: 10px; }
 }
 
-/* 目录 + 书页：从上往下单栏 -------------------------------------------- */
+/* 目录 + 书页：左侧目录、右侧单栏正文 -------------------------------------------- */
 .spread {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
 }
 
 /* 目录 --------------------------------------------------------------- */
@@ -160,7 +161,7 @@
 }
 .tocList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   column-gap: 18px;
   margin: 0;
   padding: 0;
@@ -202,13 +203,13 @@
   color: var(--rb-faint);
   font: 10px/1.6 ui-monospace, 'JetBrains Mono', monospace;
 }
-.tocButton[aria-current='page'] {
+.tocButton[aria-current] {
   color: var(--rb-ink);
 }
-.tocButton[aria-current='page'] .tocLabel {
+.tocButton[aria-current] .tocLabel {
   font-weight: 700;
 }
-.tocButton[aria-current='page']::after {
+.tocButton[aria-current]::after {
   content: '';
   position: absolute;
   top: 6px;
@@ -574,3 +575,25 @@
     padding: 7px 9px;
   }
 }
+
+/* 通用后台书籍阅读布局 */
+.toc { position: sticky; top: 96px; max-height: calc(100dvh - 112px); overflow-y: auto; }
+.tocHead { cursor: pointer; list-style: none; }
+.tocButton { width: 100%; text-align: left; text-decoration: none; font-size: 14px; }
+.tocButton:focus-visible { outline: 2px solid var(--rb-gold); outline-offset: 2px; }
+.chapters { min-width: 0; display: grid; gap: 24px; }
+.bookChapter { min-width: 0; scroll-margin-top: 100px; }
+.paperBody { overflow-wrap: anywhere; }
+.paperBody pre { max-width: 100%; overflow-x: auto; }
+@media (max-width: 900px) {
+  .spread { grid-template-columns: minmax(0, 1fr); }
+  .toc { position: static; max-height: none; }
+}
+
+.chapters .paperBody { font-size: 1rem; line-height: 1.85; }
+.chapters .paperBody :global(.prose) { font-size: 1rem; line-height: 1.85; }
+.chapters .paperBody :global(.prose table) { display: block; max-width: 100%; overflow-x: auto; }
+.chapters .paperBody :global(.prose th), .chapters .paperBody :global(.prose td) { min-width: 8rem; }
+.tocPartLabel { font-size: 12px; letter-spacing: .04em; }
+
+.tocButton[aria-current] { color: var(--rb-ink); font-weight: 700; background: var(--rb-gold-soft); }

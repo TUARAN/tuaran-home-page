@@ -15,7 +15,7 @@ const auditSource = await readFile(new URL('../../docs/context/ui-ux-audit-roadm
 test('all design documents render directly without an outer collapsible layer', () => {
   assert.doesNotMatch(pageSource, /isCollapsedDesignDocument/)
   assert.doesNotMatch(pageSource, /kind: 'audit'/)
-  assert.match(pageSource, /<Section[\s\S]*title=\{document\.title\}/)
+  assert.match(pageSource, /<AdminBookChapter[\s\S]*title=\{document\.title\}/)
   assert.match(pageSource, /showProgress: true/)
   assert.match(pageSource, /<StatusPill tone="info" size="sm">/)
 })
@@ -46,7 +46,7 @@ test('collapsible section stays closed unless a matching hash targets it', () =>
 })
 
 test('document subsections share one divider instead of stacked bordered cards', () => {
-  assert.match(pageSource, /variant="nested"/)
+  assert.doesNotMatch(pageSource, /<CollapsibleSection/)
   assert.match(pageSource, /admin-document-sections/)
   assert.match(seoRoadmapSource, /variant="nested"/)
   assert.match(collapsibleSource, /variant = 'card'/)

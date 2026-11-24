@@ -48,7 +48,7 @@ function useMethodSelection() {
     if (!next) params.delete('method')
     else params.set('method', next)
     const query = params.toString()
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
   return [method, setMethod]

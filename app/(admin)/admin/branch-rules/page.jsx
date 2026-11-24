@@ -1,5 +1,6 @@
+import AdminBook, { AdminBookChapter } from '../../components/AdminBook'
 import AdminPageGate from '../../components/AdminPageGate'
-import { AdminButton, AdminPage, CollapsibleSection, Section } from '../../components/ui'
+import { AdminButton, AdminPage } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import rules from '../../../../docs/specs/branch-management.md?raw'
 
@@ -24,6 +25,10 @@ function render(markdown) {
 
 export default function AdminBranchRulesPage() {
   const [intro, ...sections] = rules.replace(/^# .+\n/, '').split(/^## /m)
+  const chapters = sections.map((section, index) => {
+    const split = section.indexOf('\n')
+    return { id: `branch-rules-${index + 1}`, title: section.slice(0, split).trim(), body: section.slice(split + 1) }
+  })
   return (
     <AdminPageGate label="分支规范" returnTo="/admin/branch-rules">
       <AdminPage
@@ -31,26 +36,16 @@ export default function AdminBranchRulesPage() {
         description="分支怎么开、怎么合、怎么收。记录来源：docs/specs/branch-management.md，修改后随部署同步。"
         actions={<AdminButton href="/admin/site-dev" size="sm">开发发布</AdminButton>}
       >
-        <Section title="适用范围">
+        <AdminBook title="分支规范" description="分支命名、生命周期与归档" groups={[{ id: "rules", items: [{ id: "scope", title: "适用范围" }, ...chapters.map(({ id, title }) => ({ id, title }))] }]}><AdminBookChapter id="scope" title="适用范围">
           <div
             className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
             dangerouslySetInnerHTML={{ __html: render(intro.trim()) }}
           />
-        </Section>
-        <div className="mt-5 space-y-3">
-          {sections.map((section, index) => {
-            const split = section.indexOf('\n')
-            const title = section.slice(0, split).trim()
-            return (
-              <CollapsibleSection key={title} id={`branch-rules-${index + 1}`} title={title} defaultOpen={index < 3}>
-                <div
-                  className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
-                  dangerouslySetInnerHTML={{ __html: render(section.slice(split + 1)) }}
-                />
-              </CollapsibleSection>
-            )
-          })}
-        </div>
+        </AdminBookChapter>
+        {chapters.map(chapter => <AdminBookChapter key={chapter.id} id={chapter.id} title={chapter.title}>
+          <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: render(chapter.body) }} />
+        </AdminBookChapter>)}
+        </AdminBook>
       </AdminPage>
     </AdminPageGate>
   )

@@ -1,6 +1,6 @@
+import AdminBook, { AdminBookChapter } from '../../components/AdminBook'
 import AdminPageGate from '../../components/AdminPageGate'
-import AdminSubnav from '../../components/AdminSubnav'
-import { AdminButton, AdminPage, CollapsibleSection, Section, StatCard, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, StatCard, StatusPill } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import audit from '../../../../docs/context/ui-ux-audit-roadmap.md?raw'
 import language from '../../../../docs/specs/site-design-language.md?raw'
@@ -51,25 +51,24 @@ function DocumentBody({ document }) {
       ) : null}
       {sections.length ? (
         <div
-          className={`admin-document-sections -mx-4 -mb-4 md:-mx-5 ${
-            introMarkdown ? 'mt-3 border-t border-[var(--admin-line-soft)]' : '-mt-4'
-          }`}
+          className="admin-document-sections"
         >
           {sections.map((section, index) => {
             const split = section.indexOf('\n')
             const title = section.slice(0, split).trim()
             return (
-              <CollapsibleSection
+              <section
                 key={title}
                 id={`${document.id}-section-${index + 1}`}
-                title={title}
-                variant="nested"
+                aria-label={title}
+                className="scroll-mt-28 border-t border-[var(--admin-line-soft)] mt-6 pt-2"
               >
+                <h3 className="mt-8 font-serif text-xl font-semibold">{title}</h3>
                 <div
                   className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
                   dangerouslySetInnerHTML={{ __html: renderDocument(section.slice(split + 1)) }}
                 />
-              </CollapsibleSection>
+              </section>
             )
           })}
         </div>
@@ -84,13 +83,13 @@ function DocumentSection({ document }) {
   const progress = countAuditTasks(document.markdown)
   return (
     <div id={document.id} className="scroll-mt-24">
-      <Section
+      <AdminBookChapter
         title={document.title}
         description={description}
         actions={document.showProgress && progress.total ? <StatusPill tone="info" size="sm">{progress.completed}/{progress.total} 项完成</StatusPill> : undefined}
       >
         {body}
-      </Section>
+      </AdminBookChapter>
     </div>
   )
 }
@@ -109,13 +108,14 @@ export default function AdminDesignPage() {
           <StatCard label="审计基线" value="2026-09-08" sub="GPT6-Astra · 桌面观察与代码审计" icon="researchStyle" />
           <StatCard label="验证状态" value="待复测" sub="移动端、多主题与完整交互尚未验证" icon="audit" tone="warning" />
         </div>
-        <div className="mt-5">
-          <AdminSubnav label="设计文档导航" items={documents.map((document) => ({ id: document.id, label: document.title, href: `#${document.id}` }))} />
-        </div>
+
         <p className="mb-5 text-sm leading-7 text-[var(--admin-muted)]">
-          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。设计规范与审计文档直接展示，各章节可按需展开；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
+          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。设计规范与审计文档直接展示，各章节可从左侧目录定位；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
         </p>
-        <div className="space-y-5">{documents.map((document) => <DocumentSection key={document.id} document={document} />)}</div>
+        <AdminBook title="UI 设计" description="设计规范与界面审计" groups={documents.map(document => ({ id: document.id, label: document.title, items: [
+          { id: document.id, title: '概览与来源' },
+          ...document.markdown.replace(/^# .+\n/, '').split(/^## /m).slice(1).map((section, index) => ({ id: `${document.id}-section-${index + 1}`, title: section.split('\n')[0].trim() })),
+        ] }))}>{documents.map(document => <DocumentSection key={document.id} document={document} />)}</AdminBook>
       </AdminPage>
     </AdminPageGate>
   )

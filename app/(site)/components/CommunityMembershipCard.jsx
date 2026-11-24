@@ -6,7 +6,7 @@ import {
   IconCheck,
   IconClock,
   IconFileInvoice,
-  IconMessageCircleCheck,
+  IconMail,
   IconReceipt,
   IconShieldCheck,
 } from '@tabler/icons-react'
@@ -39,7 +39,8 @@ function ActivityCountdown({ countdown }) {
 
 export default function CommunityMembershipCard({ compact = false, id, waitlist = false, topicName = '' }) {
   const [selectedPlanId, setSelectedPlanId] = useState(COMMUNITY_MEMBERSHIP.plans[0].id)
-  const [countdown, setCountdown] = useState(() => getCommunityCountdown())
+  // 倒计时只在客户端刷新，避免 SSR 与 hydration 时刻不一致触发 React #418。
+  const [countdown, setCountdown] = useState(null)
 
   useEffect(() => {
     const update = () => setCountdown(getCommunityCountdown())
@@ -106,12 +107,12 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
     {
       icon: IconReceipt,
       title: '选择方案并在线支付',
-      desc: `选好方案后微信/支付宝扫码付 ¥${selectedPrice}，支付成功本页自动识别。`,
+      desc: `选好方案后微信扫码付 ¥${selectedPrice}，支付成功本页自动识别。`,
     },
     {
-      icon: IconMessageCircleCheck,
-      title: '添加作者微信',
-      desc: '说明所选方案，不用发付款截图；需要发票时一并提供抬头和税号。',
+      icon: IconMail,
+      title: '留下联系邮箱',
+      desc: '支付成功页填写邮箱即可，无需登录；需要发票时一并说明抬头和税号。',
     },
     {
       icon: IconShieldCheck,
@@ -135,7 +136,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
           </div>
         </div>
 
-        <ActivityCountdown countdown={countdown} />
+        {countdown ? <ActivityCountdown countdown={countdown} /> : null}
 
         <div className="community-membership-plans" role="radiogroup" aria-label="选择圈子或个人服务方案">
           {COMMUNITY_MEMBERSHIP.plans.map((plan) => {
@@ -190,7 +191,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
 
       <div className="community-membership-payment">
         <div className="community-membership-pay-head">
-          <span>虎皮椒支付 · {selectedPlan.name}</span>
+          <span>微信支付 · {selectedPlan.name}</span>
           <strong>¥{selectedPrice}.00</strong>
         </div>
         <CommunityPayPanel key={selectedPlan.resourceKey} plan={selectedPlan} />
@@ -216,39 +217,21 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
         })}
       </ol>
 
-      <div className="community-membership-contact">
-        <a
-          href={COMMUNITY_MEMBERSHIP.ownerQr}
-          target="_blank"
-          rel="noreferrer"
-          className="community-membership-owner-qr"
-          aria-label="查看作者微信二维码原图"
-        >
-          <Image
-            src={COMMUNITY_MEMBERSHIP.ownerQr}
-            alt="作者个人微信二维码"
-            width={1074}
-            height={1455}
-            sizes="(max-width: 900px) 136px, 176px"
-            unoptimized
-            className="h-full w-full object-contain"
-          />
-        </a>
+      <div className="community-membership-contact is-email">
         <div className="community-membership-contact-copy">
-          <strong>付款后添加作者微信</strong>
-          <p>作者微信号：<b>{COMMUNITY_MEMBERSHIP.wechatId}</b></p>
-          <p>说明所选方案即可，不用发付款截图。</p>
-          <span className="community-membership-owner-qr-hint">点击二维码可查看原图</span>
+          <strong>付款后留下邮箱</strong>
+          <p>不用登录，也不用加微信。支付成功页会请你填写邮箱，站长按后台订单核对后通过邮件联系你。</p>
+          <p>邮件里确认方案、进群方式或一对一交流时间；需要发票时回复抬头和税号即可。</p>
         </div>
-        <aside className="community-membership-contact-guide" aria-label="添加作者微信消息示例">
-          <p className="community-membership-contact-guide-kicker">添加时这样说</p>
+        <aside className="community-membership-contact-guide" aria-label="付款后邮件联系说明">
+          <p className="community-membership-contact-guide-kicker">邮件里会确认</p>
           <blockquote>
-            你好，我已在线支付 {selectedPrice} 元，选择「{selectedPlan.name}」，微信昵称是 ______。{selectedPlan.id === 'personal-service' ? '我想梳理的问题是 ______。' : '想加入 ______ 主题圈子。'}
+            已收到「{selectedPlan.name}」的付款，请回复你希望用于进群的账号昵称，方便邀请加入。
           </blockquote>
           <ul>
-            <li>说明所选方案，无需付款截图</li>
-            <li>写清微信昵称</li>
-            <li>需要发票请提供抬头和税号</li>
+            <li>所选方案与订单号</li>
+            <li>进群方式或交流时间</li>
+            <li>发票抬头与税号（如需）</li>
           </ul>
           <div className="community-membership-contact-benefits">
             <p>当前方案包含</p>

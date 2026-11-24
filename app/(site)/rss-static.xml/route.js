@@ -59,7 +59,10 @@ function postContentHtml(article) {
   for (const block of article.content) {
     if (typeof block === 'string') {
       const text = block.trim()
-      if (text) parts.push(`<p>${escapeXml(text)}</p>`)
+      if (!text) continue
+      // 正文里的 `>` 是引用块标记（来源说明、他人原话），别把标记本身当成正文发进订阅源。
+      const quote = /^>\s?(.*)$/.exec(text)
+      parts.push(quote ? `<blockquote><p>${escapeXml(quote[1])}</p></blockquote>` : `<p>${escapeXml(text)}</p>`)
     } else if (block && typeof block === 'object' && block.label) {
       parts.push(`<h3>${escapeXml(block.label)}</h3>`)
     }

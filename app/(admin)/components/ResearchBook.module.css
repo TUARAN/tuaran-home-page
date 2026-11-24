@@ -117,29 +117,24 @@
   .spineText { font-size: 10px; }
 }
 
-/* 目录 + 书页的双栏 ---------------------------------------------------- */
+/* 目录 + 书页：从上往下单栏 -------------------------------------------- */
 .spread {
-  display: grid;
-  grid-template-columns: minmax(0, 288px) minmax(0, 1fr);
-  align-items: start;
-}
-@media (max-width: 1023px) {
-  .spread { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* 目录 --------------------------------------------------------------- */
 .toc {
-  position: sticky;
-  /* 让开 AdminPage stickyHeader：顶栏 56px + 标题区约 92px。 */
-  top: 148px;
-  max-height: calc(100dvh - 164px);
-  overflow-y: auto;
-  padding: 20px 16px 22px;
+  padding: 18px 24px 20px;
   border: 1px solid var(--rb-line);
-  border-radius: 5px 0 0 5px;
+  border-radius: 5px;
   background: var(--rb-paper-2);
 }
 .tocHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--rb-line-strong);
 }
@@ -150,12 +145,12 @@
   letter-spacing: 0.26em;
 }
 .tocHeadZh {
-  margin: 3px 0 0;
+  margin: 0;
   font: 700 20px/1.3 Georgia, 'Noto Serif SC', serif;
   letter-spacing: 0.3em;
 }
 .tocPart {
-  margin-top: 18px;
+  margin-top: 14px;
 }
 .tocPartLabel {
   margin: 0 0 6px;
@@ -164,6 +159,9 @@
   letter-spacing: 0.18em;
 }
 .tocList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  column-gap: 18px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -228,13 +226,9 @@
   font-size: 11px;
   line-height: 1.7;
 }
-@media (max-width: 1023px) {
-  .toc {
-    position: static;
-    max-height: none;
-    border-right: 1px solid var(--rb-line);
-    border-radius: 5px;
-  }
+@media (max-width: 640px) {
+  .toc { padding: 14px 16px 16px; }
+  .tocList { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* 书页 --------------------------------------------------------------- */
@@ -243,18 +237,12 @@
   min-width: 0;
   padding: 24px 30px 18px;
   border: 1px solid var(--rb-line);
-  border-radius: 0 5px 5px 0;
-  background:
-    linear-gradient(90deg, rgba(60, 50, 30, 0.055), transparent 28px),
-    var(--rb-paper);
+  border-radius: 5px;
+  background: var(--rb-paper);
   box-shadow: 0 2px 3px rgba(40, 35, 20, 0.03), 0 16px 34px rgba(40, 35, 20, 0.06);
 }
-@media (max-width: 1023px) {
-  .paper {
-    padding: 20px 18px 16px;
-    border-left: 1px solid var(--rb-line);
-    border-radius: 5px;
-  }
+@media (max-width: 640px) {
+  .paper { padding: 20px 18px 16px; }
 }
 .runningHead {
   display: flex;
@@ -309,25 +297,17 @@
   background: var(--rb-line);
 }
 
-/* 对开两叶 ----------------------------------------------------------- */
+/* 章内两叶：从上往下顺序排 ------------------------------------------- */
 .leafGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  gap: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .leafLeft {
   min-width: 0;
-  padding-right: 22px;
-  border-right: 1px solid var(--rb-line);
 }
 .leafRight {
   min-width: 0;
-  padding-left: 24px;
-}
-@media (max-width: 767px) {
-  .leafGrid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .leafLeft { padding-right: 0; border-right: 0; border-bottom: 1px solid var(--rb-line); padding-bottom: 18px; }
-  .leafRight { padding-left: 0; }
 }
 .leafTitle {
   margin: 0 0 12px;
@@ -410,4 +390,187 @@
 }
 .bookProse :global(h2) {
   font-family: Georgia, 'Noto Serif SC', serif;
+}
+
+/* 章内体例：节 / 段 / 点 / 表 / 图 -------------------------------------- */
+.section {
+  margin: 0 0 26px;
+}
+.section:last-child {
+  margin-bottom: 0;
+}
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--rb-line-strong);
+  color: var(--rb-ink);
+  font: 700 15px/1.5 Georgia, 'Noto Serif SC', serif;
+  letter-spacing: 0.02em;
+}
+.sectionNum {
+  color: var(--rb-gold);
+  font: 600 12px/1.4 ui-monospace, 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+}
+.sectionTitle {
+  flex: 1;
+}
+.sectionBody > :last-child {
+  margin-bottom: 0;
+}
+.para {
+  max-width: 56em;
+  margin: 0 0 12px;
+  color: var(--rb-ink-soft);
+  font: 13.5px/1.95 Georgia, 'Noto Serif SC', serif;
+  text-align: justify;
+}
+.para code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--rb-gold-soft);
+  font: 12px/1.5 ui-monospace, 'JetBrains Mono', monospace;
+  color: var(--rb-claret);
+}
+
+/* 点：分条列举 */
+.points {
+  max-width: 56em;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  counter-reset: rb-point;
+}
+.points li {
+  position: relative;
+  margin: 0 0 7px;
+  padding-left: 1.9em;
+  color: var(--rb-ink-soft);
+  font: 13px/1.85 Georgia, 'Noto Serif SC', serif;
+}
+.pointsPlain li::before {
+  content: '·';
+  position: absolute;
+  left: 0.55em;
+  top: -0.05em;
+  color: var(--rb-gold);
+  font-size: 18px;
+  line-height: 1;
+}
+.pointsOrdered li {
+  counter-increment: rb-point;
+}
+.pointsOrdered li::before {
+  content: counter(rb-point, cjk-ideographic) '、';
+  position: absolute;
+  left: 0;
+  color: var(--rb-gold);
+  font-weight: 600;
+}
+
+/* 表：书页表格 */
+.tableFigure {
+  margin: 0 0 18px;
+}
+.tableScroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--rb-line-strong);
+  border-top: 2px solid var(--rb-ink);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.table th,
+.table td {
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--rb-line);
+  border-right: 1px solid var(--rb-line);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.65;
+}
+.table th:last-child,
+.table td:last-child {
+  border-right: 0;
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table thead th {
+  background: var(--rb-paper-2);
+  color: var(--rb-ink);
+  font: 600 11.5px/1.5 Georgia, 'Noto Serif SC', serif;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.table td {
+  color: var(--rb-ink-soft);
+}
+.tableRowButton {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.tableRowButton:hover {
+  background: var(--rb-paper-2);
+}
+.tableRowButton:focus-visible {
+  outline: 2px solid var(--rb-gold);
+  outline-offset: -2px;
+}
+.tableRowActive {
+  background: var(--rb-gold-soft);
+  box-shadow: inset 3px 0 0 var(--rb-claret);
+}
+.tableRowActive td {
+  color: var(--rb-ink);
+  font-weight: 600;
+}
+
+/* 图：插图与题注 */
+.figure {
+  margin: 0 0 18px;
+}
+.figureArt {
+  padding: 14px 16px;
+  border: 1px solid var(--rb-line-strong);
+  background: var(--rb-paper-2);
+}
+.figureCaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 9px;
+  color: var(--rb-ink-soft);
+  font: 12px/1.6 Georgia, 'Noto Serif SC', serif;
+  text-align: center;
+}
+.figureLabel {
+  color: var(--rb-gold);
+  font: 600 11px/1.4 ui-monospace, 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+}
+.figureNote {
+  max-width: 52em;
+  margin: 7px auto 0;
+  color: var(--rb-faint);
+  font: 11.5px/1.7 Georgia, 'Noto Serif SC', serif;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .para,
+  .points li {
+    font-size: 13px;
+  }
+  .table th,
+  .table td {
+    padding: 7px 9px;
+  }
 }

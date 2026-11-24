@@ -3,6 +3,7 @@
 import Link, { useLinkStatus } from 'next/link'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
+import HomeListCover from '../components/HomeListCover'
 import PaidUnlockBadge from '../components/PaidUnlockBadge'
 import { LoadingDots } from '../../components/loading/LoadingPrimitives'
 import {
@@ -39,7 +40,7 @@ function RowBody({ item, external, group, displaySubject, paid }) {
   return (
     <div
       data-pending={pending ? 'true' : 'false'}
-      className={`h5-feed-row-body relative grid items-start gap-3 px-[0.9rem] py-[0.7rem] md:gap-4 md:px-5 md:py-4 ${item.image ? 'grid-cols-[minmax(0,1fr)_72px] md:grid-cols-[minmax(0,1fr)_136px]' : ''}`}
+      className="h5-feed-row-body relative grid grid-cols-[minmax(0,1fr)_72px] items-start gap-3 px-[0.9rem] py-[0.7rem] md:grid-cols-[minmax(0,1fr)_136px] md:gap-4 md:px-5 md:py-4"
     >
       <div className="min-w-0">
         <div className="mb-2 hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-1 md:flex">
@@ -92,22 +93,14 @@ function RowBody({ item, external, group, displaySubject, paid }) {
           ) : null}
         </div>
       </div>
-      {item.image ? (
-        <div className="h5-feed-thumb relative h-[72px] overflow-hidden rounded-[4px] border border-[var(--site-line)] bg-[var(--site-panel)] dark:bg-gray-950 md:h-24 md:w-[136px] md:rounded-md">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image.src}
-            alt={item.image.alt || `${item.title} 配图`}
-            loading="lazy"
-            decoding="async"
-            onError={(event) => {
-              const box = event.currentTarget.parentElement
-              if (box) box.style.display = 'none'
-            }}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          />
-        </div>
-      ) : null}
+      <div className="h5-feed-thumb relative h-[72px] overflow-hidden rounded-[4px] border border-[var(--site-line)] bg-[var(--site-panel)] dark:bg-gray-950 md:h-24 md:w-[136px] md:rounded-md">
+        <HomeListCover
+          id={item.id}
+          section={group}
+          src={item.image?.src}
+          alt={item.image?.alt || `${item.title} 配图`}
+        />
+      </div>
     </div>
   )
 }

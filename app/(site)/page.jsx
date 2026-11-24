@@ -48,6 +48,7 @@ import { getHomeRecommendationCatalog } from '../../lib/home/homeHighlights'
 import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/site/secondarySites'
 import HomeCodexResetCard from './components/HomeCodexResetCard'
+import { CODEX_RESET_PATH } from '../../lib/ai/codexResets'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
 import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
 import FestivalBanner from './components/FestivalBanner'
@@ -788,6 +789,27 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
       <HomeMasonry>
         <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />
+        </div>
+        <div className="home-masonry-item lg:hidden">
+          <Link
+            href={CODEX_RESET_PATH}
+            className="home-codex-reset-mobile-entry group flex items-center justify-between gap-3 rounded-2xl border border-[#d7d2c4] bg-white/70 px-4 py-3 no-underline transition hover:border-[#8e846f] dark:border-[#313a45] dark:bg-[#121923]"
+            data-analytics-event="entry_click"
+            data-analytics-surface="home_codex_reset_mobile"
+            data-analytics-destination-kind="tool"
+            data-analytics-destination-id="codex-reset"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#d7d2c4] bg-white/80 text-[#69675e] dark:border-[#313a45] dark:bg-[#1a222c] dark:text-[#aeb8c5]" aria-hidden="true">
+                <IconCalendarEvent size={18} stroke={1.8} />
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-[14px] font-semibold leading-5 text-[#2c2a23] dark:text-gray-100"><T zh="Codex 重置" en="Codex reset" /></strong>
+                <small className="mt-0.5 block text-[11.5px] leading-4 text-[#77746a] dark:text-[#98a3b1]"><T zh="额度重置与发卡日历" en="Quota reset and credit calendar" /></small>
+              </span>
+            </span>
+            <span className="shrink-0 font-mono text-[13px] text-[#8a8174] transition-transform group-hover:translate-x-0.5 dark:text-[#8e9ab0]" aria-hidden="true">→</span>
+          </Link>
         </div>
         <div className="home-masonry-item"><HomeBookCards /></div>
         <div className="home-masonry-item">

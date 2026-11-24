@@ -17,7 +17,9 @@ const dependencies = {
   '@tabler/icons-react': new Proxy({}, { get: () => () => null }),
   '../../../lib/home/homeRecommendationEngine': engine,
   '../../../lib/site/siteAnalytics': { trackSiteEvent() {} },
+  '../../../lib/home/homeAuthority': { HOME_OBSERVATION_ENTRY_LINKS: [] },
   './H5PullToRefresh': ({ children }) => children,
+  './HomeSectionCouplet': () => null,
   './LocaleProvider': { T: ({ zh }) => zh },
 }
 
@@ -127,7 +129,7 @@ test('home article list keeps the latest tab and does not render a latest badge'
   assert.match(html, /资源/)
   assert.match(html, /home-article-scope-ai_dev/)
   assert.match(html, />AI</)
-  assert.match(html, /home-article-scope-web3/)
+  assert.match(html, /home-article-scope-observation/)
   assert.doesNotMatch(html, /home-badge-latest/)
 })
 

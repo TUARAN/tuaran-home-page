@@ -124,3 +124,46 @@ test('reader: exclusion keeps real reader comments and drops only bot rows', () 
   assert.equal(Number(total.period_comments), 2)
   db.close()
 })
+
+test('top-liked articles and like totals ignore in-site bot votes', () => {
+  assert.match(contentAnalyticsRouteSource, /const BOT_VOTER_KEY_PATTERN/)
+  assert.match(contentAnalyticsRouteSource, /user:\$\{READER_USER_PREFIX\}%/)
+  const likeQueries = contentAnalyticsRouteSource.match(/FROM article_likes[\s\S]*?voter_key NOT LIKE \?4/g) || []
+  assert.equal(likeQueries.length, 2)
+  assert.match(contentAnalyticsRouteSource, /bind\(periodStart, previousStart, now, BOT_VOTER_KEY_PATTERN\)/)
+  assert.match(contentAnalyticsRouteSource, /bind\(periodStart, previousStart, now, BOT_VOTER_KEY_PATTERN, LIMIT\)/)
+})
+
+test('voter: exclusion keeps real likes and drops only bot votes', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec(`CREATE TABLE article_likes (
+    id INTEGER PRIMARY KEY, article_key TEXT NOT NULL, voter_key TEXT NOT NULL,
+    user_id TEXT, created_at INTEGER NOT NULL
+  )`)
+  db.exec(`INSERT INTO article_likes VALUES
+    (1, 'article:a', 'user:reader:qingshi', 'reader:qingshi', 40),
+    (2, 'article:a', 'user:reader:nanan', 'reader:nanan', 35),
+    (3, 'article:b', 'user:reader:gubai', 'reader:gubai', 30),
+    (4, 'article:a', 'user:1001', '1001', 20),
+    (5, 'article:c', 'guest:abc', NULL, 10)`)
+  const pattern = `user:${READER_USER_PREFIX}%`
+  const totals = db.prepare(
+    `SELECT
+       SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
+       SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
+     FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
+       AND voter_key NOT LIKE ?4`,
+  ).get(15, 0, 100, pattern)
+  assert.equal(Number(totals.total), 1)
+  assert.equal(Number(totals.previous_total), 1)
+  const top = db.prepare(
+    `SELECT article_key,
+       SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total
+     FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
+       AND voter_key NOT LIKE ?4
+     GROUP BY article_key HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
+     ORDER BY total DESC LIMIT ?5`,
+  ).all(15, 0, 100, pattern, 12)
+  assert.deepEqual(top.map((row) => row.article_key), ['article:a'])
+  db.close()
+})

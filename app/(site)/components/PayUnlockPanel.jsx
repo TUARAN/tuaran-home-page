@@ -23,6 +23,8 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
   const [phase, setPhase] = useState('idle') // idle | creating | qr | error
   const [order, setOrder] = useState(null)
   const [message, setMessage] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [refreshNote, setRefreshNote] = useState('')
   const pollRef = useRef(null)
   const settledRef = useRef(false)
 
@@ -44,17 +46,38 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
     if (typeof onUnlocked === 'function') onUnlocked()
   }, [onUnlocked, stopPolling])
 
-  const poll = useCallback(
-    async (orderNo) => {
+  // silent=true 供 3 秒自动轮询使用，不出提示；手动点「刷新状态」时给出可见反馈
+  const checkStatus = useCallback(
+    async (orderNo, { silent = false } = {}) => {
+      if (!silent) {
+        setChecking(true)
+        setRefreshNote('')
+      }
       try {
         const res = await fetch(`/api/pay/status?orderNo=${encodeURIComponent(orderNo)}`, {
           cache: 'no-store',
           credentials: 'same-origin',
         })
+        if (res.status === 401) {
+          if (!silent) setRefreshNote('登录状态已过期，请重新登录后再试。')
+          return 'unauthorized'
+        }
         const data = await safeJson(res)
-        if (data?.unlocked || data?.status === 'paid') finish()
+        if (data?.unlocked || data?.status === 'paid') {
+          finish()
+          return 'paid'
+        }
+        if (!silent) {
+          if (res.status === 404) setRefreshNote('订单不存在或已失效，请取消后重新下单。')
+          else if (!res.ok) setRefreshNote('查询失败，请稍后再试。')
+          else setRefreshNote('还未查到支付结果。刚付款可能有几秒延迟，稍等再点一次。')
+        }
+        return 'unpaid'
       } catch {
-        // 网络抖动继续轮询，由总时长兜底
+        if (!silent) setRefreshNote('网络异常，请稍后再试。')
+        return 'error'
+      } finally {
+        if (!silent) setChecking(false)
       }
     },
     [finish]
@@ -62,9 +85,9 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
 
   useEffect(() => {
     if (phase !== 'qr' || !order?.orderNo) return undefined
-    pollRef.current = setInterval(() => poll(order.orderNo), 3000)
+    pollRef.current = setInterval(() => checkStatus(order.orderNo, { silent: true }), 3000)
     return stopPolling
-  }, [phase, order?.orderNo, poll, stopPolling])
+  }, [phase, order?.orderNo, checkStatus, stopPolling])
 
   async function create() {
     setPhase('creating')
@@ -137,15 +160,16 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
             </a>
           )}
           <p className="text-xs text-[#8a7a55] dark:text-amber-300/80">
-            微信/支付宝扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功后本页自动解锁
+            微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功后本页自动解锁
           </p>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => poll(order.orderNo)}
-              className="rounded-full border border-[#caa86a] bg-white px-4 py-1.5 text-xs font-medium text-[#7a5b1e] hover:bg-[#fffdf7] dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+              onClick={() => checkStatus(order.orderNo)}
+              disabled={checking}
+              className="rounded-full border border-[#caa86a] bg-white px-4 py-1.5 text-xs font-medium text-[#7a5b1e] hover:bg-[#fffdf7] disabled:opacity-60 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
             >
-              我已支付，刷新状态
+              {checking ? '正在查询…' : '我已支付，刷新状态'}
             </button>
             <button
               type="button"
@@ -153,12 +177,16 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
                 stopPolling()
                 setPhase('idle')
                 setOrder(null)
+                setRefreshNote('')
               }}
               className="rounded-full px-3 py-1.5 text-xs text-[#8a7a55] hover:text-[#7a5b1e] dark:text-amber-300/70"
             >
               取消
             </button>
           </div>
+          {refreshNote ? (
+            <p className="text-xs text-[#8a7a55] dark:text-amber-300/80">{refreshNote}</p>
+          ) : null}
           <p className="text-[11px] text-[#a8966f] dark:text-amber-300/60">
             订单号 {order.orderNo}
           </p>

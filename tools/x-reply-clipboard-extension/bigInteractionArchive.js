@@ -11,8 +11,18 @@
     const operations = document.querySelector('#x-reply-clipboard-panel [data-xrc-experiments]');
     if (operations && box.parentElement !== operations) operations.append(box);
   }
-  mount();
-  const mountTimer = setInterval(mount, 1000);
+  // 面板一出现就停轮询，不再每秒查一次 DOM。
+  let mountTimer = 0;
+  function mountOnce() {
+    mount();
+    if (!mountTimer) return;
+    if (document.querySelector("#x-reply-clipboard-panel [data-xrc-experiments]")) {
+      clearInterval(mountTimer);
+      mountTimer = 0;
+    }
+  }
+  mountOnce();
+  mountTimer = setInterval(mountOnce, 1000);
   window.addEventListener("pagehide", () => clearInterval(mountTimer), { once: true });
   const status = box.querySelector("[data-status]");
   const start = box.querySelector("[data-start]");
@@ -38,8 +48,17 @@
     return { id: match[2], url: `https://x.com/${HANDLE}/status/${match[2]}`, createdAt: time.getAttribute("datetime") || "", text, images: [...new Set(images)] };
   }
 
+  // 归档只增不减，写失败时给出能直接照做的原因，不把原始错误抛到状态栏。
   async function save() {
-    await chrome.storage.local.set({ [KEY]: { account: HANDLE, checked, scannedIds: [...seen], posts: kept, updatedAt: new Date().toISOString() } });
+    try {
+      await chrome.storage.local.set({ [KEY]: { account: HANDLE, checked, scannedIds: [...seen], posts: kept, updatedAt: new Date().toISOString() } });
+    } catch (error) {
+      const message = String(error?.message || error || "");
+      if (/quota|QUOTA_BYTES|storage full|空间|空间不足/iu.test(message)) {
+        throw new Error("本机扩展存储写不进去（可能已满）：先点「导出 JSON + 图片」保存进度，再清掉旧归档或减少收录");
+      }
+      throw new Error(`保存归档失败：${message || "未知原因"}`);
+    }
   }
 
   async function scanVisible() {

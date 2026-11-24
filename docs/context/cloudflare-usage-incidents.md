@@ -12,8 +12,13 @@
   2. `research_pv_hits` 各类聚合：`/api/admin/overview` 41 次约 28 万行，`/api/admin/content-weekly` 与 `/reader` 十几条 `SUM(CASE…)` 约 70 万行。`quality` 索引存在，但 `COUNT(*)`/`SUM` 仍要扫完所有匹配行。
   3. `content_documents ORDER BY content_key LIMIT 500 OFFSET ?`：294 次约 14 万行，来自调研 override 列表；只有 isolate 内内存缓存，跨 isolate 各扫一遍。
   4. 该小时 `admin.2aran.com` 有 965 次请求，对照小时没有后台流量，说明是后台面板高频刷新。
-- **已改**：新增 `lib/db/edgeCache.mjs`（Cache API 跨 isolate 缓存，不可用时退回进程内 Map），接入 `/ranbi` 供应量（60 秒）、`/api/admin/overview`（60 秒）、`/api/admin/content-weekly` 与 `/reader`（60 秒）、调研 override 列表（5 分钟）；poemcn Worker 对详情页做 5 分钟、接口 60 秒的 Cache API 缓存，只缓存 200。11-02 条目里「燃币余额要落到单行汇总」这次先以缓存止血，见下方未完成项。
-- **还没动**：`user_points` 物化计数器（写入时维护 identities / circulating，彻底摆脱 `COUNT` + `SUM` 全表）、`research_pv_hits` 日汇总表与合格阅读计数器、后台面板默认刷新频率下调、poemcn 对 meta-webindexer 是否需要 robots/限流。
+- **已改**：新增 `lib/db/edgeCache.mjs`（Cache API 跨 isolate 缓存，不可用时退回进程内 Map），接入 `/ranbi` 供应量、`/api/admin/overview`、`/api/admin/content-weekly` 与 `/reader`、调研 override 列表；poemcn Worker 对详情页做 5 分钟、接口 60 秒的 Cache API 缓存，只缓存 200。
+- **11-24 收尾**（缓存只压请求数，miss 仍整表扫，所以继续改取数本身）：
+  - `user_points_summary`（migration `0136`）：单行计数器，由 `AFTER INSERT` / `UPDATE OF balance` / `DELETE` 三个触发器维护，与转账同事务原子更新；`/ranbi` 一次 miss 从 48,179 行降到 1 行。表缺失时退回原聚合，计数器超 24 小时未核对时重算兜底，`/api/admin/points` 新增 `reconcileSupply` 对账动作（返回差额并就地修复）。
+  - 侧栏徽标改 `?fields=badges`（#584）：`AdminShell` 每次进后台页面原本会顺带跑三条 `research_pv_hits` 聚合（1.5 万行表），现在只做 `site_users` 的 COUNT（44 行）。
+  - 周报与读者明细缓存 60 → 300 秒：周报按周口径，60 秒刷新只会重复扫明细。
+- **评估后不做**：`research_pv_hits` 日汇总表——表仅 15,498 行、已有 4 个索引，UV 是 `COUNT(DISTINCT visitorKey)`，按天存去重数跨天不可相加，精确存储反而更贵，等表涨到几十万行再议。后台面板降频——`VibeCafeUvTest` 的 2 秒是手动触发的实验工具，`DistributionMonitor` 的 10 秒已带 `document.hidden` 保护且不读 pv/points。周报 18 条不做硬合并——同一窗口不同维度无法压成一条 SQL，`UNION ALL` 会牺牲可读性且仍需多次扫描，改用缓存时长收敛。
+- **仍未动**：poemcn 对 meta-webindexer 是否需要 robots 或限流（缓存已让重复抓取不打到 D1，暂不处理）。
 - **复盘**：
   - 为什么没有提前拦住：80% 预警按「当天累计」算，而告警时段已接近 UTC 日尾声；11-02 的复盘已经把燃币余额和阅读计数列为未完成，但没有排期，这次原样复发。
   - 判断失误：把「公开目录 5 分钟缓存」当成了缓存治理完成，实际那只是单个 isolate 内的变量，多实例、爬虫会绕开。

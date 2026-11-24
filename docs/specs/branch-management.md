@@ -8,7 +8,7 @@
 
 - 只有一条长期分支：`main`。不建 `develop`、`release` 等长期分支。
 - 所有改动走短命分支，PR 经 squash 合回 `main`，分支寿命以天计。
-- **开工隔离**：任务一开始就 `git worktree add -b <类型>/<任务名> <路径> origin/main`，在独立目录里写文件、提交、推送；不在主工作区直接写文件或提交。主工作区常被多个智能体共享，在其中 `checkout` 新分支不算隔离——目录相同，他人未提交改动仍混在一起；判断标准是目录形态（`.git` 为目录即主工作区），不是分支名。`pre-commit` 钩子拒绝主工作区的任何提交；站长明确要求在主工作区直接提交的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
+- **开工隔离**：任务在独立 worktree 里写文件、提交、推送；不在主工作区直接写文件或提交。主仓（`.git` 为目录）执行 `npm run worktree:add -- <类型> <任务名>`，会 `worktree add` 并把卫星目录的 `node_modules` 链到主仓那一份。等价原语：`git worktree add -b <类型>/<任务名> <路径> origin/main`，再加 `npm run worktree:link-deps`（在卫星目录）。主工作区常被多个智能体共享，在其中 `checkout` 新分支不算隔离——目录相同，他人未提交改动仍混在一起。`pre-commit` 钩子拒绝主工作区的任何提交；站长明确要求在主工作区直接提交的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
 - 合入 `main` 是否触发 Cloudflare Pages 生产构建，看 squash 提交说明是否以 `[CF-Pages-Skip]` 开头。规则见「预览与部署」。合并动作只由站长发出。助手不 squash、不 merge。
 - 非琐碎改动不直接推 `main`。
 
@@ -127,6 +127,17 @@ git branch -D <分支名>
 
 - tag 名去掉任务类型前缀，例如 `content/weekly-rss` → `archive/weekly-rss`。
 - 删除分支前确认 tag 已指向预期提交；已合并的 PR 优先用「合并前归档」流程，避免漏打。
+
+## 依赖与磁盘
+
+Git worktree **共享** `.git/objects`，但 **`node_modules` 不进 Git**，不会随 worktree 自动共享。每个卫星目录若单独 `npm install`，大约再占一份完整依赖（本仓库约 2GB 量级），是本地磁盘暴涨的常见原因。
+
+- **只在主 worktree**（`.git` 为目录的那棵）执行 `npm install` / `npm ci`。改 `package-lock.json` 后回主仓重装；卫星目录通过符号链接自动跟上。
+- **新开卫星**：在主仓执行 `npm run worktree:add -- <类型> <任务名>`。类型取命名表白名单（`feat` / `fix` / `research` / `content` / `chore`）。
+- **已有卫星缺链或链错**：在该卫星目录执行 `npm run worktree:link-deps`（误装出实体目录时用 `npm run worktree:link-deps -- --force` 先删掉再链）。
+- **禁止**在卫星目录执行 `npm install`、`npm ci`、`pnpm install`（除非站长明确用 `ALLOW_LOCAL_NODE_MODULES=1` 绕过 `pre-commit`）。
+- **自检**：`npm run worktree:doctor`，列出各 worktree 与 `node_modules` 是主仓实体、符号链接还是缺失。
+- Git 层所谓「稀疏」只省对象库；**疏通磁盘靠共享依赖 + 合并当天拆 worktree**，见上表数量上限。
 
 ## 工作区卫生
 

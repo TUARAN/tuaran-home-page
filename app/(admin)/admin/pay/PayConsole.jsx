@@ -150,7 +150,7 @@ export default function PayConsole() {
       if (kw) {
         const hay = `${o.out_trade_no || ''} ${o.resource_key || ''} ${o.user_id || ''} ${
           o.transaction_id || ''
-        }`.toLowerCase()
+        } ${o.contact_email || ''}`.toLowerCase()
         if (!hay.includes(kw)) return false
       }
       return true
@@ -231,9 +231,19 @@ export default function PayConsole() {
       ),
     },
     {
+      key: 'contact',
+      header: '联系邮箱',
+      width: '18%',
+      render: (row) => (
+        <span className="break-all text-[12px] text-[#33352c] dark:text-gray-200">
+          {row.contact_email || '—'}
+        </span>
+      ),
+    },
+    {
       key: 'resource',
       header: '内容',
-      width: '24%',
+      width: '20%',
       render: (row) => (
         <div className="min-w-0 break-all font-mono text-[12px]" title={row.resource_key}>
           {row.resource_key}
@@ -294,7 +304,7 @@ export default function PayConsole() {
   return (
     <AdminPage
       title="支付订单"
-      description="虎皮椒收款的订单记录、补单与内容现金定价。仅站长本人可见。"
+      description="微信收款的订单记录、联系邮箱、补单与内容现金定价。仅站长本人可见。"
       actions={
         <AdminButton onClick={refresh} disabled={status === 'loading'}>
           <IconRefresh size={15} aria-hidden="true" />
@@ -376,7 +386,7 @@ export default function PayConsole() {
                     className={`${inputCls} w-52`}
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
-                    placeholder="订单号 / 资源 key / 用户"
+                    placeholder="订单号 / 资源 key / 用户 / 邮箱"
                     aria-label="搜索订单"
                   />
                 </>
@@ -392,7 +402,7 @@ export default function PayConsole() {
                   columns={columns}
                   rows={filteredOrders}
                   rowKey={(row) => row.out_trade_no}
-                  tableClassName="min-w-[900px]"
+                  tableClassName="min-w-[1020px]"
                   empty={
                     <EmptyState
                       title={orders.length ? '没有匹配的订单' : '还没有支付订单'}
@@ -427,6 +437,10 @@ export default function PayConsole() {
                       {detailOrder.user_id}
                     </span>
                   </dd>
+                </div>
+                <div>
+                  <dt className="text-[#82847a] dark:text-gray-500">联系邮箱</dt>
+                  <dd className="mt-0.5 break-all text-[12px]">{detailOrder.contact_email || '—'}</dd>
                 </div>
                 <div>
                   <dt className="text-[#82847a] dark:text-gray-500">资源 key</dt>

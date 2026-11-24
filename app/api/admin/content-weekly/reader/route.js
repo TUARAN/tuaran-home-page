@@ -104,9 +104,10 @@ export async function GET(req) {
   }
 
   try {
+    // 与周报同口径：读者明细也是按周看的，60 秒刷新只会重复扫明细表。
     const payload = await readThroughEdgeCache(
       `admin:content-weekly:reader:${cumulative ? 'all' : days}:${key}`,
-      60,
+      300,
       () => buildReaderDetail(db, { key, days, cumulative }),
     )
     return Response.json(payload)

@@ -1,6 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../lib/db/d1'
 import { readThroughEdgeCache } from '../../../../lib/db/edgeCache.mjs'
+import { loadAdminBadges } from '../../../../lib/admin/badgeCounts.mjs'
 import { listSiteUsers } from '../../../../lib/auth/userDirectory'
 import { getD1QuickStatus } from '../../../../lib/admin/dbAdmin'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/research/researchStyleTemplates'
@@ -12,6 +13,10 @@ export const dynamic = 'force-dynamic'
  * Dashboard 总览聚合：用户数 / PV / UV / D1 状态 / 最近活动。
  * 复用各业务模块的取数函数，不另起一套查询。Ops 健康仍由
  * /api/admin/ops-console 单独提供（dashboard 并行取）。
+ *
+ * `?fields=badges` 是侧栏计数专用分支：AdminShell 每次进后台页面都会请求，
+ * 只用到用户数。走这个分支时不再执行 research_pv_hits 的三条聚合
+ * （表约 1.5 万行，每次切页面白扫一遍），只做一次 site_users 的 COUNT。
  */
 
 const SHANGHAI_TZ_OFFSET_MS = 8 * 60 * 60 * 1000
@@ -26,10 +31,13 @@ function activeStyleSummary() {
   return active ? { id: active.id, label: active.label, date: active.date } : null
 }
 
+const BADGES_TTL_SECONDS = 60
+
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
+  const wantBadgesOnly = new URL(req.url).searchParams.get('fields') === 'badges'
   const style = activeStyleSummary()
 
   let db = null
@@ -46,6 +54,27 @@ export async function GET(req) {
       db: { status: 'unavailable', tables: null, name: null },
       recent: { users: [], style },
     })
+  }
+
+  if (wantBadgesOnly) {
+    try {
+      const payload = await readThroughEdgeCache('admin:overview:badges', BADGES_TTL_SECONDS, async () => ({
+        status: 'ok',
+        generatedAt: Date.now(),
+        badges: await loadAdminBadges(db),
+      }))
+      return Response.json(payload)
+    } catch (error) {
+      return Response.json(
+        {
+          status: 'error',
+          generatedAt: Date.now(),
+          error: 'OVERVIEW_BADGES_FAILED',
+          detail: String(error?.message || error),
+        },
+        { status: 500 }
+      )
+    }
   }
 
   try {

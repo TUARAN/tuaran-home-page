@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  IconAdjustmentsHorizontal,
   IconBell,
   IconBook2,
   IconCheck,
@@ -23,6 +24,7 @@ import {
 
 import SettingsButton from './SettingsButton'
 import SiteSearch from './SiteSearch'
+import SiteSettingsControls from './SiteSettingsControls'
 import UserAvatar from './UserAvatar'
 import WeChatContact from './WeChatContact'
 import { useLocale } from './LocaleProvider'
@@ -1108,7 +1110,6 @@ export default function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-1 xl:hidden">
-            <div className="xl:hidden"><SettingsButton /></div>
             <button
               type="button"
               aria-label={mobileMenuOpen ? pick(locale, '关闭导航菜单', 'Close menu') : pick(locale, '打开导航菜单', 'Open menu')}
@@ -1157,6 +1158,18 @@ export default function SiteHeader() {
       >
         {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-3 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
         <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
+        <details className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={pick(locale, '显示设置', 'Display settings')}>
+          <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3 text-[13.5px] font-medium text-[#f1f0ea] [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-2.5">
+              <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
+              <span>{pick(locale, '显示设置', 'Display settings')}</span>
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70" aria-hidden="true">＋</span>
+          </summary>
+          <div className="border-t border-[#332d26] px-3 pb-3 pt-3">
+            <SiteSettingsControls />
+          </div>
+        </details>
         <section className="site-mobile-card overflow-hidden rounded-2xl border" aria-label={pick(locale, '常用入口', 'Quick links')}>
           <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="site-mobile-quick-nav">
             {MOBILE_PRIMARY_CHANNELS.map((channel) => (

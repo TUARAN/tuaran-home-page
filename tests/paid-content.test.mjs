@@ -190,3 +190,119 @@ test('角标复用同一组件，列表与详情都按 paid 派生而非硬编�
   const badgeCode = badge.replace(/\/\*[\s\S]*?\*\//g, '')
   assert.doesNotMatch(badgeCode, /frontmatter|tags|keywords|metadata/)
 })
+
+/** 模拟 D1：记录执行的 SQL，UPDATE paid 时同步内存里的订单状态 */
+function fakeOrderDb(initialOrder) {
+  const calls = []
+  let order = initialOrder ? { ...initialOrder } : null
+  return {
+    calls,
+    get order() {
+      return order
+    },
+    prepare(sql) {
+      return {
+        bind(...args) {
+          calls.push({ sql, args })
+          return this
+        },
+        async first() {
+          if (/FROM paid_orders/.test(sql)) return order ? { ...order } : null
+          return null
+        },
+        async run() {
+          calls.push({ sql, ran: true })
+          if (/SET status = 'paid'/.test(sql) && order) order = { ...order, status: 'paid' }
+          return { meta: { changes: 1 } }
+        },
+      }
+    },
+  }
+}
+
+test('回调丢失时主动查单兜底：网关确认已支付且金额一致则落库写权益', async () => {
+  const { settleFromGateway } = await import('../lib/pay/settle.mjs')
+  const db = fakeOrderDb({
+    out_trade_no: 'T20261124104225b75tsy',
+    user_id: 'acct_test',
+    resource_key: 'community:topic-circle',
+    amount_fen: 6900,
+    status: 'pending',
+  })
+  const queryArgs = []
+  const result = await settleFromGateway(db, 'T20261124104225b75tsy', {
+    now: 1_800_000_000_000,
+    query: async (args) => {
+      queryArgs.push(args)
+      return { ok: true, data: { status: 'OD', total_fee: '69.00', transaction_id: 'TX123' } }
+    },
+  })
+  assert.deepEqual(result, { checked: true, paid: true })
+  assert.equal(db.order.status, 'paid')
+  assert.equal(queryArgs[0].orderNo, 'T20261124104225b75tsy')
+  const executed = db.calls.filter((call) => call.ran).map((call) => call.sql)
+  assert.ok(executed.some((sql) => /SET status = 'paid'/.test(sql)), '应把订单落成 paid')
+  assert.ok(executed.some((sql) => /INTO resource_unlocks/.test(sql)), '应写权益')
+})
+
+test('查单返回未支付时不落库，等回调或下次查询', async () => {
+  const { settleFromGateway } = await import('../lib/pay/settle.mjs')
+  const db = fakeOrderDb({
+    out_trade_no: 'T1', user_id: 'u', resource_key: 'r', amount_fen: 6900, status: 'pending',
+  })
+  const result = await settleFromGateway(db, 'T1', {
+    query: async () => ({ ok: true, data: { status: 'WP', total_fee: '69.00' } }),
+  })
+  assert.deepEqual(result, { checked: true, paid: false })
+  assert.equal(db.order.status, 'pending')
+  assert.ok(!db.calls.some((call) => call.ran), '未支付不应有任何写库')
+})
+
+test('查单金额与下单不一致时拒绝落库（防改价）', async () => {
+  const { settleFromGateway } = await import('../lib/pay/settle.mjs')
+  const db = fakeOrderDb({
+    out_trade_no: 'T1', user_id: 'u', resource_key: 'r', amount_fen: 6900, status: 'pending',
+  })
+  const result = await settleFromGateway(db, 'T1', {
+    query: async () => ({ ok: true, data: { status: 'OD', total_fee: '10.00' } }),
+  })
+  assert.equal(result.paid, false)
+  assert.equal(result.error, 'AMOUNT_MISMATCH')
+  assert.equal(db.order.status, 'pending')
+})
+
+test('已支付订单不再查网关；查单失败时静默返回不写库', async () => {
+  const { settleFromGateway } = await import('../lib/pay/settle.mjs')
+  const paidDb = fakeOrderDb({
+    out_trade_no: 'T1', user_id: 'u', resource_key: 'r', amount_fen: 6900, status: 'paid',
+  })
+  let queried = 0
+  assert.deepEqual(
+    await settleFromGateway(paidDb, 'T1', { query: async () => { queried += 1; return { ok: true, data: { status: 'OD' } } } }),
+    { checked: false }
+  )
+  assert.equal(queried, 0)
+
+  const pendingDb = fakeOrderDb({
+    out_trade_no: 'T2', user_id: 'u', resource_key: 'r', amount_fen: 6900, status: 'pending',
+  })
+  assert.deepEqual(
+    await settleFromGateway(pendingDb, 'T2', { query: async () => ({ ok: false }) }),
+    { checked: false }
+  )
+  assert.equal(pendingDb.order.status, 'pending')
+})
+
+test('支付刷新按钮有可见反馈：查询中置灰，未查到时给出提示', () => {
+  const community = readFileSync(new URL('../app/(site)/components/CommunityPayPanel.jsx', import.meta.url), 'utf8')
+  const unlock = readFileSync(new URL('../app/(site)/components/PayUnlockPanel.jsx', import.meta.url), 'utf8')
+  for (const [name, source] of [['CommunityPayPanel', community], ['PayUnlockPanel', unlock]]) {
+    assert.match(source, /正在查询/, `${name} 刷新中应显示「正在查询」`)
+    assert.match(source, /还未查到支付结果/, `${name} 未查到时应给出提示`)
+    assert.match(source, /disabled=\{checking\}/, `${name} 查询中按钮应置灰`)
+    assert.match(source, /res\.status === 404/, `${name} 应处理订单失效分支`)
+    assert.match(source, /res\.status === 401/, `${name} 应处理登录/身份过期分支`)
+    // 自动轮询保持静默，不弹提示
+    assert.match(source, /silent: true/, `${name} 自动轮询应静默`)
+  }
+})

@@ -5,7 +5,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   metadataBase: new URL('https://x.2aran.com'),
   title: { absolute: 'X大互动' },
-  description: '简中区 X 推文热榜与涨粉潜力，以及矿工阿三、矿长阿富、矿工小十三当天的插件动作。',
+  description: '帮更多智能体拿到 X 创作者收益。大互动智能体账号当天的插件动作看板。',
   alternates: { canonical: '/' },
   robots: { index: false, follow: false },
 }

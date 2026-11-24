@@ -15,9 +15,10 @@ const NAS_FALLBACK_ENDPOINT = "https://2aran.com/api/community-actions/model-fal
 const BAI_ENDPOINT = "https://api.b.ai/v1/responses";
 const BAI_MODEL = "gpt-6-luna";
 const BAI_COOLDOWN_KEY = "xrcBaiAccessCooldown";
-const REPLY_PROVIDER_ORDER = ["mobileoffice", "deepseek", "nas", "bai"];
+// 写作与规划共用的回退顺序：DeepSeek → B.AI → NAS → 本地桥接（MobileOffice）。
+const REPLY_PROVIDER_ORDER = ["deepseek", "bai", "nas", "mobileoffice"];
 const DEFAULT_REPLY_PROVIDERS = [];
-const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
+const REPLY_PROVIDERS_DEFAULT_VERSION = 3;
 const MOBILEOFFICE_ENDPOINT = "http://127.0.0.1:8765/chat";
 const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
@@ -265,13 +266,10 @@ function resolvePromptBundle(settings = {}) {
   };
 }
 
+// 保存即启用：密钥可用就算启用，不需要另外勾选；「停用」把该来源写进 replyProvidersDisabled。
+// NAS 与社区回执共用一条密钥，仍要显式保存过一次才参与回退，避免只配了回执就把生成请求发去自家服务。
 function resolveReplyProviders(settings) {
-  const hasList = Array.isArray(settings?.replyProviders);
-  const explicit = settings?.replyProvidersManual === true;
-  const autoNasOnly = hasList && !explicit && settings.replyProviders.length === 1 && settings.replyProviders[0] === "nas";
-  const stored = !hasList || autoNasOnly
-    ? []
-    : REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider));
+  const saved = Array.isArray(settings?.replyProviders) ? settings.replyProviders : null;
   const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
   const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
     ? /^sk-\S{8,}$/u.test(String(settings?.apiKey || "").trim())
@@ -280,8 +278,11 @@ function resolveReplyProviders(settings) {
       : provider === "nas"
         ? settings?.nasSecretAvailable === true
         : provider === "mobileoffice" && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-  const providers = REPLY_PROVIDER_ORDER.filter((provider) => stored.includes(provider) && configured.includes(provider) && !disabled.includes(provider));
-  return { providers, persist: autoNasOnly };
+  const providers = REPLY_PROVIDER_ORDER.filter((provider) => configured.includes(provider)
+    && !disabled.includes(provider)
+    && (provider !== "nas" || (saved || []).includes("nas")));
+  const persist = Boolean(providers.length) && !Array.isArray(settings?.replyProviders);
+  return { providers, persist };
 }
 
 async function readStoredAiSettings() {

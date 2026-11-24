@@ -3735,6 +3735,33 @@
     @apply block px-0 py-3.5 last:pb-0;
   }
 
+  /* 列表缩略图图案（/articles 目录行在用）：配色由站点 token 派生。 */
+  .h5-feed-thumb svg {
+    @apply block h-full w-full transition-transform duration-500 group-hover:scale-[1.04];
+  }
+
+  .home-cover-tone-accent {
+    --home-cover-base: var(--site-accent);
+  }
+
+  .home-cover-tone-blue {
+    --home-cover-base: var(--site-blue);
+  }
+
+  .home-cover-tone-green {
+    --home-cover-base: var(--site-green);
+  }
+
+  .home-cover-tone-stone {
+    --home-cover-base: var(--site-ink);
+  }
+
+  .home-cover-pattern {
+    --home-cover-bg: color-mix(in srgb, var(--home-cover-base) 12%, var(--site-panel-strong));
+    --home-cover-soft: color-mix(in srgb, var(--home-cover-base) 34%, var(--site-panel-strong));
+    --home-cover-ink: color-mix(in srgb, var(--home-cover-base) 68%, var(--site-ink));
+  }
+
   .home-reading-skeleton {
     @apply absolute inset-0 divide-y overflow-hidden;
     border-color: var(--site-line);
@@ -7892,6 +7919,14 @@
     font-size: 10px;
   }
 
+  .community-xh-pay-status {
+    margin: 0.5rem 0 0;
+    color: var(--site-faint);
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
   .community-xh-pay-order {
     margin: 0.5rem 0 0;
     color: var(--site-faint);
@@ -7924,6 +7959,39 @@
     color: #b4402f;
     font-size: 10px;
     text-align: center;
+  }
+
+  .community-xh-pay-email {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.85rem;
+  }
+
+  .community-xh-pay-email label {
+    color: var(--site-ink);
+    font-size: 10px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .community-xh-pay-email input {
+    width: 100%;
+    border: 1px solid var(--site-line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    background: var(--site-panel);
+    color: var(--site-ink);
+    font-size: 12px;
+    outline: none;
+  }
+
+  .community-xh-pay-email input:focus { border-color: #07a956; }
+
+  .community-xh-pay-email .community-xh-pay-button {
+    padding: 0.5rem 1rem;
+    font-size: 12px;
   }
 
   .community-membership.is-compact .community-xh-pay { width: 10rem; }
@@ -7990,6 +8058,11 @@
     border-top: 1px solid var(--site-line);
     padding: 1.25rem 1.4rem;
     background: color-mix(in srgb, var(--community-warm, #d9b66f) 7%, transparent);
+  }
+
+  /* 改成邮箱联系后不再放二维码，收成两栏 */
+  .community-membership-contact.is-email {
+    grid-template-columns: minmax(13rem, 0.8fr) minmax(20rem, 1.2fr);
   }
 
   .community-membership-owner-qr {
@@ -8135,6 +8208,11 @@
   .community-membership.is-compact .community-membership-contact {
     grid-template-columns: 8.5rem minmax(10rem, 0.65fr) minmax(18rem, 1.35fr);
     align-items: center;
+  }
+
+  .community-membership.is-compact .community-membership-contact.is-email,
+  .community-join-panel > .community-membership.is-compact .community-membership-contact.is-email {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   }
 
   .community-membership.is-compact .community-membership-owner-qr {
@@ -8355,6 +8433,12 @@
       align-items: flex-start;
       gap: 1rem;
       padding: 1rem;
+    }
+
+    .community-membership-contact.is-email,
+    .community-membership.is-compact .community-membership-contact.is-email,
+    .community-join-panel > .community-membership.is-compact .community-membership-contact.is-email {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .community-membership-owner-qr { width: 8.5rem; }

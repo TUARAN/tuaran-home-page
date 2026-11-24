@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
+import { findInteractionAgent } from '../../../../../lib/interaction/agentPool.js'
 import {
   DAILY_TOP_SUBJECT,
   emptyStateCopy,
@@ -24,7 +25,7 @@ function monthTitle(yearMonth) {
 
 export default function InteractionCalendar({ days, activities = [], initialToday, executions = null }) {
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days])
-  const activityByDate = useMemo(() => new Map(activities.map((day) => [day.date, day])), [activities])
+  const activityDates = useMemo(() => new Set(activities.map((day) => day.date)), [activities])
   const topDates = useMemo(() => days.map((day) => day.date), [days])
   const executionDateList = useMemo(() => (executions ? executionDates(executions) : []), [executions])
   const executionByDate = useMemo(() => new Set(executionDateList), [executionDateList])
@@ -61,7 +62,10 @@ export default function InteractionCalendar({ days, activities = [], initialToda
   }
 
   const day = byDate.get(selected) || null
-  const activity = activityByDate.get(selected) || null
+  const activitiesForDay = useMemo(
+    () => activities.filter((entry) => entry.date === selected),
+    [activities, selected],
+  )
   const cells = monthMatrix(visibleMonth)
 
   return (
@@ -88,12 +92,12 @@ export default function InteractionCalendar({ days, activities = [], initialToda
               className={[
                 date === selected ? styles.selected : '',
                 date === today ? styles.today : '',
-                byDate.has(date) || activityByDate.has(date) || executionByDate.has(date) ? styles.recorded : '',
+                byDate.has(date) || activityDates.has(date) || executionByDate.has(date) ? styles.recorded : '',
               ].filter(Boolean).join(' ')}
               onClick={() => choose(date)}
             >
               {Number(date.slice(-2))}
-              {byDate.has(date) || activityByDate.has(date) || executionByDate.has(date) ? <i /> : null}
+              {byDate.has(date) || activityDates.has(date) || executionByDate.has(date) ? <i /> : null}
             </button>
           ) : <span key={`empty-${index}`} />)}
         </div>
@@ -121,22 +125,32 @@ export default function InteractionCalendar({ days, activities = [], initialToda
             <p className={styles.windowLine}>前一自然日 00:00 至当日 00:00（Asia/Shanghai）。</p>
           )}
         </header>
-        <section className={styles.ownActivity} aria-label="本账号互动次数">
-          <p className={styles.eyebrow}>本账号互动</p>
-          {activity ? (
-            <>
-              <p className={styles.windowLine}>{activity.sourceDate} · @{activity.accountHandle}</p>
-              <div className={styles.ownGrid}>
-                {activity.metrics.map((metric) => (
-                  <div key={metric.key} className={styles.ownMetric}>
-                    <span>{metric.label}</span>
-                    <strong>{metric.count}</strong>
-                  </div>
-                ))}
-              </div>
-            </>
+        <section className={styles.ownActivity} aria-label="智能体账号池互动次数">
+          <p className={styles.eyebrow}>智能体账号</p>
+          {activitiesForDay.length ? (
+            <div className={styles.ownAccountStack}>
+              {activitiesForDay.map((activity) => {
+                const agent = findInteractionAgent(activity.accountHandle)
+                return (
+                  <article key={activity.accountHandle} className={styles.ownAccountBlock}>
+                    <p className={styles.windowLine}>
+                      {activity.sourceDate} · @{activity.accountHandle}
+                      {agent?.name ? ` · ${agent.name}` : ''}
+                    </p>
+                    <div className={styles.ownGrid}>
+                      {activity.metrics.map((metric) => (
+                        <div key={`${activity.accountHandle}-${metric.key}`} className={styles.ownMetric}>
+                          <span>{metric.label}</span>
+                          <strong>{metric.count}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
           ) : (
-            <p className={styles.windowLine}>这一天还没有 @{DAILY_TOP_SUBJECT} 的任务次数。</p>
+            <p className={styles.windowLine}>这一天还没有智能体账号池里的任务次数。</p>
           )}
         </section>
         <div className={styles.tableWrap}>

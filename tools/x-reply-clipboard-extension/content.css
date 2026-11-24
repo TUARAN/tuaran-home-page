@@ -1060,6 +1060,50 @@
   background: transparent;
 }
 
+#x-reply-clipboard-panel .xrc-provider .xrc-config-row {
+  cursor: default;
+}
+
+#x-reply-clipboard-panel .xrc-provider-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+#x-reply-clipboard-panel .xrc-provider-state {
+  padding: 2px 8px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 999px;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+#x-reply-clipboard-panel .xrc-provider-state[data-state="on"] {
+  border-color: var(--xrc-accent);
+  color: var(--xrc-accent);
+}
+
+#x-reply-clipboard-panel .xrc-provider-off {
+  padding: 2px 9px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+#x-reply-clipboard-panel .xrc-provider-off:hover {
+  border-color: var(--xrc-accent);
+  color: var(--xrc-text);
+}
+
 #x-reply-clipboard-panel .xrc-provider-list .xrc-config-row.is-inactive {
   opacity: 0.48;
   cursor: default;
@@ -1258,11 +1302,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-}
-
-#x-reply-clipboard-panel .xrc-pace-editor {
-  display: grid;
-  gap: 12px;
 }
 
 #x-reply-clipboard-panel .xrc-pace-set {
@@ -3645,56 +3684,6 @@
   border-radius: 10px;
 }
 
-#x-reply-clipboard-panel table.xrc-pace-edit {
-  width: 100%;
-  min-width: 640px;
-  border-collapse: collapse;
-  background: var(--xrc-elevated);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-#x-reply-clipboard-panel table.xrc-pace-edit th,
-#x-reply-clipboard-panel table.xrc-pace-edit td {
-  padding: 6px;
-  border-top: 1px solid var(--xrc-line);
-  border-left: 1px solid var(--xrc-line);
-  font-weight: 700;
-  text-align: left;
-  white-space: nowrap;
-}
-
-#x-reply-clipboard-panel table.xrc-pace-edit thead th {
-  border-top: 0;
-  background: var(--xrc-soft);
-  color: var(--xrc-muted);
-  font-size: 10px;
-}
-
-#x-reply-clipboard-panel table.xrc-pace-edit th:first-child,
-#x-reply-clipboard-panel table.xrc-pace-edit td:first-child {
-  border-left: 0;
-}
-
-#x-reply-clipboard-panel .xrc-pace-range {
-  display: inline-grid;
-  grid-template-columns: auto auto auto;
-  gap: 4px;
-  align-items: center;
-}
-
-#x-reply-clipboard-panel table.xrc-pace-edit input {
-  width: 3.2em;
-  height: 26px;
-  padding: 0 4px;
-  border: 1px solid var(--xrc-line);
-  border-radius: 6px;
-  background: var(--xrc-elevated);
-  color: var(--xrc-text);
-  font: inherit;
-  text-align: center;
-}
-
 #x-reply-clipboard-panel .xrc-pace-caption {
   flex: none;
   color: var(--xrc-muted);
@@ -5481,8 +5470,6 @@
   #x-reply-clipboard-panel[data-theme="dark"] .xrc-prune-rules,
   #x-reply-clipboard-panel[data-theme="dark"] .xrc-post-strategy,
   #x-reply-clipboard-panel[data-theme="dark"] .xrc-pace-table,
-  #x-reply-clipboard-panel[data-theme="dark"] table.xrc-pace-edit,
-  #x-reply-clipboard-panel[data-theme="dark"] table.xrc-pace-edit input { background: #101418; }
   #x-reply-clipboard-panel[data-theme="dark"] .xrc-pace-table-row.is-active { background: #16354b; }
   #x-reply-clipboard-panel[data-theme="dark"] .xrc-pace-options button { background: #101418; }
   #x-reply-clipboard-panel[data-theme="dark"] .xrc-pace-options button:hover:not(:disabled),

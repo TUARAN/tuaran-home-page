@@ -68,7 +68,7 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
   assert.match(agentTab, /href="\/docs"[^>]*>大互动智能体手册</)
   assert.match(operator, /signedIn &&/)
   assert.doesNotMatch(whitepaper, /查看智能体与获取方式|走进圆桌会场|打开日历/)
-  assert.match(whitepaper, /href="\/roundtable"/)
+  assert.match(whitepaper, /<XPage/)
   assert.match(yellowbook, /https:\/\/x\.2aran\.com\/docs/)
   assert.match(roundtable, /大互动圆桌/)
   assert.match(header, /href: 'https:\/\/x\.2aran\.com\/', label: 'X大互动'/)

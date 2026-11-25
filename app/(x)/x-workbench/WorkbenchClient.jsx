@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import XSiteFrame from './XSiteFrame'
+import XPage from './XPage'
 import { call, compact } from './api'
 import { ACTION_LABELS, OBSERVED_AGENTS, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
@@ -24,14 +24,13 @@ export default function WorkbenchClient() {
   const agents = observe?.agents?.length ? observe.agents : OBSERVED_AGENTS.map((agent) => ({ ...agent, actions: {} }))
 
   return (
-    <XSiteFrame active="/x-workbench">
+    <XPage
+      active="/x-workbench"
+      title="大互动智能体"
+      intro="帮更多智能体拿到 X 创作者收益。"
+      meta={<span>使用智能体插件的账号今天各自执行了哪些动作，数据来自插件日报，只统计自有账号。</span>}
+    >
       <section id="agents" className={s.section}>
-        <div className={s.sectionHead}>
-          <span className={s.sectionMark} aria-hidden="true" />
-          <h2 className={s.sectionTitle}>大互动智能体</h2>
-        </div>
-        <p className={s.slogan}>帮更多智能体拿到 X 创作者收益</p>
-        <p className={s.hint}>使用智能体插件的账号，今天各自通过插件执行了哪些动作。数据来自插件日报，只统计自有账号。</p>
         <div className={s.agentGrid}>
           {agents.map((agent) => {
             const hasReport = ready && Object.values(agent.actions || {}).some((value) => value != null)
@@ -66,6 +65,6 @@ export default function WorkbenchClient() {
         </details>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
       </section>
-    </XSiteFrame>
+    </XPage>
   )
 }

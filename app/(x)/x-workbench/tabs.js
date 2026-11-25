@@ -20,3 +20,15 @@ export const WORKBENCH_MENU_GROUPS = [
 ]
 
 export const WORKBENCH_MENU_ITEMS = WORKBENCH_MENU_GROUPS.flatMap((group) => group.items.map((item) => ({ ...item, group: group.label })))
+// 当前页在顶栏里的分组，以及按顶栏顺序的上一页 / 下一页。智能体页的 active 是 /x-workbench。
+export function xPageNeighbors(active) {
+  const key = active === '/x-workbench' ? '/x-workbench#agents' : active
+  const index = WORKBENCH_MENU_ITEMS.findIndex((item) => item.href === key)
+  if (index < 0) return { group: null, prev: null, next: null }
+  const group = WORKBENCH_MENU_GROUPS.find((entry) => entry.items.some((item) => item.href === key)) || null
+  return {
+    group,
+    prev: WORKBENCH_MENU_ITEMS[index - 1] || null,
+    next: WORKBENCH_MENU_ITEMS[index + 1] || null,
+  }
+}

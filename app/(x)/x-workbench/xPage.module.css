@@ -1,0 +1,18 @@
+.page { padding-top: 12px; padding-bottom: 40px; }
+.head { max-width: 1088px; margin: 4px 0 24px; padding-left: 16px; border-left: 4px solid var(--accent); }
+.kicker { margin: 0 0 6px; color: var(--accentInk); font-size: 12px; font-weight: 800; letter-spacing: .14em; }
+.title { margin: 0; color: var(--ink); font-size: clamp(26px, 3.4vw, 32px); font-weight: 800; line-height: 1.2; letter-spacing: -.01em; }
+.intro { max-width: 760px; margin: 10px 0 0; color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.7; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; max-width: 760px; margin: 8px 0 0; color: var(--sub); font-size: 13px; line-height: 1.7; }
+.meta time, .meta span { white-space: nowrap; }
+.pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--cardLine); }
+.pagerLink { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--cardLine); border-radius: 12px; color: var(--ink); text-decoration: none; transition: border-color .15s, background .15s; }
+.pagerLink:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.pagerLink span { color: var(--sub); font-size: 12px; }
+.pagerLink b { font-size: 15px; font-weight: 700; }
+.pagerNext { text-align: right; }
+@media (max-width: 640px) {
+  .head { margin-bottom: 18px; padding-left: 12px; }
+  .intro { font-size: 15px; }
+  .pager { margin-top: 28px; }
+}

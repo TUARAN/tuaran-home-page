@@ -391,7 +391,7 @@
       "path": "/admin/community-actions/x-monitor",
       "file": "app/(admin)/admin/community-actions/x-monitor/page.jsx",
       "kind": "redirect",
-      "redirect": "/admin/community-actions/monitor?platform=x",
+      "redirect": "https://x.2aran.com/x-workbench/ops#plugin-console",
       "registered": false,
       "indexable": false,
       "sitemap": false,

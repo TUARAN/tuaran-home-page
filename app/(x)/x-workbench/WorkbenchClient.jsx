@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 
 import XPage from './XPage'
+import MonitorSection from './MonitorSection'
 import { call, compact } from './api'
-import { ACTION_LABELS, OBSERVED_AGENTS, agentFootnote } from '../../../lib/x/workbench/observeCore'
+import { ACTION_LABELS, OBSERVED_AGENTS, actionCount, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
 
 function Metric({ ready, value }) {
@@ -50,7 +51,7 @@ export default function WorkbenchClient() {
                 <dl className={s.metricRow}>
                   {ACTION_LABELS.map(([key, label]) => (
                     <div key={key} className={key === 'posts' ? `${s.metricCell} ${s.metricHero}` : s.metricCell}>
-                      <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
+                      <dd><Metric ready={ready} value={actionCount(agent.actions, key)} /></dd>
                       <dt>{label}</dt>
                     </div>
                   ))}
@@ -65,6 +66,7 @@ export default function WorkbenchClient() {
         </details>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
       </section>
+      <MonitorSection />
     </XPage>
   )
 }

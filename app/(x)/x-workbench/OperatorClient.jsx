@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import AgentTab from './AgentTab'
 import XSiteFrame from './XSiteFrame'
+import PluginConsole from './ops/PluginConsole'
 import { call } from './api'
 import s from './workbench.module.css'
 
@@ -66,6 +67,7 @@ export default function OperatorClient() {
             )}
           </header>
           <AgentTab accounts={accounts} usage={usage} active={handle} onSelect={setHandle} onAccounts={loadAccounts} />
+          <PluginConsole />
         </>
       )}
     </XSiteFrame>

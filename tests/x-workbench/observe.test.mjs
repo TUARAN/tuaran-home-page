@@ -7,6 +7,7 @@ import {
   OBSERVED_AGENTS,
   THEORY_POINTS,
   accountBoardConclusion,
+  actionCount,
   agentFootnote,
   blankActions,
   hotBoardAccountConclusion,
@@ -38,7 +39,7 @@ test('公开站观察账号池全部智能体，理论结论对得到卡片指�
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
 })
 
-test('关注与回关分列；没有行或没有字段时保持空', () => {
+test('关注与回关入库分列，展示合并为一类；没有行或没有字段时保持空', () => {
   const actions = presentObservedActions({
     comments: 4,
     likes: 2,
@@ -52,8 +53,18 @@ test('关注与回关分列；没有行或没有字段时保持空', () => {
   })
   assert.equal(actions.follows, 1)
   assert.equal(actions.followBacks, 3)
+  assert.equal(actionCount(actions, 'follows'), 4)
   assert.equal(actions.comments, 5)
   assert.equal(actions.unfollows, 0)
+  assert.deepEqual(ACTION_LABELS, [
+    ['posts', '发帖'],
+    ['comments', '评论'],
+    ['likes', '点赞'],
+    ['follows', '关注（含回关）'],
+    ['unfollows', '取关'],
+  ])
+  assert.equal(actionCount({ follows: null, followBacks: null }, 'follows'), null)
+  assert.equal(actionCount({ follows: null, followBacks: 2 }, 'follows'), 2)
   assert.equal(presentObservedActions(null), null)
   assert.equal(presentObservedActions({ comments: 1, posts: null }).posts, null)
   assert.deepEqual(blankActions(), {

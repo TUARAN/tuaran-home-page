@@ -1,6 +1,6 @@
 import AdminBook, { AdminBookChapter } from '../../components/AdminBook'
 import AdminPageGate from '../../components/AdminPageGate'
-import { AdminButton, AdminPage } from '../../components/ui'
+import { AdminPage } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import rules from '../../../../docs/specs/branch-management.md?raw'
 
@@ -31,12 +31,7 @@ export default function AdminBranchRulesPage() {
   })
   return (
     <AdminPageGate label="分支规范" returnTo="/admin/branch-rules">
-      <AdminPage
-        hideTitle
-        title="分支规范"
-        description="分支怎么开、怎么合、怎么收。记录来源：docs/specs/branch-management.md，修改后随部署同步。"
-        actions={<AdminButton href="/admin/site-dev" size="sm">开发发布</AdminButton>}
-      >
+      <AdminPage hideTitle title="分支规范">
         <AdminBook title="分支规范" description="分支命名、生命周期与归档" groups={[{ id: "rules", items: [{ id: "scope", title: "适用范围" }, ...chapters.map(({ id, title }) => ({ id, title }))] }]}><AdminBookChapter id="scope" title="适用范围">
           <div
             className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"

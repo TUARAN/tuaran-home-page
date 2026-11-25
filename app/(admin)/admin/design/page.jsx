@@ -1,6 +1,6 @@
 import AdminBook, { AdminBookChapter } from '../../components/AdminBook'
 import AdminPageGate from '../../components/AdminPageGate'
-import { AdminButton, AdminPage, StatCard, StatusPill } from '../../components/ui'
+import { AdminPage, StatusPill } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import audit from '../../../../docs/context/ui-ux-audit-roadmap.md?raw'
 import language from '../../../../docs/specs/site-design-language.md?raw'
@@ -95,24 +95,9 @@ function DocumentSection({ document }) {
 }
 
 export default function AdminDesignPage() {
-  const { completed, total } = countAuditTasks(audit)
   return (
     <AdminPageGate label="UI 设计" returnTo="/admin/design">
-      <AdminPage
-        hideTitle
-        title="UI 设计"
-        description="集中查看设计规范、界面交互问题和改造验收；运行质量与流量异常已拆分到站点体检。"
-        actions={<><AdminButton href="/admin/site-health?tab=audit" size="sm">站点体检</AdminButton><AdminButton href="/admin/seo" size="sm">SEO 管理</AdminButton><AdminButton href="/admin/planning" size="sm">规划与待办</AdminButton></>}
-      >
-        <div className="grid gap-3 sm:grid-cols-3">
-          <StatCard label="归档任务进度" value={`${completed}/${total}`} sub="以审计文档的勾选记录为准" icon="planning" tone="info" />
-          <StatCard label="审计基线" value="2026-09-08" sub="GPT6-Astra · 桌面观察与代码审计" icon="researchStyle" />
-          <StatCard label="验证状态" value="待复测" sub="移动端、多主题与完整交互尚未验证" icon="audit" tone="warning" />
-        </div>
-
-        <p className="mb-5 text-sm leading-7 text-[var(--admin-muted)]">
-          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。设计规范与审计文档直接展示，各章节可从左侧目录定位；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
-        </p>
+      <AdminPage hideTitle title="UI 设计">
         <AdminBook title="UI 设计" description="设计规范与界面审计" groups={documents.map(document => ({ id: document.id, label: document.title, items: [
           { id: document.id, title: '概览与来源' },
           ...document.markdown.replace(/^# .+\n/, '').split(/^## /m).slice(1).map((section, index) => ({ id: `${document.id}-section-${index + 1}`, title: section.split('\n')[0].trim() })),

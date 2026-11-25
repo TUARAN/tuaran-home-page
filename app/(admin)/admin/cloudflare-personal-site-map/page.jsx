@@ -166,7 +166,7 @@ function ArchitectureDiagram() {
 
 function CloudflarePersonalSiteMapContent() {
   return (
-    <AdminPage title="站点架构" description="查看 Cloudflare 技术架构、运行时边界及 DNS 与部署配置快照。" hideTitle>
+    <AdminPage hideTitle title="站点架构">
       <AdminBook title="站点架构" description="Cloudflare 架构与运行时边界" groups={[{ id: 'architecture', items: SECTIONS.map(section => ({ id: section.id, title: section.label })) }]}>
 
       <Section id="overview" title="概览">

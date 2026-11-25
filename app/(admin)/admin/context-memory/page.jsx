@@ -20,7 +20,7 @@ export const metadata = {
 export default async function AdminContextMemoryPage() {
   return (
     <AdminPageGate>
-      <AdminPage hideTitle title={PAGE_TITLE} description={PAGE_DESCRIPTION}>
+      <AdminPage hideTitle title={PAGE_TITLE}>
         <MemoryVault description="登录可见 · 项目规则、工程记忆与上下文文档的版本快照" />
       </AdminPage>
     </AdminPageGate>

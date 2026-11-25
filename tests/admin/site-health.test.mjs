@@ -10,7 +10,7 @@ const nextConfigSource = await readFile(new URL('../../next.config.js', import.m
 
 test('UI design stays in engineering while runtime tools stay on the operations pages', () => {
   assert.match(designSource, /title="UI 设计"/)
-  assert.match(designSource, /href="\/admin\/site-health\?tab=audit"/)
+  assert.doesNotMatch(designSource, /<StatCard|<AdminButton/)
   assert.doesNotMatch(designSource, /site-health-audit\.md/)
   assert.match(pageSource, /OperationsDirectory/)
   assert.match(pageSource, /findOperationsEntry/)

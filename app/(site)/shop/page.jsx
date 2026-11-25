@@ -7,7 +7,7 @@ export const dynamic = 'force-static'
 
 const title = '甄选小店 · ChatGPT 代充与更多服务'
 const description =
-  '甄选小店：站长自营与甄选的服务入口，目前提供 ChatGPT Plus / Pro 代充，Claude 中转与更多商品陆续上线。'
+  '甄选小店：ChatGPT Plus / Pro 代充已开放购买，Claude 中转与更多商品陆续上线。只放站长自己用过、能对交付负责的商品。'
 
 export const metadata = {
   title,
@@ -125,8 +125,8 @@ export default function ShopPage() {
             </h1>
           </div>
           <div className="max-w-[560px] md:justify-self-end">
-            <p className="mb-0 text-[14px] leading-7 text-[#56564e] dark:text-[#aeb8c6]">
-              站长自营与甄选的服务入口。已开放的商品点进去就能下单，还在准备中的商品会先挂在这里占位，上线后补上购买入口。
+            <p className="mb-0 text-[17px] font-medium leading-8 text-[#15140f] dark:text-gray-100 md:text-[18px]">
+              小店只放站长自己用过、能对交付负责的商品。
             </p>
           </div>
         </div>
@@ -157,7 +157,7 @@ export default function ShopPage() {
       <section className="rounded-2xl border border-[#d7d6cb] bg-[#f7f6ee] p-6 dark:border-[#27303a] dark:bg-[#10151d] md:p-8">
         <h2 className="mb-3 text-[16px] font-semibold text-[#15140f] dark:text-gray-100">关于小店</h2>
         <p className="mb-3 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-          小店只放站长自己用过、能对交付负责的商品。X 账号等更多商品会陆续上架，已购订单的进度与售后都在对应服务页完成。
+          X 账号等更多商品会陆续上架。已购订单的进度与售后都在对应服务页完成。
         </p>
         <p className="mb-0 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
           有问题可以先看

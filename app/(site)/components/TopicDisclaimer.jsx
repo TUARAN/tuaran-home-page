@@ -16,11 +16,11 @@ export default function TopicDisclaimer({ kind }) {
   if (!copy) return null
   return (
     <aside
-      className="mb-6 rounded-xl border border-[#e4d3b4] bg-[#fff8ec] px-4 py-3 text-[13px] leading-6 text-[#5c4b32] dark:border-[#5a4630] dark:bg-[#241b12] dark:text-[#ead7b8]"
+      className="mb-6 rounded-xl border border-[#e4d3b4] bg-[#fff8ec] px-4 py-2 text-[13px] leading-6 text-[#5c4b32] dark:border-[#5a4630] dark:bg-[#241b12] dark:text-[#ead7b8]"
       role="note"
     >
-      <p className="mb-1 font-semibold">{copy.title}</p>
       <p className="mb-0">
+        <strong className="mr-2 font-semibold">{copy.title}</strong>
         {copy.body}
         {' '}
         <Link href="/editorial" className="underline decoration-dotted underline-offset-4">内容说明</Link>

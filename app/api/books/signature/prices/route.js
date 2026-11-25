@@ -3,9 +3,9 @@ import {
   SIGNATURE_BOOKS,
   isKnownSignatureSlug,
   listSignatureEditions,
+  readSignatureSaleFen,
   salePriceFor,
 } from '../../../../../lib/pay/bookOrders.mjs'
-import { readPriceFen } from '../../../../../lib/pay/orders'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -38,7 +38,7 @@ export async function GET(req) {
       const row = rows.find((r) => r.book_slug === slug)
       if (!row || !Number(row.active)) continue
       const basePriceFen = Math.max(0, Math.trunc(Number(row.base_price_fen || 0)))
-      const salePriceFen = await readPriceFen(db, `signature:${slug}`)
+      const salePriceFen = await readSignatureSaleFen(db, slug)
       if (basePriceFen <= 0 || salePriceFen <= 0) continue
       // 收款价必须与原价×折扣一致；不一致（后台被单独改过价）时以显示原价与折扣为准，隐藏卡片避免误导
       if (salePriceFen !== salePriceFor(basePriceFen)) continue

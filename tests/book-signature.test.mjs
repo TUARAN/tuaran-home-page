@@ -103,8 +103,8 @@ test('公开接口：游客可下单、归属校验、不上架不返回', () =>
   assert.match(pricesRoute, /listSignatureEditions/)
   assert.match(pricesRoute, /salePriceFor/)
   assert.match(pricesRoute, /salePriceFen !== salePriceFor\(basePriceFen\)/)
-  // 收货信息：订单归属校验 + 仅签名版订单可填
-  assert.match(shippingRoute, /getPaidOrderForUser\(db, orderNo, userId\)/)
+  // 收货信息：订单归属校验 + 仅签名版订单可填（轻量查询，不拖支付网关 bundle）
+  assert.match(shippingRoute, /getSignaturePayOrderForOwner\(db, orderNo, userId\)/)
   assert.match(shippingRoute, /startsWith\('signature:'\)/)
   assert.match(shippingRoute, /setBookOrderAddress/)
   assert.match(shippingRoute, /enforceRateLimits/)

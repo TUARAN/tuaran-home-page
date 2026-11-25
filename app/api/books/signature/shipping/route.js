@@ -1,9 +1,14 @@
 import { getD1 } from '../../../../../lib/db/d1'
 import { getUserFromRequest } from '../../../../../lib/auth/edgeSession'
 import { GUEST_USER_PREFIX, getGuestId } from '../../../../../lib/auth/guestSession'
-import { getPaidOrderForUser, setOrderContactEmail } from '../../../../../lib/pay/orders'
 import { normalizeEmail } from '../../../../../lib/pay/contact.mjs'
-import { getBookOrderForUser, normalizeRecipient, setBookOrderAddress } from '../../../../../lib/pay/bookOrders.mjs'
+import {
+  getBookOrderForUser,
+  getSignaturePayOrderForOwner,
+  markOrderContactEmail,
+  normalizeRecipient,
+  setBookOrderAddress,
+} from '../../../../../lib/pay/bookOrders.mjs'
 import { getClientIp, enforceRateLimits, cleanupRateLimits } from '../../../../../lib/auth/abuseControls'
 
 export const runtime = 'edge'
@@ -56,9 +61,9 @@ export async function POST(req) {
       )
     }
 
-    // 归属校验：订单必须属于当前登录用户 / 游客，且是签名版订单
-    const paid = await getPaidOrderForUser(db, orderNo, userId)
-    if (!paid || !String(paid.resourceKey || '').startsWith('signature:')) {
+    // 归属校验：订单必须属于当前登录用户 / 游客，且已支付（轻量查询，不拖支付网关 bundle）
+    const paid = await getSignaturePayOrderForOwner(db, orderNo, userId)
+    if (!paid || !paid.paid || !String(paid.resourceKey || '').startsWith('signature:')) {
       return Response.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 })
     }
 
@@ -80,7 +85,7 @@ export async function POST(req) {
 
     // 可选联系邮箱：换设备 / 清 cookie 后站长凭邮箱联系买家补寄或核单
     const email = normalizeEmail(body?.email)
-    if (email) await setOrderContactEmail(db, orderNo, email).catch(() => {})
+    if (email) await markOrderContactEmail(db, orderNo, email).catch(() => {})
 
     const order = await getBookOrderForUser(db, orderNo, userId)
     await cleanupRateLimits(db).catch(() => {})

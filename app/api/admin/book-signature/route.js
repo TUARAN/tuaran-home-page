@@ -1,6 +1,5 @@
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../lib/db/d1'
-import { readPriceFen } from '../../../../lib/pay/orders'
 import { upsertResource } from '../../../../lib/ledger/points'
 import {
   SIGNATURE_BOOKS,
@@ -8,6 +7,7 @@ import {
   listBookOrdersWithPayment,
   listSignatureEditions,
   readSignatureEdition,
+  readSignatureSaleFen,
   salePriceFor,
   shipBookOrder,
 } from '../../../../lib/pay/bookOrders.mjs'
@@ -48,7 +48,7 @@ export async function GET(req) {
       const row = editions.find((e) => e.book_slug === book.slug) || null
       const basePriceFen = Math.max(0, Math.trunc(Number(row?.base_price_fen || 0)))
       const active = row ? Number(row.active) !== 0 : false
-      const salePriceFen = await readPriceFen(db, `signature:${book.slug}`)
+      const salePriceFen = await readSignatureSaleFen(db, book.slug)
       return {
         slug: book.slug,
         title: book.title,

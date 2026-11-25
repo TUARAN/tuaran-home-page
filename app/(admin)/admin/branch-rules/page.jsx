@@ -6,7 +6,7 @@ import rules from '../../../../docs/specs/branch-management.md?raw'
 
 export const metadata = {
   title: '分支规范',
-  description: '分支命名、生命周期、数量上限、合并后清理与归档规则，仅站长可见。',
+  description: '分支命名、生命周期、数量上限、合并后清理、追溯与归档规则，仅站长可见。',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 }
 

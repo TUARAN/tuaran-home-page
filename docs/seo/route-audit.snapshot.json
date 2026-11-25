@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 250,
+    "routes": 251,
     "redirects": 23,
     "private": 62,
-    "registeredStatic": 121,
-    "indexable": 140,
-    "canonical": 161,
-    "openGraph": 93,
-    "jsonLd": 68,
+    "registeredStatic": 122,
+    "indexable": 141,
+    "canonical": 162,
+    "openGraph": 94,
+    "jsonLd": 69,
     "errors": 9,
     "warnings": 138
   },
@@ -3421,6 +3421,22 @@
         "noindex": "explicit",
         "openGraph": false,
         "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/shop",
+      "file": "app/(site)/shop/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
         "ogUrls": []
       }
     },

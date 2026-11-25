@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 251,
+    "routes": 252,
     "redirects": 23,
     "private": 62,
-    "registeredStatic": 122,
-    "indexable": 141,
-    "canonical": 162,
-    "openGraph": 94,
-    "jsonLd": 69,
+    "registeredStatic": 123,
+    "indexable": 142,
+    "canonical": 163,
+    "openGraph": 95,
+    "jsonLd": 70,
     "errors": 9,
     "warnings": 138
   },
@@ -2845,6 +2845,22 @@
     {
       "path": "/resources/big-interaction-whitepaper/calendar",
       "file": "app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/big-interaction-whitepaper/grokbot",
+      "file": "app/(site)/resources/big-interaction-whitepaper/grokbot/page.jsx",
       "kind": "static",
       "registered": true,
       "indexable": true,

@@ -8,7 +8,7 @@ import {
   emptyStateCopy,
   formatWindowLabel,
   monthMatrix,
-  resolveSelectedDate,
+  resolveCalendarSelectedDate,
   shanghaiDateKey,
   shiftMonth,
 } from '../../../../../lib/interaction/dailyTop/model.js'
@@ -29,7 +29,7 @@ export default function InteractionCalendar({ days, activities = [], initialToda
     () => [...new Set([...topDates, ...activities.map((day) => day.date)])].sort(),
     [topDates, activities],
   )
-  const initialSelected = resolveSelectedDate(null, initialToday, availableDates)
+  const initialSelected = resolveCalendarSelectedDate(null, initialToday)
   const [today, setToday] = useState(initialToday)
   const [selected, setSelected] = useState(initialSelected)
   const [visibleMonth, setVisibleMonth] = useState(initialSelected.slice(0, 7))
@@ -37,11 +37,11 @@ export default function InteractionCalendar({ days, activities = [], initialToda
   useEffect(() => {
     const liveToday = shanghaiDateKey()
     const query = new URLSearchParams(window.location.search).get('date')
-    const next = resolveSelectedDate(query, liveToday, availableDates)
+    const next = resolveCalendarSelectedDate(query, liveToday)
     setToday(liveToday)
     setSelected(next)
     setVisibleMonth(next.slice(0, 7))
-  }, [availableDates])
+  }, [])
 
   function choose(date) {
     setSelected(date)

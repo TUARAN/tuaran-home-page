@@ -6,6 +6,11 @@ import { createPaidOrder, readPriceFen } from '../../../../lib/pay/orders'
 import { readGatewayConfig } from '../../../../lib/pay/gateways/xunhupay'
 import { workerEnv } from '../../../../lib/pay/runtimeEnv'
 import { isGuestPayResource, normalizeReturnPath } from '../../../../lib/pay/contact.mjs'
+import {
+  ensureBookOrderRow,
+  isSignatureResourceKey,
+  slugFromResourceKey,
+} from '../../../../lib/pay/bookOrders.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -109,6 +114,14 @@ export async function POST(req) {
       config: readGatewayConfig(workerEnv()),
     })
     await cleanupRateLimits(db).catch(() => {})
+
+    // 签名版实体书：下单成功同步登记 book_orders 行（幂等），支付落地后走收货信息流转
+    if (result.ok && isSignatureResourceKey(resourceKey)) {
+      await ensureBookOrderRow(db, {
+        orderNo: result.orderNo,
+        bookSlug: slugFromResourceKey(resourceKey),
+      }).catch(() => {})
+    }
 
     return reply(result, result.ok ? 200 : ERROR_STATUS[result.error] || 400, setCookie)
   } catch {

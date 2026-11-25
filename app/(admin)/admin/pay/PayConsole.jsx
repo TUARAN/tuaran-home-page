@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { IconRefresh, IconReceipt2, IconCoin, IconBook2 } from '@tabler/icons-react'
+import { IconRefresh, IconReceipt2, IconCoin, IconBook2, IconBallpen } from '@tabler/icons-react'
 
 import { displayNameForUserId } from '../../../../lib/auth/userDisplayName'
 import {
@@ -18,6 +18,7 @@ import {
 const TABS = [
   { id: 'orders', label: '订单记录', icon: IconReceipt2 },
   { id: 'prices', label: '内容定价', icon: IconCoin },
+  { id: 'signature', label: '签名版', icon: IconBallpen },
   { id: 'guide', label: '接入说明', icon: IconBook2 },
 ]
 
@@ -26,6 +27,14 @@ const STATUS_META = {
   pending: { label: '待支付', tone: 'warning' },
   closed: { label: '已关闭', tone: 'neutral' },
   failed: { label: '失败', tone: 'danger' },
+}
+
+const BOOK_STATUS_META = {
+  pending: { label: '未支付', tone: 'warning' },
+  awaiting_address: { label: '待填收货', tone: 'warning' },
+  to_ship: { label: '待发货', tone: 'danger' },
+  shipped: { label: '已发货', tone: 'success' },
+  closed: { label: '已关闭', tone: 'neutral' },
 }
 
 const inputCls =
@@ -88,6 +97,12 @@ export default function PayConsole() {
   const [priceDraftFen, setPriceDraftFen] = useState('')
   const [priceBusyKey, setPriceBusyKey] = useState('')
 
+  const [sigOrders, setSigOrders] = useState([])
+  const [sigEditions, setSigEditions] = useState([])
+  const [sigPriceEdits, setSigPriceEdits] = useState({})
+  const [sigTracking, setSigTracking] = useState({})
+  const [sigStatus, setSigStatus] = useState('ok')
+
   const refresh = useCallback(async () => {
     setStatus('loading')
     setMessage('')
@@ -141,6 +156,29 @@ export default function PayConsole() {
   useEffect(() => {
     if (activeTab === 'prices') loadPrices()
   }, [activeTab, loadPrices])
+
+  const loadSignature = useCallback(async () => {
+    setSigStatus('loading')
+    try {
+      const res = await fetch('/api/admin/book-signature?limit=300', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`)
+      setSigOrders(Array.isArray(data.orders) ? data.orders : [])
+      setSigEditions(Array.isArray(data.editions) ? data.editions : [])
+      setSigPriceEdits({})
+      setSigStatus('ok')
+    } catch (error) {
+      setSigStatus('error')
+      setMessage(`签名版数据读取失败：${String(error?.message || error)}`)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'signature') loadSignature()
+  }, [activeTab, loadSignature])
 
   const filteredOrders = useMemo(() => {
     const kw = keyword.trim().toLowerCase()
@@ -211,6 +249,68 @@ export default function PayConsole() {
       setMessage(`改价失败：${String(error?.message || error)}`)
     } finally {
       setPriceBusyKey('')
+    }
+  }
+
+  async function postSignature(body) {
+    setBusy(true)
+    setMessage('')
+    try {
+      const res = await fetch('/api/admin/book-signature', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || data?.message || `HTTP ${res.status}`)
+      }
+      return data
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveSignaturePrice(edition, active) {
+    const draft = sigPriceEdits[edition.slug]
+    const yuan = draft?.base !== undefined ? Number(draft.base) : edition.basePriceFen / 100
+    if (!Number.isFinite(yuan) || yuan < 0) {
+      setMessage('请输入有效的原价（元）')
+      return
+    }
+    try {
+      const data = await postSignature({
+        action: 'price',
+        slug: edition.slug,
+        basePriceFen: Math.round(yuan * 100),
+        active,
+      })
+      setMessage(
+        data.active
+          ? `已保存《${data.title}》签名版：原价 ${fenToYuan(data.basePriceFen)}，早鸟价 ${fenToYuan(data.salePriceFen)} 已同步生效`
+          : `已下架《${data.title}》签名版，前台购买入口已隐藏`
+      )
+      await loadSignature()
+    } catch (error) {
+      setMessage(`签名版定价保存失败：${String(error?.message || error)}`)
+    }
+  }
+
+  async function shipSignatureOrder(order) {
+    const tracking = String(sigTracking[order.out_trade_no] || '').trim()
+    if (tracking.length < 5) {
+      setMessage('请填写有效的快递单号（至少 5 位）')
+      return
+    }
+    if (!window.confirm(`确认订单 ${order.out_trade_no} 已寄出并登记单号？`)) return
+    try {
+      await postSignature({ action: 'ship', orderNo: order.out_trade_no, trackingNo: tracking })
+      setMessage(`订单 ${order.out_trade_no} 已标记发货`)
+      setSigTracking((prev) => ({ ...prev, [order.out_trade_no]: '' }))
+      await loadSignature()
+    } catch (error) {
+      setMessage(`发货登记失败：${String(error?.message || error)}`)
     }
   }
 
@@ -631,6 +731,234 @@ export default function PayConsole() {
               >
                 添加 / 更新
               </AdminButton>
+            </div>
+          </Section>
+        </div>
+      ) : null}
+
+      {activeTab === 'signature' ? (
+        <div className="space-y-5">
+          <Section
+            title="签名版定价"
+            description="划线原价（元）填在这里，早鸟价 = 原价 × 0.88 自动算出并同步为实收价；下架后前台购买入口隐藏。"
+          >
+            {sigStatus === 'loading' ? (
+              <p className="py-6 text-center text-[13px] text-[#82847a]">加载中…</p>
+            ) : (
+              <DataTable
+                columns={[
+                  {
+                    key: 'title',
+                    header: '图书',
+                    render: (row) => (
+                      <div>
+                        <div className="text-[13px] font-medium text-[#33352c] dark:text-gray-200">{row.title}</div>
+                        <div className="mt-0.5 font-mono text-[11px] text-[#9a9c8f]">signature:{row.slug}</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'base',
+                    header: '划线原价（元）',
+                    render: (row) => (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={`${inputCls} w-24`}
+                        value={sigPriceEdits[row.slug]?.base ?? (row.basePriceFen ? row.basePriceFen / 100 : '')}
+                        aria-label={`${row.title} 的签名版原价（元）`}
+                        placeholder="未设置"
+                        onChange={(e) =>
+                          setSigPriceEdits((prev) => ({
+                            ...prev,
+                            [row.slug]: { ...prev[row.slug], base: e.target.value },
+                          }))
+                        }
+                      />
+                    ),
+                  },
+                  {
+                    key: 'sale',
+                    header: '早鸟价（实收）',
+                    align: 'right',
+                    render: (row) =>
+                      row.active && row.salePriceFen > 0 ? (
+                        <span className="whitespace-nowrap font-medium">{fenToYuan(row.salePriceFen)}</span>
+                      ) : (
+                        <span className="text-[12px] text-[#82847a]">未上架</span>
+                      ),
+                  },
+                  {
+                    key: 'check',
+                    header: '校对',
+                    render: (row) => {
+                      if (!row.active || !row.salePriceFen) return <span className="text-[12px] text-[#82847a]">—</span>
+                      return row.salePriceFen === row.expectedSaleFen ? (
+                        <span className="text-[12px] text-green-700 dark:text-green-400">原价×0.88 ✓</span>
+                      ) : (
+                        <span className="text-[12px] text-red-600 dark:text-red-400">实收价与原价×0.88 不一致</span>
+                      )
+                    },
+                  },
+                  {
+                    key: 'actions',
+                    header: '操作',
+                    render: (row) => (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex items-center gap-1.5 text-[12px] text-[#6f6b63] dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={sigPriceEdits[row.slug]?.active ?? row.active}
+                            onChange={(e) =>
+                              setSigPriceEdits((prev) => ({
+                                ...prev,
+                                [row.slug]: { ...prev[row.slug], active: e.target.checked },
+                              }))
+                            }
+                          />
+                          上架
+                        </label>
+                        <AdminButton
+                          size="sm"
+                          variant="primary"
+                          disabled={busy}
+                          onClick={() =>
+                            saveSignaturePrice(
+                              row,
+                              sigPriceEdits[row.slug]?.active ?? row.active
+                            )
+                          }
+                        >
+                          保存
+                        </AdminButton>
+                      </div>
+                    ),
+                  },
+                ]}
+                rows={sigEditions}
+                rowKey={(row) => row.slug}
+                tableClassName="min-w-[760px]"
+              />
+            )}
+          </Section>
+
+          <Section title="签名版订单" description="支付成功进入待填收货；收货信息齐了变待发货，填快递单号标记发货。">
+            <div className="mt-3">
+              {sigStatus === 'loading' ? (
+                <p className="py-8 text-center text-[13px] text-[#82847a]">加载中…</p>
+              ) : (
+                <DataTable
+                  columns={[
+                    {
+                      key: 'order',
+                      header: '订单号 / 图书',
+                      render: (row) => (
+                        <div className="min-w-0">
+                          <div className="truncate font-mono text-[12px] text-[#33352c] dark:text-gray-200">
+                            {row.out_trade_no}
+                          </div>
+                          <div className="mt-0.5 text-[12px] text-[#82847a] dark:text-gray-500">
+                            <UserCell userId={row.user_id} /> · {row.contact_email || '无邮箱'}
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'book',
+                      header: '书',
+                      render: (row) => (
+                        <span className="whitespace-nowrap text-[12px]">{row.book_slug}</span>
+                      ),
+                    },
+                    {
+                      key: 'amount',
+                      header: '实付',
+                      align: 'right',
+                      render: (row) => <span className="whitespace-nowrap">{fenToYuan(row.amount_fen)}</span>,
+                    },
+                    {
+                      key: 'status',
+                      header: '状态',
+                      render: (row) => {
+                        const meta = BOOK_STATUS_META[row.status] || { label: row.status || '未知', tone: 'neutral' }
+                        return (
+                          <StatusPill tone={meta.tone} size="sm">
+                            {meta.label}
+                          </StatusPill>
+                        )
+                      },
+                    },
+                    {
+                      key: 'recipient',
+                      header: '收货信息',
+                      width: '26%',
+                      render: (row) =>
+                        row.recipient_name ? (
+                          <div className="min-w-0 text-[12px] leading-5">
+                            <div className="font-medium text-[#33352c] dark:text-gray-200">
+                              {row.recipient_name} · {row.recipient_phone}
+                            </div>
+                            <div className="mt-0.5 break-all text-[#6f6b63] dark:text-gray-400">
+                              {row.recipient_address}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[12px] text-[#82847a]">待买家填写</span>
+                        ),
+                    },
+                    {
+                      key: 'ship',
+                      header: '发货',
+                      render: (row) =>
+                        row.status === 'shipped' ? (
+                          <div className="min-w-0 text-[12px] leading-5">
+                            <div className="break-all">{row.tracking_no}</div>
+                            <div className="mt-0.5 text-[#82847a]">{formatTime(row.shipped_at)}</div>
+                          </div>
+                        ) : row.status === 'to_ship' ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              className={`${inputCls} w-36`}
+                              value={sigTracking[row.out_trade_no] ?? ''}
+                              placeholder="快递单号"
+                              aria-label={`${row.out_trade_no} 的快递单号`}
+                              onChange={(e) =>
+                                setSigTracking((prev) => ({ ...prev, [row.out_trade_no]: e.target.value }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') shipSignatureOrder(row)
+                              }}
+                            />
+                            <AdminButton size="sm" disabled={busy} onClick={() => shipSignatureOrder(row)}>
+                              发货
+                            </AdminButton>
+                          </div>
+                        ) : (
+                          <span className="text-[12px] text-[#82847a]">—</span>
+                        ),
+                    },
+                    {
+                      key: 'time',
+                      header: '更新时间',
+                      render: (row) => (
+                        <span className="whitespace-nowrap text-[12px] text-[#82847a] dark:text-gray-500">
+                          {formatTime(row.updated_at)}
+                        </span>
+                      ),
+                    },
+                  ]}
+                  rows={sigOrders}
+                  rowKey={(row) => row.out_trade_no}
+                  tableClassName="min-w-[1080px]"
+                  empty={
+                    <EmptyState
+                      title="还没有签名版订单"
+                      description="书页签名版卡片成交后，订单会按「待填收货 → 待发货 → 已发货」流转显示在这里。"
+                    />
+                  }
+                />
+              )}
             </div>
           </Section>
         </div>

@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import PageContainer from '../../components/PageContainer'
 import MoreBooks from '../MoreBooks'
+import SignatureEditionCard from '../SignatureEditionCard'
 import { PUBLISHED_WORKS } from '../../../../lib/site/publishedWorks'
 
 const book = PUBLISHED_WORKS.find((work) => work.href === '/books/seedance-guide')
@@ -38,6 +39,11 @@ export default function SeedanceGuidePage() {
         </div>
         <Image src={book.image} alt="《Seedance：电影级AI视频创作指南》图书封面" width={370} height={574} className="h-auto w-full max-w-[260px] rounded-xl shadow-lg" priority />
       </section>
+
+      <section className="mt-8" aria-label="站长亲笔签名版">
+        <SignatureEditionCard slug="seedance-guide" title="Seedance：电影级AI视频创作指南" />
+      </section>
+
       <MoreBooks currentHref={book.href} />
     </PageContainer>
   )

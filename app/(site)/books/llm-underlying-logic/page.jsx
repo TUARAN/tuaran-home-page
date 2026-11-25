@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { IconArrowRight, IconBook2, IconExternalLink } from '@tabler/icons-react'
 
 import MoreBooks from '../MoreBooks'
+import SignatureEditionCard from '../SignatureEditionCard'
 
 import PageContainer from '../../components/PageContainer'
 import { PUBLISHED_WORKS } from '../../../../lib/site/publishedWorks'
@@ -99,6 +100,7 @@ export default function LlmUnderlyingLogicBookPage() {
         <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.2em] text-[#ad693c] dark:text-[#e4a66c]">Find the book</p>
         <h2 id="buy-heading" className="mb-3 font-serif text-[27px] font-semibold text-[#2c2924] dark:text-gray-100">购书渠道</h2>
         <p className="mb-6 max-w-[46rem] text-[14px] leading-7 text-[#6c675f] dark:text-gray-300">选择常用平台搜索本书，具体上架与库存以平台结果为准。下单前请核对书名、作者和 ISBN {isbn}。</p>
+        <div className="mb-5"><SignatureEditionCard slug="llm-underlying-logic" title="AI大模型的底层逻辑" /></div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{stores.map((store) => <a key={store.name} href={store.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between rounded-xl border border-[#dfc5ac] bg-white px-4 py-3 text-[15px] font-semibold text-[#743e22] no-underline transition hover:-translate-y-0.5 hover:border-[#ae6e3e] hover:shadow-[0_10px_24px_rgba(112,65,26,0.1)] dark:border-[#654a36] dark:bg-[#2a2420] dark:text-[#ffd1a4]"><span>去{store.name}搜索</span><IconExternalLink size={18} className="transition group-hover:translate-x-0.5" aria-hidden="true" /></a>)}</div>
       </section>
       <MoreBooks currentHref="/books/llm-underlying-logic" />

@@ -10,7 +10,7 @@ const siteHeaderSource = await readFile(new URL('app/(site)/components/SiteHeade
 const globalsCss = await readFile(new URL('app/globals.css', repoRoot), 'utf8')
 const shopPageSource = await readFile(new URL('app/(site)/shop/page.jsx', repoRoot), 'utf8')
 
-test('shop catalog: first item is ChatGPT recharge, second is a coming-soon placeholder', () => {
+test('shop catalog: ChatGPT recharge first, Claude recharge via Wokey second', () => {
   assert.equal(SHOP_PATH, '/shop')
   assert.equal(listShopItems().length, SHOP_ITEMS.length)
 
@@ -21,10 +21,17 @@ test('shop catalog: first item is ChatGPT recharge, second is a coming-soon plac
   assert.match(gptplus.title, /ChatGPT/)
   assert.ok(gptplus.desc.length > 0)
 
-  const claudeRelay = findShopItem('claude-relay')
-  assert.ok(claudeRelay, '缺少 Claude 中转占位商品')
-  assert.equal(claudeRelay.status, 'coming')
-  assert.equal(claudeRelay.href, null)
+  const claude = findShopItem('claude-recharge')
+  assert.ok(claude, '缺少 Claude 代充商品')
+  assert.equal(SHOP_ITEMS[1].id, 'claude-recharge')
+  assert.equal(claude.status, 'available')
+  assert.equal(claude.href, 'https://wokey.ai/r/6D1SSKHS')
+  assert.equal(claude.wechat, true)
+  const highlights = claude.highlights.map((highlight) => highlight.label)
+  assert.ok(highlights.includes('离线可验证'))
+  assert.ok(highlights.some((label) => label.includes('1:6.9')))
+  assert.ok(highlights.some((label) => label.includes('微信')))
+  assert.equal(findShopItem('claude-relay'), undefined, 'Claude 中转占位应已被代充商品替换')
 })
 
 test('every available shop item has a valid href; coming items stay placeholder', () => {
@@ -76,4 +83,11 @@ test('shop page renders catalog from shopCatalog and marks placeholders', () => 
   assert.match(shopPageSource, /from ['"].*lib\/shop\/shopCatalog/)
   assert.match(shopPageSource, /canonical: SHOP_PATH/)
   assert.match(shopPageSource, /购买入口准备中/)
+})
+
+test('shop cards with a WeChat action do not nest buttons inside the card link', () => {
+  assert.match(shopPageSource, /ContactDialogButton/)
+  assert.match(shopPageSource, /splitActions/)
+  assert.match(shopPageSource, /加微信/)
+  assert.match(shopPageSource, /item\.highlights/)
 })

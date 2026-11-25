@@ -1,18 +1,20 @@
 import Link from 'next/link'
 
+import { ContactDialogButton } from '../components/ContactCards'
 import PageContainer from '../components/PageContainer'
 import { SHOP_ITEMS, SHOP_PATH } from '../../../lib/shop/shopCatalog'
+import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 
-const title = '甄选小店 · ChatGPT 代充与更多服务'
+const title = '甄选小店 · ChatGPT 与 Claude 代充'
 const description =
-  '甄选小店：ChatGPT Plus / Pro 代充已开放购买，Claude 中转与更多商品陆续上线。只放站长自己用过、能对交付负责的商品。'
+  '甄选小店：ChatGPT Plus / Pro 代充与 Claude 代充（离线可验证，1:6.9 汇率，可加微信沟通）已开放购买。只放站长自己用过、能对交付负责的商品。'
 
 export const metadata = {
   title,
   description,
-  keywords: ['甄选小店', 'ChatGPT 代充', 'ChatGPT Plus', 'Claude 中转', '小店'],
+  keywords: ['甄选小店', 'ChatGPT 代充', 'ChatGPT Plus', 'Claude 代充', 'Wokey', '小店'],
   alternates: { canonical: SHOP_PATH },
   openGraph: {
     title,
@@ -45,6 +47,8 @@ const STATUS_BADGE = {
 function ShopItemCard({ item, index }) {
   const badge = STATUS_BADGE[item.status] ?? STATUS_BADGE.coming
   const available = item.status === 'available' && item.href
+  // 卡片内有微信按钮时，整卡不能再包在 <a> 里。
+  const splitActions = Boolean(item.wechat)
   const body = (
     <>
       <span
@@ -60,6 +64,19 @@ function ShopItemCard({ item, index }) {
         </span>
       </div>
       <p className="relative mb-0 mt-2.5 text-[15px] leading-7 text-[#3f3f38] dark:text-gray-300">{item.desc}</p>
+      {item.highlights?.length ? (
+        <ul className="relative mb-0 mt-3 flex list-none flex-wrap gap-2 p-0">
+          {item.highlights.map((highlight) => (
+            <li
+              key={highlight.label}
+              className="m-0 inline-flex items-center gap-1.5 rounded-full border border-[#e3c48e] bg-[#fbf1dc] px-3 py-1 text-[13px] font-semibold leading-5 text-[#7a4f12] dark:border-[#4a3c22] dark:bg-[#2a2216] dark:text-[#e6c88f]"
+            >
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#b7791f] dark:bg-[#e6c88f]" />
+              {highlight.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="relative mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-[#e4e3d8] pt-3.5 dark:border-[#27303a]">
         <div className="flex flex-wrap gap-1.5">
           {item.tags.map((tag) => (
@@ -71,7 +88,26 @@ function ShopItemCard({ item, index }) {
             </span>
           ))}
         </div>
-        {available ? (
+        {available && splitActions ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {item.wechat ? (
+              <ContactDialogButton className="inline-flex items-center gap-1 rounded-full border border-[#3b7053] bg-transparent px-3.5 py-1.5 text-[13px] font-semibold text-[#3b7053] transition hover:bg-[#eef6ef] dark:border-[#b8dfc2] dark:text-[#b8dfc2] dark:hover:bg-[#203329]">
+                加微信 {WECHAT_CONTACT.value}
+              </ContactDialogButton>
+            ) : null}
+            <a
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+              data-analytics-event="shop_item_click"
+              data-analytics-destination-id={item.id}
+              className="inline-flex items-center gap-1 rounded-full bg-[#3b7053] px-3.5 py-1.5 text-[13px] font-semibold text-white no-underline transition hover:bg-[#2f5c44] dark:bg-[#b8dfc2] dark:text-[#10241a]"
+            >
+              去购买
+              <span aria-hidden="true" className="font-mono">↗</span>
+            </a>
+          </div>
+        ) : available ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-[#3b7053] px-3.5 py-1.5 text-[13px] font-semibold text-white transition group-hover:bg-[#2f5c44] dark:bg-[#b8dfc2] dark:text-[#10241a]">
             去购买
             <span aria-hidden="true" className="font-mono">↗</span>
@@ -82,6 +118,14 @@ function ShopItemCard({ item, index }) {
       </div>
     </>
   )
+
+  if (available && splitActions) {
+    return (
+      <div className="relative flex flex-col overflow-hidden rounded-2xl border border-[#c7c6bb] border-t-[3px] border-t-[#b7791f] bg-[#faf9f3] p-5 shadow-[0_2px_10px_rgba(60,50,20,0.05)] dark:border-[#33404d] dark:border-t-[#a8ae82] dark:bg-[#141b24]">
+        {body}
+      </div>
+    )
+  }
 
   if (available) {
     return (

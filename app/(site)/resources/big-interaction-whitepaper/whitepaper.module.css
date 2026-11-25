@@ -1,7 +1,5 @@
 .page { padding-top: 28px; padding-bottom: 64px; color: #213a31; }
 .masthead { max-width: 1088px; margin: 8px auto 36px; }
-.kicker { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.kicker { margin: 0 0 12px; color: #2e6745; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
 .masthead h1 { margin: 0; color: #143628; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(40px, 6vw, 68px); font-weight: 700; line-height: 1.12; letter-spacing: .02em; }
 .deck { max-width: 680px; margin: 16px 0 0; color: #203f2f; font-size: 18px; font-weight: 600; line-height: 1.8; }
 .metaLine { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 16px 0 0; color: #667c6a; font-size: 12px; line-height: 1.6; }

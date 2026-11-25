@@ -32,6 +32,7 @@ export default function AdminBranchRulesPage() {
   return (
     <AdminPageGate label="分支规范" returnTo="/admin/branch-rules">
       <AdminPage
+        hideTitle
         title="分支规范"
         description="分支怎么开、怎么合、怎么收。记录来源：docs/specs/branch-management.md，修改后随部署同步。"
         actions={<AdminButton href="/admin/site-dev" size="sm">开发发布</AdminButton>}

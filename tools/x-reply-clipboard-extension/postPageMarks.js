@@ -24,6 +24,7 @@
     const kind = item?.postKind || (item?.source === "xtheme" ? "x" : "normal");
     if (kind === "premium") return "postPremiumPrompt";
     if (kind === "x") return "postXPrompt";
+    if (kind === "mutual") return "postMutualPrompt";
     return "postNormalPrompt";
   }
 

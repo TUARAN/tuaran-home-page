@@ -52,6 +52,9 @@
     if (/^(?:\/memory|记忆|看看记忆|查看记忆|你记得什么|你记住了什么|记住了什么)[?？]?$/u.test(raw)) return { ...base, intent: "memory-list" };
     if (/^(?:\/compact|压缩上下文|压缩对话|压缩会话)$/u.test(raw)) return { ...base, intent: "compact" };
     if (/^(?:\/persona|人格|账号人格|账号设定|人格设置|打开人格)$/u.test(raw)) return { ...base, intent: "open-profile" };
+    const retry = /^重新启动(.{1,20})$/u.exec(raw);
+    if (retry) return { ...base, intent: "retry-task", label: retry[1] };
+    if (/^(?:打开)?模型设置$/u.test(raw)) return { ...base, intent: "open-settings", page: "model" };
     if (/(?:暂停全部|全部暂停|暂停所有|停掉全部|全都暂停|^全停$)/u.test(raw)) {
       return { ...base, intent: "pause-all", tool: "xrc-flow-pause" };
     }
@@ -62,10 +65,6 @@
       return { ...base, intent: "status", tool: "xrc-runtime-get" };
     }
     if (/(?:打开设置|设置中心|^设置$)/u.test(raw)) return { ...base, intent: "open-settings", page: "hub" };
-    if (/提示词/u.test(raw)) return { ...base, intent: "open-settings", page: "prompts" };
-    if (/频率/u.test(raw)) return { ...base, intent: "open-settings", page: "pace" };
-    if (/名单/u.test(raw)) return { ...base, intent: "open-settings", page: "lists" };
-    if (/(?:^规则$|打开规则|规则设置)/u.test(raw)) return { ...base, intent: "open-settings", page: "prompts" };
     if (/(?:排班台|^排班$|运行详情|^高级$|打开高级)/u.test(raw)) return { ...base, intent: "open-advanced" };
     return { ...base, intent: "unknown" };
   }
@@ -225,6 +224,70 @@
     return error || "规划模型没有给出结论";
   }
 
+  const ALERT_AUTO_MS = 3 * 60 * 1000;
+
+  function countdownText(ms) {
+    const total = Math.max(0, Math.ceil(ms / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+  }
+
+  // A schedule failure the plugin could not clear on its own, written as a chat turn.
+  // Options appear only when a person has to choose; a limit that lifts by itself gets none.
+  function alertTurn(alert, labels = {}) {
+    const kind = String(alert?.kind || "");
+    if (!alert?.id || kind === "self-healed") return null;
+    const mode = String(alert.task || "");
+    const label = labels[mode] || mode || "任务";
+    const message = String(alert.message || "").replace(/\s+/gu, " ").trim();
+    const help = root.XrcTaskEngine?.startFailureHelp?.(message) || "";
+    const route = { protocol: PROTOCOL, intent: "alert", alert: kind };
+    let text;
+    let why = "";
+    let confirm = [];
+    if (kind === "rate-limit") {
+      text = `${label}触发了 X 的限制，已停下等待恢复，不用动手。${message ? `原因：${clip(message, 120)}` : ""}`;
+    } else if (kind === "storage-failed") {
+      text = `${label}的进度没有存进本机：${clip(message, 120)}。检查浏览器存储空间后，任务会继续记录。`;
+    } else {
+      text = `${label}没有跑成：${clip(message, 140) || "原因未记录"}。`;
+      why = help || "需要你决定是重新启动，还是先放一放。";
+      if (/模型|密钥|API|MobileOffice|DeepSeek|B\.AI|NAS/u.test(message)) confirm.push("模型设置");
+      if (mode && labels[mode]) confirm.unshift(`重新启动${label}`);
+    }
+    // 需要选择的卡片带倒计时；人不处理，到点自动按第一个「重新启动」处理。
+    const autoAt = /^重新启动/u.test(confirm[0] || "") ? Date.now() + ALERT_AUTO_MS : 0;
+    return {
+      ...assistantTurn(route, { text, why, confirm, tool: { name: "alert", kind } }),
+      alertId: String(alert.id),
+      ...(autoAt ? { autoAt } : {})
+    };
+  }
+
+  const noticed = new WeakMap();
+  async function notifyAlert(panel, host, alert) {
+    const rootNode = panel?.querySelector?.("[data-xrc-agent-home]");
+    if (!rootNode || !host || !alert?.id) return null;
+    const seen = noticed.get(rootNode) || new Set();
+    if (seen.has(alert.id)) return null;
+    seen.add(alert.id);
+    noticed.set(rootNode, seen);
+    const pending = sessions.get(rootNode);
+    if (pending?.loading) {
+      try { await pending.loading; } catch (error) { /* keep the in-memory session */ }
+    }
+    const store = sessions.get(rootNode)?.threads ? sessions.get(rootNode) : emptyStore();
+    const thread = activeThread(store);
+    if (thread.turns.some((turn) => turn.alertId === String(alert.id))) return null;
+    const turn = alertTurn(alert, host.labels?.() || {});
+    if (!turn) return null;
+    thread.turns.push(turn);
+    autoCompact(thread);
+    thread.updatedAt = Date.now();
+    rootNode.dataset.xrcAgentFresh = String(turn.at);
+    await remember(rootNode, host, store);
+    return turn;
+  }
+
   async function handleTurn(text, host, context) {
     const route = routeCommand(text);
     if (LOCAL_INTENTS.has(route.intent)) {
@@ -239,7 +302,7 @@
       catch (error) {
         return assistantTurn(route, { text: `设置没有打开：${error?.message || "请再试一次"}`, showActions: true });
       }
-      const where = { hub: "设置中心", prompts: "提示词", pace: "频率", lists: "名单", model: "模型与密钥" }[route.page] || "设置";
+      const where = { hub: "设置中心", model: "模型与密钥" }[route.page] || "设置";
       return assistantTurn(route, { text: `已打开${where}。`, tool: { name: "open-settings", page: route.page } });
     }
     if (route.intent === "open-advanced") {
@@ -251,6 +314,21 @@
         return assistantTurn(route, { text: `排班没有打开：${error?.message || "请再试一次"}`, showActions: true });
       }
       return assistantTurn(route, { text: runtimePage ? "已打开运行详情。" : "已打开排班。", tool: { name: "open-advanced" } });
+    }
+    if (route.intent === "retry-task") {
+      const labels = host.labels?.() || {};
+      const mode = Object.keys(labels).find((key) => labels[key] === route.label);
+      let result = { ok: false, error: mode ? "重新启动没有发出" : `没有找到任务「${route.label}」` };
+      if (mode && typeof host.startTask === "function") {
+        try { result = await host.startTask(mode); } catch (error) { result = { ok: false, error: error?.message || "重新启动失败" }; }
+      }
+      const view = await readView(host);
+      return assistantTurn(route, {
+        text: result?.ok ? `已请求重新启动${route.label}。${view.sentence}` : `${route.label}没有重新启动：${result?.error || "请再试一次"}`,
+        view,
+        tool: { name: "xrc-task-manual-start", mode: mode || "" },
+        showActions: !result?.ok
+      });
     }
     if (route.intent === "pause-all") {
       let result = { ok: false, error: "暂停没有发出" };
@@ -882,16 +960,20 @@
   function paintConfirm(parent, turn, index) {
     const card = el("div", `xrc-agent-confirm${turn.resolved ? " is-resolved" : ""}`);
     const head = el("div", "xrc-agent-confirm-head");
-    head.append(icon("shield"), el("strong", "", turn.resolved ? "确认已处理" : "需要你确认"));
+    head.append(icon("shield"), el("strong", "", turn.resolved ? "已处理" : (turn.alertId ? "需要你选择" : "需要你确认")));
     card.append(head);
     if (turn.why) card.append(el("p", "xrc-agent-confirm-why", turn.why));
     if (turn.resolved) {
-      card.append(el("p", "xrc-agent-confirm-state", turn.resolved === "dismissed" ? "已取消，没有执行。" : `已确认：${turn.resolved}`));
+      card.append(el("p", "xrc-agent-confirm-state", turn.resolved === "dismissed" ? "已取消，没有执行。" : `已选择：${turn.resolved}`));
     } else {
       const actions = el("div", "xrc-agent-run-actions");
+      let first = null;
       for (const command of turn.confirm) {
-        const label = command.startsWith("记住") ? "确认记住" : `确认${command}`;
-        actions.append(commandButton(label, command, "xrc-agent-command is-confirm"));
+        const label = command.startsWith("记住") ? "确认记住"
+          : /^(?:重新启动|模型设置)/u.test(command) ? command : `确认${command}`;
+        const confirmButton = commandButton(label, command, "xrc-agent-command is-confirm");
+        if (!first) first = confirmButton;
+        actions.append(confirmButton);
       }
       const dismiss = el("button", "xrc-agent-command is-dismiss", "先不");
       dismiss.type = "button";
@@ -899,6 +981,24 @@
       dismiss.dataset.xrcAgentTurn = String(index);
       actions.append(dismiss);
       card.append(actions);
+      const left = Number(turn.autoAt) - Date.now();
+      if (first && left > 0 && typeof root.setInterval === "function") {
+        const note = el("p", "xrc-agent-confirm-timer", "");
+        const label = first.textContent;
+        const paint = () => { note.textContent = `不处理的话，${countdownText(Number(turn.autoAt) - Date.now())} 后自动${label}。`; };
+        paint();
+        card.append(note);
+        const tick = root.setInterval(() => {
+          if (!card.isConnected || turn.resolved) { root.clearInterval(tick); return; }
+          if (Date.now() >= Number(turn.autoAt)) {
+            root.clearInterval(tick);
+            note.textContent = `已自动${label}。`;
+            first.click();
+            return;
+          }
+          paint();
+        }, 1000);
+      }
     }
     parent.append(card);
   }
@@ -1061,16 +1161,25 @@
     drawer.setAttribute("data-xrc-agent-profile", "");
     drawer.setAttribute("aria-label", "账号人格与记忆");
     setHidden(drawer, true);
-    const head = el("header", "xrc-agent-activity-head");
-    const account = el("small", "xrc-agent-activity-count", "");
+    // Same header and section parts as the other sub pages (设置、每日报告).
+    const head = el("header", "xrc-docs-head xrc-page-head");
+    const titles = el("div");
+    const account = el("span", "", "");
     account.setAttribute("data-xrc-agent-profile-account", "");
-    const title = el("div", "xrc-agent-activity-title");
-    title.append(el("strong", "", "账号人格与记忆"), account);
-    const close = actionButton("关闭", "profile", "xrc-agent-tool", "close");
+    titles.append(el("small", "", "PERSONA"), el("strong", "", "账号人格与记忆"), account);
+    const close = el("button", "", "×");
+    close.type = "button";
+    close.dataset.xrcAgentAction = "profile";
     close.title = "关闭";
-    head.append(title, close);
-    const body = el("div", "xrc-agent-profile-body");
-    body.append(el("p", "xrc-agent-profile-lead", "只作用于当前账号。原则写在代码里，这里的内容排在原则和角色提示词之后。"));
+    close.setAttribute("aria-label", "关闭账号人格与记忆");
+    head.append(titles, close);
+    const body = el("div", "xrc-docs-content xrc-agent-profile-body");
+    const persona = el("section", "xrc-docs-section");
+    const personaTitle = el("div", "xrc-docs-title");
+    const personaCopy = el("span");
+    personaCopy.append(el("strong", "", "人格"), el("small", "", "只作用于当前账号，排在原则和角色提示词之后"));
+    personaTitle.append(personaCopy);
+    persona.append(personaTitle);
     for (const [field, label, hint] of [
       ["role", "账号定位", "例如：中文 AI 工具圈，主做开发者互动"],
       ["goal", "当前目标", "例如：这周先把评论回复做稳"],
@@ -1083,18 +1192,23 @@
       input.placeholder = hint;
       input.maxLength = PERSONA_LIMITS[field];
       row.append(el("span", "", label), input);
-      body.append(row);
+      persona.append(row);
     }
     const save = actionButton("保存人格", "save-persona", "xrc-agent-command is-confirm", "check");
     const note = el("p", "xrc-agent-profile-note", "");
     note.setAttribute("data-xrc-agent-profile-note", "");
-    const memoryHead = el("div", "xrc-agent-profile-memory-head");
+    persona.append(save, note);
+    const memory = el("section", "xrc-docs-section");
+    const memoryTitle = el("div", "xrc-docs-title");
+    const memoryCopy = el("span");
     const count = el("small", "", "");
     count.setAttribute("data-xrc-agent-memory-count", "");
-    memoryHead.append(el("strong", "", "记忆"), count);
+    memoryCopy.append(el("strong", "", "记忆"), count);
+    memoryTitle.append(memoryCopy);
     const list = el("ol", "xrc-agent-memory-list");
     list.setAttribute("data-xrc-agent-memory-list", "");
-    body.append(save, note, memoryHead, list);
+    memory.append(memoryTitle, list);
+    body.append(persona, memory);
     drawer.append(head, body);
     return drawer;
   }
@@ -1141,43 +1255,9 @@
   }
 
   // The current account's memory, always visible under the thread list.
-  function memoryCard() {
-    const card = el("button", "xrc-agent-memory-card");
-    card.type = "button";
-    card.dataset.xrcAgentAction = "profile";
-    card.setAttribute("data-xrc-agent-memory-card", "");
-    const head = el("span", "xrc-agent-memory-card-head");
-    const count = el("small", "", "");
-    count.setAttribute("data-xrc-agent-memory-card-count", "");
-    head.append(icon("persona"), el("strong", "", "本账号记忆"), count);
-    const list = el("span", "xrc-agent-memory-card-list");
-    list.setAttribute("data-xrc-agent-memory-card-list", "");
-    card.append(head, list);
-    return card;
-  }
-
+  // Remembers which account the rail's 记忆 page last loaded, so a switch reloads it.
   function paintMemoryCard(rootNode, profiles, account) {
-    const card = rootNode.querySelector?.("[data-xrc-agent-memory-card]");
-    if (!card) return;
-    const key = accountKey(account);
-    const profile = profileOf(profiles, key);
-    rootNode.dataset.xrcAgentMemoryAccount = key;
-    const count = card.querySelector("[data-xrc-agent-memory-card-count]");
-    if (count) count.textContent = key ? `${profile.memory.length}/${MAX_MEMORY}` : "";
-    const list = card.querySelector("[data-xrc-agent-memory-card-list]");
-    if (!list) return;
-    while (list.firstChild) list.removeChild(list.firstChild);
-    const persona = ["role", "goal", "tone"].filter((field) => profile.persona[field]).length;
-    const lines = !key
-      ? ["读不到当前账号"]
-      : [
-        `@${key} · 人格${persona ? `已设 ${persona}/3 项` : "未设置"}`,
-        ...(profile.memory.length
-          ? profile.memory.slice(-3).reverse().map((item) => `${MEMORY_TYPE_TAGS[item.type]}｜${item.text}`)
-          : ["还没有记忆。说「记住：……」写入"])
-      ];
-    for (const line of lines) list.append(el("span", "xrc-agent-memory-card-line", line));
-    card.setAttribute("aria-label", key ? `打开 @${key} 的人格与记忆，共 ${profile.memory.length} 条` : "打开人格与记忆");
+    rootNode.dataset.xrcAgentMemoryAccount = accountKey(account);
   }
 
   function paintLog(log, session, state = {}) {
@@ -1226,10 +1306,13 @@
     expand: '<rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1.4"/><path d="M6.2 2.6v10.8M8.3 6.1 10.4 8 8.3 9.9"/>',
     menu: '<path d="M3 4.5h10M3 8h10M3 11.5h10"/>',
     collapse: '<rect x="4.2" y="4.2" width="7.6" height="7.6" rx="1.3"/>',
+    zoomIn: '<circle cx="7" cy="7" r="4.3"/><path d="m10.2 10.2 3.3 3.3M7 5.2v3.6M5.2 7h3.6"/>',
+    zoomOut: '<circle cx="7" cy="7" r="4.3"/><path d="m10.2 10.2 3.3 3.3M5.2 7h3.6"/>',
     close: '<path d="m4 4 8 8M12 4l-8 8"/>',
     pin: '<path d="M6.1 2.2h3.8l-.5 3.1 2 1.5v1.3H4.6V6.8l2-1.5-.5-3.1Z"/><path d="M8 8.1v5.7"/>',
     trash: '<path d="M3.2 4.3h9.6M6.1 4.2V2.9h3.8v1.3M4.5 4.3l.6 8.6h5.8l.6-8.6M7 6.6v4M9 6.6v4"/>',
     accordion: '<rect x="1.8" y="2.4" width="12.4" height="11.2" rx="1.6"/><path d="M6 2.4v11.2"/><rect class="is-open" x="2.2" y="2.8" width="3.4" height="10.4"/>',
+    tag: '<path d="M2.6 2.6h5.2l5.6 5.6-5.2 5.2-5.6-5.6V2.6z"/><circle cx="5.6" cy="5.6" r=".8"/>',
     docs: '<circle cx="8" cy="8" r="6"/><path d="M8 7.2v3.6M8 4.8h.01"/>',
     reset: '<path d="M3.2 8a4.8 4.8 0 1 0 1.15-3.15"/><path d="M3.1 2.7v3.1h3.1"/>',
     theme: '<circle cx="8" cy="8" r="2.2"/><path d="M8 2.1v1.5M8 12.4v1.5M2.1 8h1.5M12.4 8h1.5M3.8 3.8l1.1 1.1M11.1 11.1l1.1 1.1M12.2 3.8l-1.1 1.1M4.9 11.1l-1.1 1.1"/>',
@@ -1324,54 +1407,10 @@
     return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function paintThreads(rootNode, store) {
-    const list = rootNode.querySelector("[data-xrc-agent-threads]");
-    if (!list) return;
-    while (list.firstChild) list.removeChild(list.firstChild);
-    for (const thread of orderedThreads(store?.threads || [])) {
-      const title = thread.kind === "main" ? "大互动智能体" : (thread.title || "新会话");
-      const pinned = thread.kind === "main";
-      const row = el("div", `xrc-agent-thread${thread.id === store.activeId ? " is-active" : ""}${pinned ? " is-main" : ""}`);
-      const button = el("button", "xrc-agent-thread-open");
-      button.type = "button";
-      button.dataset.xrcAgentAction = "thread";
-      button.dataset.xrcAgentThread = thread.id;
-      button.setAttribute("aria-label", `${title} ${formatStamp(thread.createdAt)}`);
-      const copy = el("span", "xrc-agent-thread-copy");
-      copy.append(el("span", "xrc-agent-label", title), el("span", "xrc-agent-thread-time", formatStamp(thread.createdAt)));
-      button.append(icon(pinned ? "pin" : "thread"), copy);
-      row.append(button);
-      if (!pinned) {
-        const remove = el("button", "xrc-agent-thread-delete");
-        remove.type = "button";
-        remove.dataset.xrcAgentAction = "delete-thread";
-        remove.dataset.xrcAgentThread = thread.id;
-        remove.title = "删除会话";
-        remove.setAttribute("aria-label", `删除${title}`);
-        remove.append(icon("trash"));
-        row.append(remove);
-      }
-      list.append(row);
-      if (pinned) list.append(newTaskButton());
-    }
-    if (![...list.children].some((node) => node.dataset?.xrcAgentAction === "new" || node.querySelector?.("[data-xrc-agent-action='new']"))) {
-      list.append(newTaskButton());
-    }
-  }
-
-  function newTaskButton() {
-    const button = el("button", "xrc-agent-new-task");
-    button.type = "button";
-    button.dataset.xrcAgentAction = "new";
-    button.append(icon("new"), el("span", "xrc-agent-label", "新增任务"));
-    return button;
-  }
-
   function paintStore(rootNode, store) {
     const thread = activeThread(store);
     const pageTitle = rootNode.querySelector("[data-xrc-agent-page-title]");
     if (pageTitle) pageTitle.textContent = thread?.kind === "main" ? "大互动智能体" : (thread?.title || "新会话");
-    paintThreads(rootNode, store);
     paintLog(rootNode.querySelector("[data-xrc-agent-log]"), thread, {
       replying: rootNode.dataset.xrcAgentBusy === "1",
       thinking: rootNode.dataset.xrcAgentThinking || "",
@@ -1384,8 +1423,10 @@
 
   function chromeReadout(className) {
     const box = el("div", className);
-    const version = el("span", "xrc-agent-version", "版本");
-    version.setAttribute("data-xrc-agent-version", "");
+    const version = el("div", "xrc-agent-version");
+    const versionText = el("span", "xrc-agent-label", "版本");
+    versionText.setAttribute("data-xrc-agent-version", "");
+    version.append(icon("tag"), versionText);
     const ip = actionButton("IP：—", "ip", "xrc-agent-ip", "ip");
     ip.setAttribute("data-xrc-agent-ip", "");
     box.append(version, ip);
@@ -1399,6 +1440,14 @@
   function railButton(label, action, iconName) {
     const button = actionButton(label, action, "xrc-agent-rail-button", iconName);
     button.title = label;
+    return button;
+  }
+
+  // Window size toggle at the top right of the chat header: zoom in to the wide layout, zoom out back.
+  function railZoomButton() {
+    const button = actionButton("放大面板", "rail", "xrc-agent-tool xrc-agent-zoom", "zoomIn");
+    button.title = "放大面板";
+    button.setAttribute("data-xrc-agent-handle", "");
     return button;
   }
 
@@ -1441,11 +1490,9 @@
     badge.setAttribute("data-xrc-agent-unread", "");
     setHidden(badge, true);
     bell.append(badge);
-    const fresh = actionButton("新会话", "new", "xrc-agent-tool", "new");
-    fresh.title = "新会话";
-    const persona = actionButton("账号人格与记忆", "profile", "xrc-agent-tool", "persona");
-    persona.title = "账号人格与记忆";
-    tools.append(persona, bell, fresh);
+    const closeButton = actionButton("关闭插件", "close", "xrc-agent-tool xrc-agent-close", "close");
+    closeButton.title = "关闭插件";
+    tools.append(railZoomButton(), bell, closeButton);
     head.append(row, tools, todayChips());
     return head;
   }
@@ -1498,14 +1545,12 @@
     const top = el("div", "xrc-agent-rail-top");
     top.append(
       railGroup("对话", [
-        railButton("会话", "threads", "thread"),
-        railButton("排班", "schedule", "advanced")
+        railButton("对话", "chat", "thread"),
+        railButton("排班", "schedule", "advanced"),
+        railButton("记忆", "profile", "persona")
       ]),
       railGroup("设置", [
-        railButton("模型", "model", "model"),
-        railButton("提示词", "prompts", "prompts"),
-        railButton("频率", "pace", "pace"),
-        railButton("名单", "lists", "lists")
+        railButton("模型", "model", "model")
       ]),
       railGroup("运营", [
         railButton("报告", "report", "report"),
@@ -1515,23 +1560,16 @@
     );
     const bottom = el("div", "xrc-agent-rail-bottom");
     bottom.append(
-      railButton("其他", "more", "more"),
-      railButton("收起", "collapse", "collapse"),
-      railButton("关闭", "close", "close")
+      railButton("外观", "theme", "theme"),
+      railButton("说明", "docs", "docs"),
+      railButton("重置", "reset", "reset"),
+      railButton("其他", "more", "more")
     );
     rail.append(top, bottom);
-    const threads = el("aside", "xrc-agent-thread-column");
-    threads.setAttribute("data-xrc-agent-thread-column", "");
-    const list = el("div", "xrc-agent-threads");
-    list.setAttribute("data-xrc-agent-threads", "");
-    threads.append(list, memoryCard());
     const more = el("div", "xrc-agent-more");
     more.setAttribute("data-xrc-agent-more", "");
     setHidden(more, true);
     more.append(
-      menuButton("外观", "theme", "theme"),
-      menuButton("说明", "docs", "docs"),
-      menuButton("重置", "reset", "reset"),
       chromeReadout("xrc-agent-menu-meta")
     );
 
@@ -1543,7 +1581,7 @@
     log.setAttribute("aria-live", "polite");
     main.append(activityDrawer(), profileDrawer(), log, composer());
     const stage = el("div", "xrc-agent-stage");
-    stage.append(threads, main);
+    stage.append(main);
     rootNode.append(rail, head, stage, more);
   }
 
@@ -1649,6 +1687,8 @@
   function paintProfileButton(rootNode) {
     const button = rootNode.querySelector?.("[data-xrc-agent-action='profile']");
     button?.setAttribute?.("aria-expanded", profileOpen(rootNode) ? "true" : "false");
+    // The profile page replaces the chat view, so the status header steps aside.
+    rootNode.dataset.xrcAgentProfilePage = profileOpen(rootNode) ? "open" : "closed";
   }
 
   async function profileAction(rootNode, host, button, action) {
@@ -1660,6 +1700,8 @@
         paintProfileButton(rootNode);
         return "profile-closed";
       }
+      // The drawer lives on the chat page; leave any open sub page first.
+      await host.showChat?.();
       openProfile(rootNode, profiles, account);
       return "profile-open";
     }
@@ -1786,21 +1828,23 @@
     if (action === "copy" || action === "retry" || action === "dismiss-confirm") {
       return turnAction(rootNode, host, button, action);
     }
-    if (action === "threads") {
-      await host.showChat?.();
-      if (panel.dataset.xrcAgentFrame !== "dock") {
-        panel.dataset.xrcAgentThreads = panel.dataset.xrcAgentThreads === "open" ? "closed" : "open";
+    if (action === "chat") {
+      if (profileOpen(rootNode)) {
+        setHidden(rootNode.querySelector("[data-xrc-agent-profile]"), true);
+        paintProfileButton(rootNode);
       }
-      return "threads";
+      await host.showChat?.();
+      paintRail(rootNode);
+      return "chat";
     }
-    if (action === "schedule" || action === "model" || action === "prompts" || action === "pace" || action === "lists" || action === "report" || action === "monitor" || action === "toolbox") {
+    if (action === "schedule" || action === "model" || action === "report" || action === "monitor" || action === "toolbox") {
       await enlargePanel(rootNode, host);
     }
     if (action === "schedule") {
       await host.openAdvanced?.();
       return "schedule";
     }
-    if (action === "model" || action === "prompts" || action === "pace" || action === "lists") {
+    if (action === "model") {
       await host.openSettings?.(action);
       return action;
     }
@@ -1815,37 +1859,6 @@
     if (action === "toolbox") {
       clickExisting(rootNode, "[data-xrc-toolbox-open]");
       return action;
-    }
-    if (action === "new") {
-      const pending = sessions.get(rootNode);
-      if (pending?.loading) {
-        try { await pending.loading; } catch (error) { /* keep the in-memory session */ }
-      }
-      const store = startThread(sessions.get(rootNode)?.threads ? sessions.get(rootNode) : emptyStore());
-      await remember(rootNode, host, store);
-      await host.showChat?.();
-      return store;
-    }
-    if (action === "delete-thread") {
-      const pending = sessions.get(rootNode);
-      if (pending?.loading) {
-        try { await pending.loading; } catch (error) { /* keep the in-memory session */ }
-      }
-      const current = sessions.get(rootNode)?.threads ? sessions.get(rootNode) : emptyStore();
-      const store = deleteThread(current, button.dataset.xrcAgentThread);
-      await remember(rootNode, host, store);
-      await host.showChat?.();
-      return store;
-    }
-    if (action === "thread") {
-      const store = sessions.get(rootNode);
-      const id = button.dataset.xrcAgentThread;
-      if (!store?.threads?.some((thread) => thread.id === id)) return null;
-      store.activeId = id;
-      await remember(rootNode, host, store);
-      if (panel.dataset.xrcAgentFrame !== "dock") panel.dataset.xrcAgentThreads = "closed";
-      await host.showChat?.();
-      return store;
     }
     if (action === "settings") {
       await host.openSettings?.("hub");
@@ -1877,21 +1890,8 @@
     return "chat";
   }
 
-  function railHandle() {
-    const button = el("button", "xrc-agent-rail-handle");
-    button.type = "button";
-    button.dataset.xrcAgentAction = "rail";
-    button.setAttribute("data-xrc-agent-handle", "");
-    button.title = "放大面板";
-    button.setAttribute("aria-label", "放大面板");
-    button.append(icon("accordion"), el("span", "xrc-agent-label", "放大面板"));
-    return button;
-  }
-
-  function ensureRailHandle(panel) {
-    if (!panel || panel.querySelector?.("[data-xrc-agent-handle]")) return;
-    panel.append(railHandle());
-  }
+  // The zoom control lives in the rail now; there is no floating edge handle.
+  function ensureRailHandle() {}
 
   function paintRailToggle(rootNode) {
     const panel = panelOf(rootNode);
@@ -1901,6 +1901,9 @@
       button.setAttribute?.("aria-label", label);
       const text = button.querySelector?.(".xrc-agent-label");
       if (text) text.textContent = label;
+      const next = icon(panel.dataset?.xrcAgentRail === "full" ? "zoomOut" : "zoomIn");
+      const old = button.querySelector?.(".xrc-agent-icon");
+      if (old && old.replaceWith) old.replaceWith(next);
     }
   }
 
@@ -2115,6 +2118,8 @@
     routeCommand,
     describeRuntime,
     handleTurn,
+    alertTurn,
+    notifyAlert,
     loadSession,
     saveSession,
     normalizeStore,

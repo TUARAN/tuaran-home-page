@@ -7,6 +7,8 @@
   const POST_KIND_NORMAL = "normal";
   const POST_KIND_PREMIUM = "premium";
   const POST_KIND_X = "x";
+  const POST_KIND_MUTUAL = "mutual";
+  const MUTUAL_TAGS = "#浇朋友 #互关 #蓝朋友";
   const CARD_DAILY_QUOTAS = Object.freeze([1, 3, 5, 10]);
   const DEFAULT_CARD_DAILY_QUOTA = 3;
   const CARD_SLOT_TIMES = Object.freeze({
@@ -41,15 +43,15 @@
 
   function sessionStorageKey(kind = POST_KIND_NORMAL) {
     if (kind === POST_KIND_PREMIUM) return "xrc-ai-poster-premium";
-    if (kind === "xhs") return "xrc-ai-poster-xhs";
     if (kind === POST_KIND_X) return "xrc-ai-poster-x";
+    if (kind === POST_KIND_MUTUAL) return "xrc-ai-poster-mutual";
     return "xrc-ai-poster";
   }
 
   function publishListKey(kind = POST_KIND_NORMAL) {
     if (kind === POST_KIND_PREMIUM) return "xrcPosterPublishListPremium";
-    if (kind === "xhs") return "xrcPosterPublishListXhs";
     if (kind === POST_KIND_X) return "xrcPosterPublishListX";
+    if (kind === POST_KIND_MUTUAL) return "xrcPosterPublishListMutual";
     return "xrcPosterPublishList";
   }
 
@@ -82,8 +84,9 @@
 
   function normalizePostKind(value) {
     if (value === POST_KIND_PREMIUM) return POST_KIND_PREMIUM;
-    if (value === "xhs") return "xhs";
+    if (value === "xhs") return POST_KIND_PREMIUM;
     if (value === POST_KIND_X) return POST_KIND_X;
+    if (value === POST_KIND_MUTUAL) return POST_KIND_MUTUAL;
     return POST_KIND_NORMAL;
   }
 
@@ -91,7 +94,7 @@
     const cardVariant = CARD_VARIANTS[Math.max(0, cardIndex) % CARD_VARIANTS.length];
     if (kind === POST_KIND_X) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
     if (kind === POST_KIND_PREMIUM) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
-    if (kind === "xhs") return { mediaMode: "text", lengthMode: "regular" };
+    if (kind === POST_KIND_MUTUAL) return { mediaMode: "text", lengthMode: "regular" };
     const draw = random();
     if (draw < 0.9) return { mediaMode: "text", lengthMode: "compact" };
     return { mediaMode: "text", lengthMode: "regular" };
@@ -100,12 +103,12 @@
   function withPostFormat(item, kind = state.postKind) {
     kind = normalizePostKind(kind);
     const fallback = choosePostFormat(Math.random, 0, kind);
-    const lengthMode = kind === POST_KIND_X
+    const lengthMode = kind === POST_KIND_X || kind === POST_KIND_MUTUAL
       ? "regular"
       : item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
       ? "compact"
       : item?.lengthMode === "regular" ? "regular" : fallback.lengthMode;
-    const mediaMode = kind === POST_KIND_NORMAL ? "text" : kind === POST_KIND_X || kind === POST_KIND_PREMIUM
+    const mediaMode = kind === POST_KIND_NORMAL || kind === POST_KIND_MUTUAL ? "text" : kind === POST_KIND_X || kind === POST_KIND_PREMIUM
       ? "image"
       : item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
     return {
@@ -155,6 +158,7 @@
 
   function idleStatusForKind(kind = state.postKind) {
     if (kind === POST_KIND_PREMIUM) return `待命。卡片发帖每天 ${premiumDailyLimit()} 条，按 ${cardSlotTimes().join(" / ")}（北京时间）发布，每条都是文字卡片。`;
+    if (kind === POST_KIND_MUTUAL) return "待命。互关发帖每次任务发 1 条纯文字短帖，围绕交朋友、互相关注、互相问候和互相评论，末尾固定带三个标签。";
     if (kind === POST_KIND_X) return "待命。X 主题发帖每次任务只发 1 张文字卡片。题材围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company。";
     return "待命。热点发帖每次任务只准备并发送 1 条；发完进入下一次排班倒计时，高峰等待较短。";
   }
@@ -664,7 +668,7 @@
   }
 
   function keepSourceItem(item) {
-    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
+    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme|mutual):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
   }
 
   const EVERGREEN_TOPIC_ITEMS = [
@@ -820,7 +824,86 @@
     return state.publishQueue.length;
   }
 
+
+  const MUTUAL_BANNED_RE = /我都看|我挨个回|我会回复|我都会回|必回|秒回|求关注|求互关|互粉|关注我|回关/u;
+
+  function formatMutualPost(value) {
+    const lines = preserveLines(value)
+      .replace(/[#＃][^\s#＃]+/gu, "")
+      .split("\n")
+      .map((line) => line.replace(/[ \t]+$/u, "").trim());
+    const body = lines.join("\n").replace(/\n{3,}/gu, "\n\n").trim();
+    if (!body || MUTUAL_BANNED_RE.test(body)) return "";
+    const trimmed = body.split("\n").slice(0, 7).join("\n").trim();
+    return `${trimmed}\n\n${MUTUAL_TAGS}`;
+  }
+
+  function mutualPeriod(at = Date.now()) {
+    const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Shanghai", hour: "2-digit", hour12: false }).format(new Date(at))) % 24;
+    if (hour < 5) return "深夜";
+    if (hour < 9) return "早上";
+    if (hour < 12) return "上午";
+    if (hour < 14) return "中午";
+    if (hour < 18) return "下午";
+    return "晚上";
+  }
+
+  const MUTUAL_TOPIC_ITEMS = [
+    ["打招呼", "路过打个卡，今天有人在线吗", "路过打个卡\n\n今天有人在线吗"],
+    ["打招呼", "报到：刷到这条的都算认识了", "报个到，刷到这条的都算认识了\n\n留个言让我知道你来过"],
+    ["打招呼", "问一句最近过得怎么样", "最近还好吗\n\n随便说一句就行"],
+    ["抛话题", "问大家今天最想吐槽的一件小事", "今天最想吐槽的一件小事是什么？\n\n评论区聊两句"],
+    ["抛话题", "问大家现在在做什么、在忙什么", "现在手上在忙什么？\n\n说一个就行"],
+    ["抛话题", "问大家最近发现的一个好用的小东西", "最近发现了什么好用的小东西？\n\n分享一个，我先蹲着"],
+    ["邀请互动", "邀请新朋友在评论区留一句话", "新来的朋友，留一句话吧\n\n不用自我介绍，随便聊"],
+    ["邀请互动", "邀请大家用一个词形容今天", "用一个词形容今天\n\n我先来：还行"],
+    ["自我介绍", "一句话自我介绍，邀请同路人认识", "平时聊聊 AI、折腾小东西、偶尔发疯\n\n同路人评论区认识一下"],
+    ["自我介绍", "说自己平时爱聊什么，问对方呢", "我平时爱聊 AI 和一些没用的小事\n\n你们呢？"],
+    ["夸人感谢", "感谢这周在评论区聊过天的朋友", "这周评论区聊过天的朋友，谢了\n\n下周继续"],
+    ["夸人感谢", "夸一下总在评论区接话的朋友", "评论区总能接住话的朋友，真的有点厉害\n\n继续保持"]
+  ].map(([action, text, fallbackText], index) => ({
+    id: `mutual:${action}:${index}`,
+    sourceType: "news",
+    source: "mutual",
+    sourceLabel: "互关",
+    action,
+    text,
+    fallbackText,
+    summary: `本次动作：${action}。要点：${text}`,
+    url: "https://x.com/",
+    sourcePageUrl: "https://x.com/"
+  }));
+
+  function buildMutualFallback(item) {
+    const topic = `${item?.action || "互关"}：${String(item?.text || "").slice(0, 24)}`;
+    return { topic, text: formatMutualPost(item?.fallbackText || "") };
+  }
+
+  async function collectMutualBatch() {
+    const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
+    emit(`正在准备本批 ${batchTarget} 条互关短帖…`);
+    rewriteServiceError = "";
+    rewriteRejections = [];
+    const period = mutualPeriod();
+    const day = Math.floor(Date.now() / 86400000);
+    const items = shuffleNewsItems(MUTUAL_TOPIC_ITEMS).map((item, index) => ({
+      ...item,
+      id: `${item.id}:${day}:${index}`,
+      summary: `${item.summary}。当前时段：北京时间${period}。`
+    }));
+    const used = readUsedSourceIds();
+    state.sourceQueue = items.filter((item) => !used.has(item.id)).slice(0, Math.max(batchTarget * 2, 6));
+    if (state.sourceQueue.length) await buildPublishList(batchTarget);
+    if (!state.publishQueue.length && !state.stopping) {
+      const rejected = [...new Set(rewriteRejections)].slice(-5).join("；");
+      throw new Error(`本轮未写出互关短帖${rejected ? `；未通过：${rejected}` : ""}${state.lastError ? `；改写：${state.lastError}` : ""}`);
+    }
+    state.lastError = "";
+    return state.publishQueue.length;
+  }
+
   async function collectNewsFallback() {
+    if (state.postKind === POST_KIND_MUTUAL) return collectMutualBatch();
     if (state.postKind === POST_KIND_X) return collectXThemeBatch();
     const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
     emit(`正在准备本批 ${batchTarget} 条待发稿…`);
@@ -892,20 +975,22 @@
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
         const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
         const recentEndings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").filter(Boolean).at(-1)).filter(Boolean).slice(-8);
-        const tryModel = item.source === "xtheme"
+        const tryModel = item.source === "xtheme" || item.source === "mutual"
           ? !rewriteServiceError
           : item.source !== "evergreen" || (!rewriteServiceError && evergreenModelCandidates++ < 3);
         if (tryModel) {
           const result = await requestSourceRewrite(item.text, recentTopics, item, "", "", recentOpenings, recentEndings, postFormat.lengthMode);
           if (result.skip) {
-            reason = item.source === "xtheme" ? "模型未返回 X 主题草稿" : item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
+            reason = item.source === "mutual" ? "模型未返回互关草稿" : item.source === "xtheme" ? "模型未返回 X 主题草稿" : item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
           } else {
             const rewritten = simplifyPostRhetoric(result.post);
-            text = state.postKind === POST_KIND_X
+            text = state.postKind === POST_KIND_MUTUAL
+              ? formatMutualPost(rewritten)
+              : state.postKind === POST_KIND_X
               ? formatXThemePost(rewritten)
               : (postFormat.lengthMode === "compact" ? formatCompactPost : formatModelPost)(rewritten);
             topic = String(result.topic || item.text).trim().slice(0, 60);
-            if (!text) reason = "模型未返回正文";
+            if (!text) reason = state.postKind === POST_KIND_MUTUAL ? "正文为空或含承诺话术" : "模型未返回正文";
           }
         }
       } catch (error) {
@@ -914,14 +999,14 @@
         rewriteServiceError = reason;
       }
       if (state.stopping) return state.publishQueue.length;
-      if ((item.source === "evergreen" || item.source === "xtheme") && (reason || !text)) {
-        const fallback = item.source === "xtheme" ? buildXThemeFallback(item) : buildEvergreenFallback(item);
+      if ((item.source === "evergreen" || item.source === "xtheme" || item.source === "mutual") && (reason || !text)) {
+        const fallback = item.source === "mutual" ? buildMutualFallback(item) : item.source === "xtheme" ? buildXThemeFallback(item) : buildEvergreenFallback(item);
         const fallbackReason = !fallback.text ? "没有正文" : recentEntries().some((entry) => sameDraftText(entry.text, fallback.text)) ? "正文与已发内容完全相同" : "";
         if (!fallbackReason) {
-          text = postFormat.lengthMode === "compact" ? formatCompactPost(fallback.text) : fallback.text;
+          text = postFormat.lengthMode === "compact" && item.source !== "mutual" ? formatCompactPost(fallback.text) : fallback.text;
           topic = fallback.topic;
           reason = "";
-          emit(item.source === "xtheme"
+          emit(item.source === "mutual" ? "模型暂未返回合适草稿，已切换本地互关短帖" : item.source === "xtheme"
             ? (rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地 X 主题卡片` : "模型暂未返回合适草稿，已切换本地 X 主题卡片")
             : (rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地常用社会观察内容` : "模型暂未返回合适草稿，已切换常用社会观察兜底内容"));
         } else reason = `本地兜底${fallbackReason}`;
@@ -929,7 +1014,7 @@
       if (reason) {
         rewriteRejections.push(`${sourceLabel(item.source)}：${reason}`);
         emit(`${sourceLabel(item.source)}第 ${index + 1}/${total} 条未通过：${reason}；继续尝试下一条`);
-        if (rewriteServiceError && item.source !== "evergreen" && item.source !== "xtheme") break;
+        if (rewriteServiceError && item.source !== "evergreen" && item.source !== "xtheme" && item.source !== "mutual") break;
         continue;
       }
       state.publishQueue.push({ id: item.id, text, topic, ...postFormat, sourceText: item.text, sourceSummary: item.summary || "", sourceType: item.source === "evergreen" ? "evergreen" : "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
@@ -945,7 +1030,7 @@
   function readUsedSourceIds() {
     const published = new Set(history.published.map((item) => String(item.sourceId || "")).filter(Boolean));
     const queued = new Set(state.publishQueue.map((item) => String(item.id || "")).filter(Boolean));
-    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
+    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme|mutual):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
   }
 
   async function rememberUsedSourceId(id) {
@@ -961,11 +1046,12 @@
   }
 
   function sourceLabel(source) {
-    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎", xtheme: "X主题" }[source] || "热点";
+    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎", xtheme: "X主题", mutual: "互关" }[source] || "热点";
   }
 
   function publishedKind(item) {
-    if (item?.postKind === POST_KIND_PREMIUM || item?.postKind === POST_KIND_X || item?.postKind === POST_KIND_NORMAL) return item.postKind;
+    if (item?.postKind === POST_KIND_PREMIUM || item?.postKind === POST_KIND_X || item?.postKind === POST_KIND_MUTUAL || item?.postKind === POST_KIND_NORMAL) return item.postKind;
+    if (item?.source === "mutual") return POST_KIND_MUTUAL;
     if (item?.source === "xtheme") return POST_KIND_X;
     return POST_KIND_NORMAL;
   }
@@ -1021,7 +1107,7 @@
     if (!shouldCollect()) return state.publishQueue.length;
     if (!state.stopping) await collectNewsFallback();
     if (state.stopping) return state.publishQueue.length;
-    if (!state.publishQueue.length) throw new Error(state.postKind === POST_KIND_X ? "X 主题没有形成可发草稿" : "热点没有形成可发草稿");
+    if (!state.publishQueue.length) throw new Error(state.postKind === POST_KIND_MUTUAL ? "互关短帖没有形成可发草稿" : state.postKind === POST_KIND_X ? "X 主题没有形成可发草稿" : "热点没有形成可发草稿");
     state.lastError = "";
     await savePublishList();
     await leaveFor("/home", `待发 ${state.publishQueue.length} 条，回到首页发送`);
@@ -1083,20 +1169,37 @@
       .find((input) => !input.closest('[role="dialog"]') && !input.closest("article")) || null;
   }
 
+  function dataUrlToFile(dataUrl, name) {
+    const [head, body = ""] = String(dataUrl).split(",");
+    const bytes = Uint8Array.from(atob(body), (char) => char.charCodeAt(0));
+    return new File([bytes], name, { type: /data:([^;]+)/.exec(head)?.[1] || "image/png" });
+  }
+
+  // 文字图片：优先用小红书式 3:4 排版（标题、分段、页码，最多 4 张），失败再退回单张横版卡片
+  async function buildTextImageFiles(postText, item) {
+    if (state.postKind === POST_KIND_PREMIUM && root.XrcXhsCards?.render) {
+      try {
+        const pages = await root.XrcXhsCards.render(postText);
+        if (pages.length) return pages.map((page, index) => dataUrlToFile(page, `text-image-${Date.now()}-${index + 1}.png`));
+      } catch {}
+    }
+    return [await root.XInteractionPostImage.createPostCard(
+      postText,
+      item?.topic || "话题观察",
+      item?.cardVariant || "paper",
+      state.postKind === POST_KIND_X ? { align: "center" } : {}
+    )];
+  }
+
   async function attachPostImage(postText, item) {
     const input = composerImageInput();
     if (!input) return "页面没有图片上传入口，已改为纯文字";
     if (!root.XInteractionPostImage?.createPostCard) return "配图模块未加载，已改为纯文字";
     if (typeof DataTransfer !== "function") return "浏览器不支持自动选择图片，已改为纯文字";
     try {
-      const file = await root.XInteractionPostImage.createPostCard(
-        postText,
-        item?.topic || "话题观察",
-        item?.cardVariant || "paper",
-        state.postKind === POST_KIND_X ? { align: "center" } : {}
-      );
+      const files = await buildTextImageFiles(postText, item);
       const transfer = new DataTransfer();
-      transfer.items.add(file);
+      files.forEach((file) => transfer.items.add(file));
       input.files = transfer.files;
       input.dispatchEvent(new Event("change", { bubbles: true }));
       const preview = await waitUntil(() => composerHasMedia(), 15000);
@@ -1262,10 +1365,8 @@
   }
 
   async function publishPost(postText, item = null) {
-    if (["x", "xhs"].includes(state.postKind)) {
-      const images = state.postKind === "xhs"
-        ? await root.XrcXhsCards.render(postText)
-        : [await new Promise(async (resolve, reject) => {
+    if (state.postKind === "x") {
+      const images = [await new Promise(async (resolve, reject) => {
             try { const file = await root.XInteractionPostImage.createPostCard(postText, item?.topic || '', item?.cardVariant || 'paper', {align:'center'}); const reader = new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); } catch(error) { reject(error); }
           })];
       const key = 'xrcDebugDrafts';
@@ -1388,7 +1489,7 @@
       await loadPremiumDaily();
     }
     await loadPublishList();
-    if (["x", "xhs"].includes(state.postKind)) {
+    if (state.postKind === "x") {
       if (state.nextPostAt > Date.now()) { emit("图文草稿等待下次排班"); return; }
       const held = await holdPostDailyCap();
       if (held) return;
@@ -1669,7 +1770,7 @@
     } else {
       state.running = true;
       state.stopping = false;
-      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备卡片待发列表" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : "正在准备待发列表";
+      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备卡片待发列表" : state.postKind === POST_KIND_MUTUAL ? "正在准备互关短帖" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : "正在准备待发列表";
       state.count = 0;
       state.errors = 0;
       state.startedAt = Date.now();
@@ -1805,6 +1906,8 @@
     POST_KIND_NORMAL,
     POST_KIND_PREMIUM,
     POST_KIND_X,
+    POST_KIND_MUTUAL,
+    formatMutualPost,
     PREMIUM_DAILY_LIMIT,
     PREMIUM_SLOT_TIMES,
     CARD_DAILY_QUOTAS,

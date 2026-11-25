@@ -3312,12 +3312,11 @@ test('notification rounds advance once per inspected notification even when no r
   assert.match(source, /state\.assistantMode === "notifications" \|\| state\.pageCount < currentRoundTarget\(\)/)
 })
 
-test('settings expose four editable prompt fields without a clickbait preset', async () => {
+test('settings no longer expose prompt editing fields, defaults stay in place', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(source, /data-xrc-reply-timeline-prompt/)
-  assert.match(source, /data-xrc-reply-comment-prompt/)
-  assert.match(source, /data-xrc-post-normal-prompt/)
-  assert.match(source, /data-xrc-post-premium-prompt/)
+  assert.doesNotMatch(source, /data-xrc-reply-timeline-prompt/)
+  assert.doesNotMatch(source, /data-xrc-planner-prompt/)
+  assert.doesNotMatch(source, /data-xrc-config-open="prompts"/)
   assert.doesNotMatch(source, /data-xrc-post-preset/)
   assert.match(source, /DEFAULT_REPLY_TIMELINE_PROMPT/)
   assert.match(source, /DEFAULT_POST_PREMIUM_PROMPT/)
@@ -4668,10 +4667,9 @@ test('short DOM polling stays local instead of flooding the offscreen timer chan
   assert.equal(sent, 0)
 })
 
-test('settings page shows pace as read-only text instead of editable numbers', async () => {
+test('settings page has no pace section and no editable pace numbers', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(source, /function paceSummaryHtml\(\)/)
-  assert.match(source, /data-xrc-pace-summary/)
+  assert.doesNotMatch(source, /data-xrc-pace-summary|data-xrc-config-open="pace"/)
   assert.doesNotMatch(source, /data-xrc-reply-pace-input/)
   assert.doesNotMatch(source, /data-xrc-post-pace-input/)
   assert.doesNotMatch(source, /function readReplyPaceForm|function readPostPaceForm|function replyPaceEditorHtml|function postPaceEditorHtml/)
@@ -8380,14 +8378,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-runtime/)
   assert.match(content, /randomReplyDelaySeconds\(Math\.random, replyCadencePace\(\), state\.assistantMode === "notifications" \? 1 : state\.boundaryLevel\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
-  assert.match(content, /data-xrc-pace-summary/)
+  assert.doesNotMatch(content, /data-xrc-pace-summary/)
   assert.doesNotMatch(content, /每轮条数/)
   assert.match(content, /data-xrc-wait/)
   assert.doesNotMatch(content, /data-xrc-post-wait/)
-  assert.match(content, /data-xrc-reply-timeline-prompt/)
-  assert.match(content, /data-xrc-reply-comment-prompt/)
-  assert.match(content, /data-xrc-post-normal-prompt/)
-  assert.match(content, /data-xrc-post-premium-prompt/)
+  assert.doesNotMatch(content, /data-xrc-reply-timeline-prompt/)
+  assert.doesNotMatch(content, /data-xrc-reply-comment-prompt/)
+  assert.doesNotMatch(content, /data-xrc-post-normal-prompt/)
+  assert.doesNotMatch(content, /data-xrc-post-premium-prompt/)
   assert.doesNotMatch(content, /data-xrc-reply-prompt[^-]/)
   assert.doesNotMatch(content, /data-xrc-post-prompt[^-]/)
   assert.doesNotMatch(content, /data-xrc-config-save/)
@@ -8443,7 +8441,6 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-pace/)
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
-  assert.match(content, /在对应任务页点慢、中、快或超快/)
   const downloadVersion = catalog.match(/objectKey: 'downloads\/x-reply-clipboard-extension-v([\d.]+)\.zip'/)?.[1]
   assert.ok(downloadVersion)
   assert.match(resourcePage, /SOURCE_VERSION = JSON\.parse\(readFileSync\(join\(process\.cwd\(\), 'tools\/x-reply-clipboard-extension\/manifest\.json'\)/)
@@ -8483,7 +8480,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /scheduleRuleRowsMarkup/)
   assert.match(content, /data-xrc-hub-open[\s\S]*?M19\.14 12\.94/)
   assert.doesNotMatch(content, /data-xrc-desk-home>排班台/)
-  assert.match(content, /data-xrc-config-open="pace"/)
+  assert.doesNotMatch(content, /data-xrc-config-open="pace"/)
   assert.doesNotMatch(content, /跑完一次回到队尾/)
   assert.doesNotMatch(content, /data-xrc-schedule-window/)
   assert.doesNotMatch(content, /xrc-schedule-card-config-go/)
@@ -9224,7 +9221,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
 test('default schedule ranks frequent actions first and allows follow-back all day', () => {
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share', 'community-copy']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'article', 'site-forward', 'community-share', 'community-copy']) {
     assert.equal(rules[mode].enabled, false)
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
@@ -9276,7 +9273,7 @@ test('cleanup and posting checkboxes start unchecked unless saved choices enable
   assert.ok(helper)
   const context = vm.createContext({})
   vm.runInContext(`${helper}\nglobalThis.enabled = scheduleRuleEnabled`, context)
-  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share', 'community-copy']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'article', 'site-forward', 'community-share', 'community-copy']) {
     assert.equal(context.enabled(mode, {}), false)
     assert.equal(context.enabled(mode, { enabled: true }), true)
     assert.equal(context.enabled(mode, { enabled: false }), false)

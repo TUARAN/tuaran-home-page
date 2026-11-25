@@ -6136,3 +6136,96 @@
 }
 #x-reply-clipboard-panel [data-xrc-queue-drop="before"]::after { top: -5px; }
 #x-reply-clipboard-panel [data-xrc-queue-drop="after"]::after { bottom: -5px; }
+
+/* ── 克制精修层（2026-11-24）──────────────────────────────────────────
+   目标：更简单、更安静。去掉叠加的内阴影与高光、跑马灯、编号徽标、
+   分类彩色边框与实心着色，层级只靠发丝线、留白和字重。
+   写在文件末尾，同等特异性下覆盖前文；深色主题的更高特异性规则保持不变。 */
+#x-reply-clipboard-panel[data-theme="light"] {
+  --xrc-line: rgba(15, 20, 25, 0.08);
+  --xrc-soft: rgba(15, 20, 25, 0.035);
+  --xrc-panel-shadow: 0 1px 2px rgba(15, 20, 25, 0.06), 0 16px 40px rgba(15, 20, 25, 0.14);
+  --xrc-float-shadow: 0 1px 2px rgba(15, 20, 25, 0.06), 0 16px 40px rgba(15, 20, 25, 0.16);
+}
+#x-reply-clipboard-panel[data-theme="dark"] {
+  --xrc-panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+  --xrc-float-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+#x-reply-clipboard-panel {
+  border-color: var(--xrc-line);
+  border-radius: 16px;
+}
+
+/* 顶栏：版本 / 账号 / IP 静态呈现，不再跑马灯 */
+#x-reply-clipboard-panel .xrc-header { padding: 12px 14px 10px; background: transparent; }
+#x-reply-clipboard-panel .xrc-title { font-size: 13px; font-weight: 700; }
+#x-reply-clipboard-panel .xrc-mark { box-shadow: none; }
+#x-reply-clipboard-panel .xrc-header-meta { overflow-x: auto; scrollbar-width: none; font-weight: 500; }
+#x-reply-clipboard-panel .xrc-header-meta::-webkit-scrollbar { display: none; }
+#x-reply-clipboard-panel .xrc-header-ticker { animation: none; }
+#x-reply-clipboard-panel .xrc-header-ticker-group { gap: 14px; min-width: 0; padding-inline-end: 0; }
+#x-reply-clipboard-panel .xrc-header-ticker-group[aria-hidden="true"] { display: none; }
+#x-reply-clipboard-panel .xrc-account { font-weight: 600; color: var(--xrc-muted); }
+
+/* 分区：无边框无底色，靠留白与标题分层；编号徽标收成安静的小字 */
+#x-reply-clipboard-panel .xrc-plate { padding: 12px 2px 4px; border: 0; border-radius: 0; background: transparent; }
+#x-reply-clipboard-panel .xrc-plate + .xrc-plate,
+#x-reply-clipboard-panel .xrc-flow-launch > .xrc-plate + .xrc-plate { border-top: 1px solid var(--xrc-line); margin-top: 8px; padding-top: 14px; }
+#x-reply-clipboard-panel .xrc-plate-head > b {
+  width: auto; height: auto; place-items: center start;
+  border-radius: 0; background: transparent; color: var(--xrc-muted);
+  font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.04em;
+}
+#x-reply-clipboard-panel .xrc-plate-head strong { font-size: 13px; font-weight: 700; }
+#x-reply-clipboard-panel .xrc-task-live-row { background: transparent; border-color: transparent; }
+
+/* 今日统计：中性方块，选中态只加深边框，数字保留类别色 */
+#x-reply-clipboard-panel .xrc-today-categories { gap: 4px; }
+#x-reply-clipboard-panel .xrc-today-category,
+#x-reply-clipboard-panel .xrc-today-task { border-color: transparent; background: var(--xrc-soft); border-radius: 10px; }
+#x-reply-clipboard-panel .xrc-today-category:hover,
+#x-reply-clipboard-panel .xrc-today-category:focus-visible,
+#x-reply-clipboard-panel .xrc-today-task:hover,
+#x-reply-clipboard-panel .xrc-today-task:focus-visible { border-color: var(--xrc-line); background: var(--xrc-soft); }
+#x-reply-clipboard-panel .xrc-today-category.is-active,
+#x-reply-clipboard-panel .xrc-today-category[aria-selected="true"] {
+  border-color: color-mix(in srgb, var(--xrc-ink) 28%, transparent);
+  background: var(--xrc-elevated);
+  box-shadow: none;
+}
+#x-reply-clipboard-panel .xrc-today-category-name { font-weight: 600; }
+#x-reply-clipboard-panel .xrc-today-category-name i { background: transparent; }
+#x-reply-clipboard-panel .xrc-today-category > b { font-weight: 700; }
+#x-reply-clipboard-panel .xrc-today-task { border-left: 1px solid transparent; }
+#x-reply-clipboard-panel .xrc-today-task b { font-weight: 700; }
+
+/* 当前 / 下一项切换：文字加下划线，不再整块着色 */
+#x-reply-clipboard-panel .xrc-live-tabs [role="tab"] { border-radius: 6px; font-weight: 600; }
+#x-reply-clipboard-panel .xrc-live-tabs [role="tab"].is-active,
+#x-reply-clipboard-panel .xrc-live-tabs [role="tab"][aria-selected="true"] { background: transparent; box-shadow: inset 0 -2px 0 var(--xrc-ink); }
+#x-reply-clipboard-panel .xrc-live-tabs [role="tab"]:hover,
+#x-reply-clipboard-panel .xrc-live-tabs [role="tab"]:focus-visible { color: var(--xrc-text); background: var(--xrc-soft); }
+
+/* 首页动作：描边胶囊，暂停只用文字色提示 */
+#x-reply-clipboard-panel .xrc-home-action {
+  min-height: 30px; padding: 0 13px; border-radius: 999px;
+  border-color: var(--xrc-line); background: transparent; font-weight: 600; font-size: 12px;
+}
+#x-reply-clipboard-panel .xrc-home-action:hover,
+#x-reply-clipboard-panel .xrc-home-action:focus-visible { border-color: color-mix(in srgb, var(--xrc-ink) 30%, transparent); background: var(--xrc-soft); }
+#x-reply-clipboard-panel .xrc-home-action.is-pause { background: transparent; border-color: var(--xrc-line); }
+#x-reply-clipboard-panel .xrc-home-action.is-pause:hover,
+#x-reply-clipboard-panel .xrc-home-action.is-pause:focus-visible { background: color-mix(in srgb, #9f2d34 6%, transparent); border-color: color-mix(in srgb, #9f2d34 24%, var(--xrc-line)); }
+
+/* 智能体头像：纯色，去渐变 */
+#x-reply-clipboard-panel .xrc-agent-avatar { background: var(--xrc-accent); }
+
+/* 每日报告：日期入口收成今日标题右上角的小按钮，悬浮选择 */
+#x-reply-clipboard-panel .xrc-report-picker { position: relative; }
+#x-reply-clipboard-panel .xrc-report-picker-btn { padding: 3px 9px; border: 1px solid var(--xrc-line); border-radius: 999px; background: transparent; color: var(--xrc-muted); cursor: pointer; font: inherit; font-size: 11px; }
+#x-reply-clipboard-panel .xrc-report-picker-btn:hover,
+#x-reply-clipboard-panel .xrc-report-picker-btn[aria-expanded="true"] { color: var(--xrc-text); border-color: var(--xrc-text); }
+#x-reply-clipboard-panel .xrc-report-pop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 5; display: grid; gap: 8px; width: 232px; padding: 10px; border: 1px solid var(--xrc-line); border-radius: 12px; background: var(--xrc-elevated); box-shadow: var(--xrc-float-shadow); }
+#x-reply-clipboard-panel .xrc-report-pop[hidden] { display: none; }
+#x-reply-clipboard-panel .xrc-report-pop .xrc-report-month { justify-content: center; }
+#x-reply-clipboard-panel .xrc-report-pop .xrc-report-calendar button { min-height: 28px; }

@@ -1,7 +1,7 @@
-import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
-import { getD1 } from '../../../../../lib/db/d1'
-import { readPriceFen } from '../../../../../lib/pay/orders'
-import { upsertResource } from '../../../../../lib/ledger/points'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { readPriceFen } from '../../../../lib/pay/orders'
+import { upsertResource } from '../../../../lib/ledger/points'
 import {
   SIGNATURE_BOOKS,
   isKnownSignatureSlug,
@@ -10,7 +10,7 @@ import {
   readSignatureEdition,
   salePriceFor,
   shipBookOrder,
-} from '../../../../../lib/pay/bookOrders.mjs'
+} from '../../../../lib/pay/bookOrders.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -51,13 +51,21 @@ export default function OperatorClient() {
       )}
       {ready && signedIn && (
         <>
-          <div className={s.accountRow}>
-            <select className={`${s.input} ${s.accountSelect}`} value={handle} onChange={(event) => setHandle(event.target.value)} aria-label="当前 X 账号">
-              {accounts.length === 0 && <option value="">未绑定账号</option>}
-              {accounts.map((account) => <option key={account.handle} value={account.handle}>@{account.handle}</option>)}
-            </select>
-          </div>
-          <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />
+          <header className={s.opsHead}>
+            <div className={s.opsIntro}>
+              <h1 className={s.opsTitle}>X 大互动智能体</h1>
+              <p className={s.hint}>每个 X 账号一份人格和记忆。改写会读取它们，插件里的智能体也会同步同一份。</p>
+            </div>
+            {accounts.length > 0 && (
+              <label className={s.accountRow}>
+                <span className={s.accountLabel}>当前 X 账号</span>
+                <select className={`${s.input} ${s.accountSelect}`} value={handle} onChange={(event) => setHandle(event.target.value)}>
+                  {accounts.map((account) => <option key={account.handle} value={account.handle}>@{account.handle}</option>)}
+                </select>
+              </label>
+            )}
+          </header>
+          <AgentTab accounts={accounts} usage={usage} active={handle} onSelect={setHandle} onAccounts={loadAccounts} />
         </>
       )}
     </XSiteFrame>

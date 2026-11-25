@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import XPage from './XPage'
+import MonitorSection from './MonitorSection'
 import { call, compact } from './api'
 import { ACTION_LABELS, OBSERVED_AGENTS, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
@@ -65,6 +66,7 @@ export default function WorkbenchClient() {
         </details>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
       </section>
+      <MonitorSection />
     </XPage>
   )
 }

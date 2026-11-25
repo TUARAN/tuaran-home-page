@@ -2,6 +2,7 @@ import * as accounts from '../../../../lib/x/workbench/routes/accounts'
 import * as bridge from '../../../../lib/x/workbench/routes/bridge'
 import * as drafts from '../../../../lib/x/workbench/routes/drafts'
 import * as leaderboard from '../../../../lib/x/workbench/routes/leaderboard'
+import * as monitor from '../../../../lib/x/workbench/routes/monitor'
 import * as observe from '../../../../lib/x/workbench/routes/observe'
 import * as pairing from '../../../../lib/x/workbench/routes/pairing'
 import * as profile from '../../../../lib/x/workbench/routes/profile'
@@ -14,7 +15,7 @@ import * as usage from '../../../../lib/x/workbench/routes/usage'
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const routes = { accounts, bridge, drafts, leaderboard, observe, pairing, profile, radar, rewrite, schedules, topics, usage }
+const routes = { accounts, bridge, drafts, leaderboard, monitor, observe, pairing, profile, radar, rewrite, schedules, topics, usage }
 
 function dispatch(request) {
   const name = new URL(request.url).pathname.slice('/api/x-workbench/'.length)

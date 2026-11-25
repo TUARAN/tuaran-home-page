@@ -234,6 +234,65 @@
 .opsLinks a { color: var(--accentInk); text-decoration: none; }
 .opsLinks a:hover { text-decoration: underline; }
 
+/* 首页「插件现场」：公开状态看板 + 可折叠日历。 */
+.monitorBoard { display: grid; gap: 16px; }
+.monitorMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; overflow: hidden; }
+.monitorMetric { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
+.monitorMetric:first-child { border-left: 0; }
+.monitorMetric dt { color: var(--sub); font-size: 12px; }
+.monitorMetric dd { margin: 4px 0 0; font-size: 22px; font-weight: 800; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.monitorMetric p { margin: 4px 0 0; color: var(--faint); font-size: 11px; line-height: 1.4; }
+.deviceList { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.deviceRow { background: #fff; border: 1px solid var(--cardLine); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+.deviceHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.deviceWho { font-size: 14px; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phaseChip { flex: none; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line2); color: var(--sub); background: var(--wash); white-space: nowrap; }
+.phaseOk { background: var(--accentSoft); border-color: var(--accentLine); color: var(--accentInk); }
+.phaseWarn { background: #fff7e8; border-color: #f4d9a6; color: #8a5a00; }
+.phaseIdle { background: var(--wash); border-color: var(--line2); color: var(--sub); }
+.phaseOff { background: #fff; border-color: var(--line); color: var(--faint); }
+.deviceMeta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; color: var(--faint); font-size: 12px; }
+.deviceUpdate { color: var(--accentInk); font-weight: 600; }
+.deviceEvent { margin: 8px 0 0; color: var(--sub); font-size: 12.5px; line-height: 1.6; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.deviceAgo { color: var(--faint); font-size: 11px; }
+.resultChip { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line2); color: var(--sub); }
+.resultOk { background: var(--accentSoft); border-color: var(--accentLine); color: var(--accentInk); }
+.resultBad { background: #fdeceb; border-color: #f5c6c2; color: #b42318; }
+.resultWarn { background: #fff7e8; border-color: #f4d9a6; color: #8a5a00; }
+.resultMuted { background: var(--wash); border-color: var(--line); color: var(--faint); }
+.calendarPanel { margin-top: 16px; background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; overflow: hidden; }
+.calendarToggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 800; color: var(--ink); cursor: pointer; text-align: left; min-height: 52px; }
+.calendarToggle:hover { background: var(--wash); }
+.calendarHint { color: var(--sub); font-size: 12px; font-weight: 500; }
+.calendarBody { border-top: 1px solid var(--line); padding: 14px 16px 18px; }
+.calendarNav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.calendarStep, .calendarToday { border: 1px solid var(--line2); background: #fff; border-radius: 10px; min-width: 38px; min-height: 38px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.calendarStep:disabled, .calendarToday:disabled { opacity: .4; cursor: default; }
+.calendarInput { border: 1px solid var(--line2); border-radius: 10px; min-height: 38px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--ink); background: #fff; }
+.trendScroll { margin-top: 14px; overflow-x: auto; padding-bottom: 2px; }
+.trendRow { display: flex; align-items: flex-end; gap: 6px; min-width: 460px; }
+.trendDay { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; }
+.trendCount { font-size: 10.5px; color: var(--sub); font-variant-numeric: tabular-nums; height: 14px; }
+.trendBar { width: 100%; max-width: 26px; height: 96px; display: flex; align-items: flex-end; background: var(--wash); border-radius: 6px 6px 2px 2px; overflow: hidden; }
+.trendBar i { display: block; width: 100%; background: var(--line2); border-radius: 6px 6px 0 0; }
+.trendDayOn .trendBar i { background: var(--accent); }
+.trendDayOn .trendCount, .trendDayOn .trendDate { color: var(--accentInk); font-weight: 700; }
+.trendDate { font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.daySummary { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.actionGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
+.actionGrid dd { margin: 0; font-size: 18px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.actionGrid dt { margin-top: 2px; color: var(--sub); font-size: 11.5px; }
+.tableWrap { margin-top: 12px; overflow-x: auto; }
+.taskTable { width: 100%; min-width: 420px; border-collapse: collapse; font-size: 13px; }
+.taskTable th, .taskTable td { padding: 8px 10px; border-top: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+.taskTable thead th { border-top: 0; color: var(--sub); font-size: 12px; font-weight: 600; }
+.taskTable th[scope="row"] { text-align: left; font-weight: 600; color: var(--ink); }
+.ownerPanel { margin-top: 16px; background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; padding: 0 16px 14px; }
+.ownerPanel summary { cursor: pointer; display: flex; align-items: center; min-height: 48px; font-size: 14px; font-weight: 800; color: var(--ink); }
+.ownerRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.ownerActions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ownerActions .btn { min-height: 34px; padding: 4px 14px; font-size: 13px; }
+
 /* 平板及以下：单列内容，顶栏收成「品牌 / 操作」一行 + 「导航」一行 */
 @media (max-width: 960px) {
   .opsGrid { grid-template-columns: minmax(0, 1fr); }
@@ -285,6 +344,17 @@
   .input { font-size: 16px; min-height: 44px; box-sizing: border-box; }
   .area { min-height: 120px; }
   .agentGrid { gap: 10px; }
+  .monitorMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monitorMetric { border-top: 1px solid var(--line); }
+  .monitorMetric:nth-child(-n+2) { border-top: 0; }
+  .monitorMetric:nth-child(odd) { border-left: 0; }
+  .deviceList { grid-template-columns: 1fr; }
+  .actionGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; }
+  .calendarBody { padding: 12px 12px 16px; }
+  .calendarToggle { padding: 12px; }
+  .taskTable { min-width: 320px; }
+  .taskTable th, .taskTable td { padding: 8px 6px; }
+  .ownerRow { align-items: flex-start; flex-direction: column; }
   .agentCard { padding: 12px 14px; border-radius: 14px; box-shadow: none; }
   .agentCard:hover { box-shadow: none; }
   .agentCardHead { gap: 10px; }

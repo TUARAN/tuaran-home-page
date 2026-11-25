@@ -199,6 +199,7 @@ export default function ResearchMethodsConsole() {
 
   return (
     <AdminPage
+      hideTitle
       title="调研方法"
       description="写作规范、调研风格和各类对象的现行方法都在这里。这些页面只给站长查阅，不作为前台调研文章发布。"
       stickyHeader

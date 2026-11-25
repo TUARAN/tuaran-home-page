@@ -37,7 +37,7 @@ export default function SecuritySelfCheckPage() {
       returnTo="/admin/security-self-check"
       description="仓库公开前的秘密、隐私、架构信息与历史风险检查，仅站长本人可见。"
     >
-      <AdminPage title={SECURITY_SELF_CHECK_SUMMARY.title} description={SECURITY_SELF_CHECK_SUMMARY.conclusion}>
+      <AdminPage hideTitle title={SECURITY_SELF_CHECK_SUMMARY.title} description={SECURITY_SELF_CHECK_SUMMARY.conclusion}>
         <OperationsDirectory activeHref="/admin/security-self-check" />
         <AdminBook title="涉密自检" description="安全与隐私检查记录" groups={[{ id: 'audit', items: [{"id": "audit-1", "title": "审计口径"}, {"id": "audit-2", "title": "站长确认可公开的元数据"}, {"id": "audit-3", "title": "公开前处理记录"}, {"id": "audit-4", "title": "可由站长接受的隐私取舍"}, {"id": "audit-5", "title": "当前判断"}] }]}>
         <AdminBookChapter

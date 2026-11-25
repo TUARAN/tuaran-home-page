@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 
 import { ACTION_LABELS } from '../../../lib/x/workbench/observeCore'
 import { summarizeReports } from '../../../lib/x/workbench/monitorPublic'
@@ -262,7 +263,7 @@ export default function MonitorSection() {
       {data?.owner ? (
         <details className={s.ownerPanel}>
           <summary>站长操作</summary>
-          <p className={s.hint}>指令走插件心跳执行；完整排班与明细在后台监控。</p>
+          <p className={s.hint}>指令走插件心跳执行；排班与动作明细在「插件与排班」。</p>
           {note ? <p className={s.hint} role="status">{note}</p> : null}
           {devices.map((device) => (
             <div key={device.id} className={s.ownerRow}>
@@ -275,7 +276,7 @@ export default function MonitorSection() {
             </div>
           ))}
           <p className={s.hint}>
-            <a href="https://2aran.com/admin/community-actions/monitor?platform=x" target="_blank" rel="noreferrer noopener">打开完整后台监控 →</a>
+            <Link href="/x-workbench/ops#plugin-console">打开插件与排班 →</Link>
             {data.now ? ` · 数据更新于 ${clock(data.now)}` : ''}
           </p>
         </details>

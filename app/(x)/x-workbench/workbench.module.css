@@ -279,7 +279,7 @@
 .trendDayOn .trendCount, .trendDayOn .trendDate { color: var(--accentInk); font-weight: 700; }
 .trendDate { font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .daySummary { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-.actionGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
+.actionGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
 .actionGrid dd { margin: 0; font-size: 18px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .actionGrid dt { margin-top: 2px; color: var(--sub); font-size: 11.5px; }
 .tableWrap { margin-top: 12px; overflow-x: auto; }
@@ -292,6 +292,33 @@
 .ownerRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
 .ownerActions { display: flex; flex-wrap: wrap; gap: 6px; }
 .ownerActions .btn { min-height: 34px; padding: 4px 14px; font-size: 13px; }
+
+/* 站长控制台：排班台与动作明细，沿用白卡 + 发丝线 */
+.consoleGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.consoleDevice { background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; padding: 14px 16px 12px; min-width: 0; }
+.consoleHead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.consoleWho { font-size: 15px; font-weight: 800; color: var(--ink); }
+.consoleMetaRow { display: flex; flex-wrap: wrap; gap: 2px 10px; margin: 4px 0 0; color: var(--sub); font-size: 12px; }
+.consoleActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.consoleActions .btn { min-height: 34px; padding: 4px 14px; font-size: 13px; }
+.consoleNow { margin: 10px 0 0; font-size: 13px; color: var(--sub); line-height: 1.5; }
+.consoleNow strong { color: var(--ink); font-weight: 700; }
+.consoleSub { margin: 14px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .02em; color: var(--faint); }
+.consoleTasks { list-style: none; margin: 0; padding: 0; }
+.consoleTask { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); }
+.consoleTask:first-child { border-top: 0; }
+.consoleTaskName { flex: 1 1 auto; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.consoleTaskState { flex: none; font-size: 11.5px; color: var(--sub); }
+.consoleTaskBtn { flex: none; min-height: 28px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 999px; background: #fff; font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.consoleTaskBtn:hover { border-color: var(--ink); background: var(--wash); }
+.consoleTaskBtn:disabled { opacity: .45; cursor: not-allowed; }
+.consoleJoin { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--sub); cursor: pointer; }
+.consoleCommands { list-style: none; margin: 0; padding: 0; font-size: 12.5px; color: var(--sub); }
+.consoleCommands li { padding: 6px 0; border-top: 1px solid var(--line); }
+.consoleCommands li:first-child { border-top: 0; }
+.consoleEvents { margin-top: 14px; background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; padding: 0 16px 12px; }
+.consoleEvents .calendarNav { padding-top: 10px; }
+.consoleEvents .consoleSub { margin: 0; flex: 1 1 auto; }
 
 /* 平板及以下：单列内容，顶栏收成「品牌 / 操作」一行 + 「导航」一行 */
 @media (max-width: 960px) {

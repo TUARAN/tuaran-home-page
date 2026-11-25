@@ -22,7 +22,7 @@ export default function ExtensionPackagePanel({ pluginId }) {
     <div className="flex flex-wrap items-center gap-2 text-xs"><StatusPill size="sm" tone={release?.ready ? 'success' : 'neutral'} icon={false}>{release?.ready ? '已打包 · 可下载' : release ? '安装包同步中' : '正在确认安装包'}</StatusPill>{release && <span className="text-[#6d7066] dark:text-gray-400">v{release.version} · {(release.size / 1024 / 1024).toFixed(1)} MB</span>}<AdminButton size="sm" variant="ghost" onClick={refresh}>刷新</AdminButton></div>
     <div className="flex flex-wrap gap-2">
       {release?.ready ? <AdminButton size="sm" variant="primary" href={`${endpoint}&download=1`} download={release.fileName} prefetch={false}>站长下载</AdminButton> : <AdminButton size="sm" variant="primary" disabled>站长下载</AdminButton>}
-      <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${pluginId}`}>查看监控</AdminButton>
+      <AdminButton size="sm" href={pluginId === 'x' ? 'https://x.2aran.com/x-workbench/ops#plugin-console' : `/admin/community-actions/monitor?platform=${pluginId}`}>查看监控</AdminButton>
       <AdminButton size="sm" variant="ghost" href={links.href}>插件下载页</AdminButton>
       <AdminButton size="sm" variant="ghost" href={links.docs}>{links.docsLabel}</AdminButton>
     </div>

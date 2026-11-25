@@ -263,7 +263,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbe3dd] bg-[#f3f8f5] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
-        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师和 X 的设备状态与回执在插件监控查看。小红书、掘金独立监控已收回；跨平台分发请启用 AI 分发大师。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师的设备状态与回执在插件监控查看；X 的排班、启停与动作明细在 X 站后台「插件与排班」。小红书、掘金独立监控已收回。</p>
         <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/monitor" variant="primary">插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
@@ -329,10 +329,10 @@ function OverviewPanel({ onOpenMode }) {
       </Section>
       <Section
         title="浏览器插件"
-        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；运行状态与确认回执统一在插件监控查看。"
+        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；X 的运行状态与排班在 X 站后台，AI 分发回执在插件监控。"
         actions={<><AdminButton size="sm" href="/admin/community-actions/monitor">插件监控</AdminButton><AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton></>}
       >
-        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">插件监控按平台查看设备状态、历史趋势和确认回执；X 的自动同步日报也在那里查看。插件台管理共用密钥。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">X 的插件状态、任务排班与动作明细在 x.2aran.com/x-workbench/ops；这里保留 AI 分发大师的设备与批次回执。插件台管理共用密钥。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
           <li>站内文章分发插件：把站内文章写入多个平台草稿</li>
           <li>AI 分发大师：整理多种内容并准备跨平台草稿</li>

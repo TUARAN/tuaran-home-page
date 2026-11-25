@@ -56,13 +56,43 @@ test('站长登录时附带 device_id 用于下发指令', () => {
   assert.equal(payload.devices[0].lastAction.errorCode, undefined)
 })
 
-test('日报汇总按六类累加，缺失字段按 0', () => {
+test('站长控制台数据：排班规则、指令回执与动作明细只给站长', () => {
+  const rich = {
+    ...sample,
+    devices: [{
+      ...sample.devices[0],
+      schedule: {
+        enabled: true,
+        current: 'timeline',
+        rules: [{ mode: 'timeline', enabled: true, priority: 8, window: 'all' }],
+        facing: { running: 1, waiting: 2, needs: 0, stopped: 3 },
+      },
+      commands: [{ id: 'c1', command: 'schedule-set', status: 'pending', mode: '', modeLabel: '排班', createdAt: 1763990000000, result: '' }],
+      groups: [{ id: 'reply', label: '评论', tasks: [{ mode: 'timeline', label: '评论首页', phase: 'running', priority: 8, detail: '正在评论', waitUntil: 0 }] }],
+    }],
+    events: [{ id: 'e1', task: 'timeline-reply', taskLabel: '评论首页', result: 'success', accountHandle: 'TarsixSevenEig', occurredAt: 1763990000000, errorCode: 'x-1', targetId: '1899' }],
+  }
+  const owner = publicMonitorPayload(rich, { owner: true })
+  assert.deepEqual(owner.devices[0].schedule.rules, [{ mode: 'timeline', enabled: true, priority: 8, window: 'all' }])
+  assert.equal(owner.devices[0].commands[0].command, 'schedule-set')
+  assert.equal(owner.devices[0].groups[0].tasks[0].label, '评论首页')
+  assert.equal(owner.events[0].errorCode, 'x-1')
+  assert.equal(owner.events[0].targetId, '1899')
+
+  const guest = publicMonitorPayload(rich)
+  assert.equal(guest.events, undefined)
+  assert.equal(guest.devices[0].commands, undefined)
+  assert.equal(guest.devices[0].groups, undefined)
+  assert.deepEqual(guest.devices[0].schedule, { enabled: true, current: 'timeline' })
+})
+
+test('日报汇总五类：关注并入回关，缺失字段按 0', () => {
   assert.deepEqual(summarizeReports([
     { posts: 3, comments: 12, likes: 5, follows: 2, followBacks: 1, unfollows: 4 },
     { posts: 1, comments: 2 },
     null,
-  ]), { posts: 4, comments: 14, likes: 5, follows: 2, followBacks: 1, unfollows: 4 })
-  assert.deepEqual(summarizeReports(null), { posts: 0, comments: 0, likes: 0, follows: 0, followBacks: 0, unfollows: 0 })
+  ]), { posts: 4, comments: 14, likes: 5, follows: 3, unfollows: 4 })
+  assert.deepEqual(summarizeReports(null), { posts: 0, comments: 0, likes: 0, follows: 0, unfollows: 0 })
 })
 
 test('公开监控路由允许匿名读取，并挂在 x-workbench 路由表上', async () => {
@@ -75,6 +105,23 @@ test('公开监控路由允许匿名读取，并挂在 x-workbench 路由表上'
   assert.match(route, /isOwnerUser\(user\)/)
   assert.match(dispatch, /import \* as monitor from/)
   assert.match(dispatch, /leaderboard, monitor, observe/)
+})
+
+test('X 监控与排班搬到 X 站后台，后台只剩 AI 分发大师监控', async () => {
+  const [client, ops, consoleSrc, picker] = await Promise.all([
+    source('app/(admin)/admin/community-actions/monitor/PluginMonitorClient.jsx'),
+    source('app/(x)/x-workbench/OperatorClient.jsx'),
+    source('app/(x)/x-workbench/ops/PluginConsole.jsx'),
+    source('app/(admin)/admin/community-actions/monitor/PluginPicker.jsx'),
+  ])
+  assert.match(client, /DistributionMonitor/)
+  assert.doesNotMatch(client, /XPluginStatusDeck/)
+  assert.match(client, /x-workbench\/ops/)
+  assert.match(ops, /<PluginConsole \/>/)
+  assert.match(consoleSrc, /schedule-set/)
+  assert.match(consoleSrc, /task-start/)
+  assert.match(consoleSrc, /动作明细/)
+  assert.match(picker, /x-workbench\/ops/)
 })
 
 test('首页在智能体卡片之后渲染插件现场，日历默认收起', async () => {

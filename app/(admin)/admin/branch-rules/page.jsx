@@ -6,7 +6,7 @@ import rules from '../../../../docs/specs/branch-management.md?raw'
 
 export const metadata = {
   title: '分支规范',
-  description: '分支命名、生命周期、数量上限、合并后清理与归档规则，仅站长可见。',
+  description: '分支命名、生命周期、数量上限、合并后清理、追溯与归档规则，仅站长可见。',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 }
 
@@ -32,7 +32,7 @@ export default function AdminBranchRulesPage() {
   return (
     <AdminPageGate label="分支规范" returnTo="/admin/branch-rules">
       <AdminPage hideTitle title="分支规范">
-        <AdminBook title="分支规范" description="分支命名、生命周期与归档" groups={[{ id: "rules", items: [{ id: "scope", title: "适用范围" }, ...chapters.map(({ id, title }) => ({ id, title }))] }]}><AdminBookChapter id="scope" title="适用范围">
+        <AdminBook title="分支规范" description="分支命名、生命周期、追溯与归档" groups={[{ id: "rules", items: [{ id: "scope", title: "适用范围" }, ...chapters.map(({ id, title }) => ({ id, title }))] }]}><AdminBookChapter id="scope" title="适用范围">
           <div
             className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
             dangerouslySetInnerHTML={{ __html: render(intro.trim()) }}

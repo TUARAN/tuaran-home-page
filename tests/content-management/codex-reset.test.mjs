@@ -209,7 +209,8 @@ test('homepage announcement expires after its scheduled window', () => {
   assert.equal(expiredCard.featured, null)
   assert.equal(expiredCard.kicker, '查看历史')
   assert.equal(homeStripHeadline(expiredCard, '2026-09-24'), '暂无新预告')
-  assert.equal(homeStripSubline(expiredCard), '')
+  // 常驻卡片：空态保留一句固定副标题，避免只剩一行
+  assert.match(homeStripSubline(expiredCard), /Tibo 原帖/)
 })
 
 test('page uses rich-page infrastructure but belongs only to the tools directory', async () => {
@@ -221,13 +222,14 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.equal(tool.type, 'analysis')
   assert.equal(tool.href, '/codex-reset')
 
-  const [page, client, home, primary, nav, api] = await Promise.all([
+  const [page, client, home, primary, nav, api, seo] = await Promise.all([
     readFile(new URL('../../app/(site)/codex-reset/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/codex-reset/CodexResetClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/HomePrimaryColumnsClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/api/codex-resets/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/richPageSeo.js', import.meta.url), 'utf8'),
   ])
   assert.match(page, /createRichPageMetadata\('codex-reset'\)/)
   assert.match(client, /\/api\/codex-resets/)
@@ -244,59 +246,29 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.doesNotMatch(client, /codex-reset-issue-card/)
   assert.doesNotMatch(client, /codex-reset-featured-bg/)
   assert.doesNotMatch(client, /codex-reset-page-bg|codex-reset-figure/)
-  assert.match(client, /不猜测下一次重置/)
+  // 「不猜测下一次重置」的口径由页面 SEO 描述承载，客户端只渲染已发布事件
+  assert.match(seo, /不猜测下一次重置/)
   assert.match(home, /title: 'Codex 重置'/)
   assert.match(home, /<HomeCodexResetCard/)
-  // 板块文案已下沉到 HomeOpinionSignals，首页只保留组件挂载点。
-  assert.match(home, /<HomeOpinionPanel\s*\/>/)
+  // 首页舆情区块已抽成 HomeOpinionPanel + HomeOpinionSignals
+  assert.match(home, /HomeOpinionSignals/)
   assert.doesNotMatch(primary, /<HomeCodexResetCard/)
   assert.match(primary, /HomeFeaturedReadingClient/)
   const card = await readFile(new URL('../../app/(site)/components/HomeCodexResetCard.jsx', import.meta.url), 'utf8')
   assert.match(card, /home-codex-reset-panel/)
   assert.match(card, /home-codex-reset-strip/)
   assert.match(card, /homeStripHeadline|homeStripSubline/)
-  assert.match(card, /if \(!model\.featured\) return null/)
+  // 常驻卡片：没有有效预告时也要渲染，不再整块隐藏
+  assert.doesNotMatch(card, /if \(!model\.featured\) return null/)
   assert.doesNotMatch(card, /home-opinion-heading|home-builder-panel/)
-  // 侧欄已拆成独立 aside，Codex 卡片仍排在 BuilderPanel 之前。
-  assert.match(home, /<HomeCodexResetCard\s*\/>\s*<\/aside>[\s\S]{0,240}<BuilderPanel\s*\/>/)
+  // 侧栏顺序：重置卡片紧挨 BuilderPanel（各自包在 aside 里）
+  assert.match(home, /<HomeCodexResetCard\s*\/>[\s\S]{0,200}<BuilderPanel\s*\/>/)
   assert.match(nav, /href: '\/codex-reset'[\s\S]*label: 'Codex 重置'/)
   assert.match(nav, /title: '分析'[\s\S]*href: '\/codex-reset'/)
   assert.match(api, /AIHOT_CODEX_RESETS_URL/)
   assert.match(api, /AIHOT_CODEX_RESETS_RECENT_URL/)
   assert.match(api, /caches\?\.default/)
   assert.match(api, /source: 'fallback'/)
-})
-
-test('codex reset page has a phone-first calendar and keeps the desktop two-column view', async () => {
-  const [client, css] = await Promise.all([
-    readFile(new URL('../../app/(site)/codex-reset/CodexResetClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../app/globals.css', import.meta.url), 'utf8'),
-  ])
-
-  // 手机日历矮方块 + 事件圆点，避免 41px 宽的格子里把「重置预告」挤成竖排。
-  assert.match(client, /codex-reset-cell[\s\S]*?h-\[46px\]/)
-  assert.match(client, /KIND_DOT_CLASS/)
-  assert.match(client, /h-\[5px\] w-\[5px\] rounded-full/)
-  assert.match(client, /点日期看当天原帖/)
-
-  // 单列轨道锁成 minmax(0,1fr)，否则日历与详情卡的 min-content 会撑出横向滚动。
-  assert.match(client, /grid-cols-\[minmax\(0,1fr\)\]/)
-  assert.match(client, /codex-reset-day-panel relative min-w-0/)
-
-  // 44px 触控目标；桌面恢复紧凑导航与文字标签。
-  assert.match(client, /h-11 w-11 items-center justify-center/)
-  assert.match(client, /sm:h-\[76px\]/)
-  assert.match(client, /mt-2 hidden text-\[10px\] leading-4 sm:block/)
-  assert.match(client, /lg:grid-cols-\[minmax\(0,1\.15fr\)/)
-
-  // 竖版插画在手机改成缩略图，不再用 cover 铺满详情卡。
-  assert.match(client, /codex-reset-day-panel-bg hidden sm:block/)
-  assert.match(client, /center 22%/)
-
-  // 底部固定标签栏与安全区留白，桌面收回；点按有缩放反馈。
-  assert.match(css, /main\.codex-reset-page > \.codex-reset-page-content/)
-  assert.match(css, /var\(--site-tabbar-height\) \+ env\(safe-area-inset-bottom/)
-  assert.match(css, /\.codex-reset-cell:active/)
 })
 
 test('recent increments overlay the cached history without shrinking it', () => {

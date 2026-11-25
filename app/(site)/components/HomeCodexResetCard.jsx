@@ -16,6 +16,7 @@ import {
 
 export default function HomeCodexResetCard() {
   const [model, setModel] = useState(() => homeCardModel(FALLBACK_SNAPSHOT, todayBeijing()))
+  const [live, setLive] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -31,7 +32,10 @@ export default function HomeCodexResetCard() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const payload = await response.json()
         if (!payload?.snapshot?.events) throw new Error('invalid snapshot')
-        if (active) setModel(homeCardModel(payload.snapshot))
+        if (active) {
+          setModel(homeCardModel(payload.snapshot))
+          setLive(true)
+        }
       } catch (error) {
         if (active && error.name !== 'AbortError') {
           /* keep fallback model */
@@ -47,11 +51,12 @@ export default function HomeCodexResetCard() {
     }
   }, [])
 
-  const headline = homeStripHeadline(model)
+  const hasFeatured = Boolean(model.featured)
+  // 常驻卡片：未拿到实时快照时不报「暂无预告」，避免接口失败被读成没有重置
+  const headline = hasFeatured || live ? homeStripHeadline(model) : '更新中'
+  const kicker = hasFeatured || live ? model.kicker : '同步中'
   const subline = homeStripSubline(model)
   const summary = subline ? `${headline} · ${subline}` : headline
-
-  if (!model.featured) return null
 
   return (
     <section className="home-section home-codex-reset-panel" aria-label="Codex reset">
@@ -71,7 +76,7 @@ export default function HomeCodexResetCard() {
       <Link
         href={CODEX_RESET_PATH}
         className="home-codex-reset-strip group no-underline"
-        aria-label={`Codex 重置：${model.kicker} ${summary}`}
+        aria-label={hasFeatured ? `Codex 重置：${kicker} ${summary}` : `Codex 重置：${summary}`}
         data-analytics-event="entry_click"
         data-analytics-surface="home_codex_reset"
         data-analytics-destination-kind="tool"
@@ -81,7 +86,7 @@ export default function HomeCodexResetCard() {
           <span className="home-codex-reset-strip-date">{headline}</span>
           {subline ? <span className="home-codex-reset-strip-window">{subline}</span> : null}
         </span>
-        <span className={`home-codex-reset-strip-badge is-${model.kind}`}>{model.kicker}</span>
+        <span className={`home-codex-reset-strip-badge is-${model.kind}`}>{kicker}</span>
       </Link>
     </section>
   )

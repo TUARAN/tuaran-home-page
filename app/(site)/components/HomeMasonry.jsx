@@ -45,7 +45,8 @@ export default function HomeMasonry({ children, eagerCount = SSR_EAGER_COUNT, pr
       for (const item of nodes) {
         const content = item.firstElementChild
         if (!content || !item.getClientRects().length) continue
-        const height = content.getBoundingClientRect().height
+        // 卡片自身高度也算进去：内容从无到有时，卡片外框尺寸会变，行跨度据此重算。
+        const height = Math.max(content.getBoundingClientRect().height, item.getBoundingClientRect().height)
         item.style.gridRowEnd = `span ${Math.max(1, Math.ceil((height + gap) / (row + gap)))}`
       }
       grid.dataset.masonryReady = 'true'
@@ -58,6 +59,8 @@ export default function HomeMasonry({ children, eagerCount = SSR_EAGER_COUNT, pr
 
     const observer = new ResizeObserver(schedule)
     for (const item of nodes) {
+      // 同时观察卡片外框：子内容后来才出现（如组件由空变为有内容）时，也会触发重新测量。
+      observer.observe(item)
       if (item.firstElementChild) observer.observe(item.firstElementChild)
     }
     schedule()

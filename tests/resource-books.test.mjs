@@ -53,7 +53,7 @@ test('馆藏同时收录出版作品和在线书，封面路径可用', () => {
     assert.ok(existsSync(join(process.cwd(), 'public', cover.slice(1))), `${book.href} 封面不存在`)
   }
   const yellowBooks = LIBRARY_BOOKS.filter((book) => book.coverTone === 'yellow').map((book) => book.title)
-  assert.deepEqual(yellowBooks, ['智能体手册', 'AI 分发大师黄皮书'])
+  assert.deepEqual(yellowBooks, ['大互动智能体（手册）', 'AI 分发大师黄皮书'])
   assert.equal(LIBRARY_BOOKS.find((book) => book.href === '/resources/big-interaction-whitepaper')?.title, '大互动理论')
   assert.equal(LIBRARY_BOOKS.find((book) => book.href === '/resources/big-interaction-whitepaper')?.cover, undefined, '宣传海报不能冒充封面')
 })

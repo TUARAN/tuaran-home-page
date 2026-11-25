@@ -32,7 +32,6 @@ export default function GrokbotPage() {
           <Link className={styles.back} href="/x-workbench#agents">← 智能体</Link>
           <header className={styles.masthead}>
             <h1>{title}</h1>
-            <p className={styles.permalink}><a href={path}>{canonicalUrl}</a></p>
           </header>
           <section className={styles.executions} aria-labelledby="grokbot-cz-heading">
             <h2 id="grokbot-cz-heading">CZ 用 Grokbot 清理关注列表</h2>

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { xRouteDecision } from '../../lib/site/xSiteRoutes.js'
+import { X_CHROME_FREE_PATHS, X_SHORT_REWRITES, xRouteDecision } from '../../lib/site/xSiteRoutes.js'
 
 const preview = 'cursor-rename-x-workbench-47.tuaran.pages.dev'
 
@@ -41,4 +41,13 @@ test('preview host opens short paths and redirects old content paths', () => {
   assert.deepEqual(xRouteDecision(preview, '/resources/big-interaction-whitepaper'), { action: 'redirect', location: '/theory', status: 308 })
   assert.deepEqual(xRouteDecision(preview, '/resources/x-reply-clipboard-extension/docs'), { action: 'redirect', location: '/docs', status: 308 })
   assert.deepEqual(xRouteDecision(preview, '/resources/x-reply-clipboard-extension'), { action: 'redirect', location: '/extension', status: 308 })
+})
+
+test('every x.2aran.com short page and its rewrite target hides the main site chrome', () => {
+  for (const [short, target] of Object.entries(X_SHORT_REWRITES)) {
+    assert.ok(X_CHROME_FREE_PATHS.includes(short), short)
+    assert.ok(X_CHROME_FREE_PATHS.includes(target), target)
+  }
+  assert.ok(X_CHROME_FREE_PATHS.includes('/grokbot'))
+  assert.ok(X_CHROME_FREE_PATHS.includes('/resources/big-interaction-whitepaper/grokbot'))
 })

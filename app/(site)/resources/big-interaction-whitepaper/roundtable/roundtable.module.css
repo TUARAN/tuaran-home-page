@@ -7,9 +7,6 @@
 .masthead h1 { margin: 0; color: #143628; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(28px, 4vw, 38px); font-weight: 700; line-height: 1.15; }
 .deck { max-width: 720px; margin: 12px 0 0; color: #203f2f; font-size: 16px; font-weight: 600; line-height: 1.75; }
 .metric { max-width: 720px; margin: 8px 0 0; color: #5d7364; font-size: 13px; line-height: 1.7; }
-.permalink { margin: 8px 0 0; color: #5d7364; font-size: 13px; line-height: 1.6; }
-.permalink a { color: #1d6840; font-weight: 700; overflow-wrap: anywhere; text-decoration: none; }
-.permalink a:hover { text-decoration: underline; }
 
 .hall { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 16px; margin-top: 8px; }
 .scene {

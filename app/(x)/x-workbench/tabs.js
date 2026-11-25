@@ -5,7 +5,6 @@ export const WORKBENCH_MENU_GROUPS = [
     label: '产品',
     items: [
       { id: 'agents', label: '大互动智能体', href: '/x-workbench#agents' },
-      { id: 'grokbot', label: 'GrokBot 秘籍', href: '/grokbot' },
     ],
   },
   {
@@ -15,6 +14,7 @@ export const WORKBENCH_MENU_GROUPS = [
       { id: 'theory', label: '大互动理论', href: '/theory' },
       { id: 'calendar', label: '大互动日历', href: '/calendar' },
       { id: 'roundtable', label: '大互动圆桌', href: '/roundtable' },
+      { id: 'grokbot', label: 'GrokBot 秘籍', href: '/grokbot' },
     ],
   },
 ]

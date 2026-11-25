@@ -140,7 +140,6 @@ export default function BigInteractionWhitepaperPage() {
         <header className={styles.masthead}>
           <BookIdentity kind="实践读本" />
 
-          <p className={styles.kicker}>实践读本</p>
           <h1>{title}</h1>
           <p className={styles.deck}>从好好照顾自己，到在互动中认识自己、拓展还能退出的边界。</p>
           <p className={styles.metaLine}>

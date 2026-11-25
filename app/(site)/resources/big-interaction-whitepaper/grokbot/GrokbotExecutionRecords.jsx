@@ -6,7 +6,7 @@ import {
   seriesStatusLabel,
   verificationStatusLabel,
 } from '../../../../../lib/interaction/grokbotExecutions/model.js'
-import styles from './calendar.module.css'
+import styles from '../calendar/calendar.module.css'
 
 function CountList({ counts, extra }) {
   const items = [
@@ -88,10 +88,9 @@ export default function GrokbotExecutionRecords({ records, selectedDate }) {
   return (
     <section className={styles.executions} aria-labelledby="grokbot-executions-heading" id="grokbot-executions">
       <header className={styles.execHead}>
-        <p className={styles.eyebrow}>Grokbot 执行</p>
         <h2 id="grokbot-executions-heading">Grokbot 执行记录</h2>
         <p className={styles.execLead}>
-          Grokbot 代 @{owner.username}（{owner.displayName}）执行的批次取关台账，与上方「互动前十」「本账号互动」分开记录。时区 {records.timezone}。数据截至 {records.asOfAsiaShanghai}。
+          Grokbot 代 @{owner.username}（{owner.displayName}）执行的批次取关台账。时区 {records.timezone}。数据截至 {records.asOfAsiaShanghai}。
         </p>
         <p className={styles.execNote}>{records.method}</p>
         <p className={styles.execNote}>{records.hanziDetection || HANZI_DETECTION_COPY}</p>
@@ -102,8 +101,7 @@ export default function GrokbotExecutionRecords({ records, selectedDate }) {
       {selectedDate && dayBatches.length > 0 ? (
         <div className={styles.execToday} id={`grokbot-day-${selectedDate}`}>
           <h3>{selectedDate} 当日已核验批次</h3>
-          <p className={styles.execMeta}>选中日期后定位到当天批次；未选日期或该日没有记录时，下面的系列总览仍然可见。</p>
-          <ul className={styles.execDayList}>
+                    <ul className={styles.execDayList}>
             {dayBatches.map(({ series, batch }) => (
               <li key={`${series.id}-${batch.index}`}>
                 <a href={`#grokbot-batch-${series.id}-${batch.index}`}>{series.title} · 第 {batch.index} 批</a>
@@ -114,9 +112,7 @@ export default function GrokbotExecutionRecords({ records, selectedDate }) {
         </div>
       ) : selectedDate ? (
         <p className={styles.execMeta}>{selectedDate} 没有已写入并核验的执行批次。下面是各系列规则、进度和已核验结果。</p>
-      ) : (
-        <p className={styles.execMeta}>不必先选日期也可以查看各系列规则、进度和状态。</p>
-      )}
+      ) : null}
 
       <div className={styles.execSeriesList}>
         {records.series.map((series) => {

@@ -4,7 +4,8 @@ export const WORKBENCH_MENU_GROUPS = [
     id: 'product',
     label: '产品',
     items: [
-      { id: 'agents', label: '智能体', href: '/x-workbench#agents' },
+      { id: 'agents', label: '大互动智能体', href: '/x-workbench#agents' },
+      { id: 'grokbot', label: 'GrokBot 秘籍', href: '/grokbot' },
     ],
   },
   {

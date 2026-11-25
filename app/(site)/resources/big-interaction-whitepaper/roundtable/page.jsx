@@ -23,11 +23,9 @@ export default function RoundtablePage() {
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
           <Link className={styles.back} href="/theory">← 大互动理论</Link>
           <header className={styles.masthead}>
-            <p className={styles.kicker}>大互动理论 · 大互动圆桌</p>
             <h1>{title}</h1>
-            <p className={styles.deck}>一张圆桌，许多视角。会议主题：大互动理论</p>
             <p className={styles.metric}>{snapshot.count.toLocaleString('en-US')} 位伙伴 · 采集更新 {updated} UTC</p>
-            <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
+            <p className={styles.permalink}><a href={path}>{canonicalUrl}</a></p>
           </header>
           <RoundtableHall />
           <RoundtableGuestbook />

@@ -66,7 +66,7 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
     <section>
       <h2 className={s.h2}>X 大互动智能体</h2>
       <p className={s.hint}>每个 X 账号一份人格和记忆。改写会读取它们，插件里的智能体也会同步同一份。写入前会按固定原则检查，要求调高上限、缩短冷却、绕开检测的内容会被拒绝。</p>
-      <p className={s.note}><Link href="/docs">智能体手册</Link>：安装、十九项任务、频率与异常恢复。</p>
+      <p className={s.note}><Link href="/docs">大互动智能体（手册）</Link>：安装、十九项任务、频率与异常恢复。</p>
       <div className={s.card}>
         <div className={s.accountChips}>
           {accounts.map((a) => (

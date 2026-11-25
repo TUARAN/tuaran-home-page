@@ -6,7 +6,6 @@ import { interactionAgentHandles } from '../../../../../lib/interaction/agentPoo
 import { loadOwnActivityDaysForPool } from '../../../../../lib/interaction/dailyTop/ownActivity.js'
 import { DAILY_TOP_METRIC_LABEL, DAILY_TOP_SUBJECT, shanghaiDateKey } from '../../../../../lib/interaction/dailyTop/model.js'
 import { loadCombinedDailyTopDays } from '../../../../../lib/interaction/dailyTop/store.js'
-import { loadGrokbotExecutions } from '../../../../../lib/interaction/grokbotExecutions/load.js'
 import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
 import ManualPaper from '../../../components/book-reader/ManualPaper'
 import PageContainer from '../../../components/PageContainer'
@@ -32,7 +31,7 @@ function edgeBindings() {
 const path = '/calendar'
 const canonicalUrl = 'https://x.2aran.com/calendar'
 const title = '大互动日历'
-const description = '按 Asia/Shanghai 选择日期，查看前一自然日与他人的互动前十、本账号各任务完成次数，以及 Grokbot 批次取关执行记录。'
+const description = '按 Asia/Shanghai 选择日期，查看前一自然日与他人的互动前十、本账号各任务完成次数。'
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -64,7 +63,6 @@ export default async function BigInteractionCalendarPage() {
   const today = shanghaiDateKey()
   const { bucket, db } = edgeBindings()
   const days = await loadCombinedDailyTopDays(bucket)
-  const executions = loadGrokbotExecutions()
   let activities = []
   try {
     activities = await loadOwnActivityDaysForPool(db, { today })
@@ -78,15 +76,11 @@ export default async function BigInteractionCalendarPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <Link className={styles.back} href="/x-workbench#agents">← 智能体</Link>
       <header className={styles.masthead}>
-        <p className={styles.kicker}>往日记录</p>
         <h1>{title}</h1>
-        <p className={styles.deck}>
-          选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及智能体账号池（当前 {interactionAgentHandles().length} 个：{interactionAgentHandles().map((h) => `@${h}`).join('、')}）各任务完成了多少次。页内另有独立的 Grokbot 执行记录台账。
-        </p>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>
-        <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
+        <p className={styles.permalink}><a href={path}>{canonicalUrl}</a></p>
       </header>
-      <InteractionCalendar days={days} activities={activities} initialToday={today} executions={executions} />
+      <InteractionCalendar days={days} activities={activities} initialToday={today} />
     </PageContainer>
     </ManualPaper>
     </XSiteFrame>

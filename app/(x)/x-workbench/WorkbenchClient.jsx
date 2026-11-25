@@ -1,10 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import XSiteFrame from './XSiteFrame'
-import { useSharedSession } from './sharedSession'
 import { call, compact } from './api'
 import { ACTION_LABELS, OBSERVED_AGENTS, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
@@ -17,7 +15,6 @@ function Metric({ ready, value }) {
 
 export default function WorkbenchClient() {
   const [observe, setObserve] = useState(null)
-  const { signedIn } = useSharedSession()
 
   useEffect(() => {
     call('/observe').then((res) => setObserve(res.ok ? res.data : { agents: [], gaps: ['暂时读不到，请稍后再试。'] }))
@@ -68,12 +65,6 @@ export default function WorkbenchClient() {
           <p className={s.hint}>{observe?.footnote || agentFootnote()}</p>
         </details>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
-        <div className={s.actionRow}>
-          <Link href="/extension" className={`${s.btn} ${s.primary}`}>获取插件</Link>
-          <Link href="/theory" className={s.btn}>大互动理论</Link>
-          <Link href="/docs" className={s.btn}>智能体手册</Link>
-          {signedIn ? <Link href="/x-workbench/ops" className={s.btn}>登录后台</Link> : null}
-        </div>
       </section>
     </XSiteFrame>
   )

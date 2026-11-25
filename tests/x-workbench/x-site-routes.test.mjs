@@ -10,6 +10,7 @@ test('x.2aran.com rewrites short paths and redirects old ones', () => {
   assert.equal(xRouteDecision('x.2aran.com', '/docs').pathname, '/resources/x-reply-clipboard-extension/docs')
   assert.equal(xRouteDecision('x.2aran.com', '/calendar').pathname, '/resources/big-interaction-whitepaper/calendar')
   assert.equal(xRouteDecision('x.2aran.com', '/roundtable').pathname, '/resources/big-interaction-whitepaper/roundtable')
+  assert.equal(xRouteDecision('x.2aran.com', '/grokbot').pathname, '/resources/big-interaction-whitepaper/grokbot')
   assert.equal(xRouteDecision('x.2aran.com', '/extension').pathname, '/resources/x-reply-clipboard-extension')
   assert.deepEqual(xRouteDecision('x.2aran.com', '/x-workbench'), { action: 'redirect', location: 'https://x.2aran.com/', status: 308 })
   assert.deepEqual(xRouteDecision('x.2aran.com', '/resources/big-interaction-whitepaper'), { action: 'redirect', location: 'https://x.2aran.com/theory', status: 308 })

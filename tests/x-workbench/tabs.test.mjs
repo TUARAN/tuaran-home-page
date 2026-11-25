@@ -6,7 +6,7 @@ import { WORKBENCH_MENU_GROUPS, WORKBENCH_MENU_ITEMS } from '../../app/(x)/x-wor
 
 test('X大互动导航收束为智能体产品与读本', () => {
   assert.deepEqual(WORKBENCH_MENU_GROUPS.map((group) => [group.label, group.items.map((item) => item.label)]), [
-    ['产品', ['智能体']],
+    ['产品', ['大互动智能体', 'GrokBot 秘籍']],
     ['读本', ['大互动理论', '大互动日历', '大互动圆桌']],
   ])
   const labels = WORKBENCH_MENU_ITEMS.map((item) => item.label)
@@ -14,7 +14,8 @@ test('X大互动导航收束为智能体产品与读本', () => {
     assert.equal(labels.includes(removed), false)
   }
   assert.deepEqual(WORKBENCH_MENU_ITEMS.filter((item) => item.href).map((item) => [item.label, item.href, Boolean(item.external)]), [
-    ['智能体', '/x-workbench#agents', false],
+    ['大互动智能体', '/x-workbench#agents', false],
+    ['GrokBot 秘籍', '/grokbot', false],
     ['大互动理论', '/theory', false],
     ['大互动日历', '/calendar', false],
     ['大互动圆桌', '/roundtable', false],
@@ -55,7 +56,7 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
   assert.doesNotMatch(client, /@TuaranX/)
   assert.doesNotMatch(client, /矿工阿三|tarsixseveneig1|涨粉潜力|推文热榜/)
   assert.doesNotMatch(client, /RadarTab|BoardTab/)
-  assert.match(client, /大互动理论/)
+  assert.doesNotMatch(client, /大互动理论/)
   assert.match(client, /未采集/)
   assert.doesNotMatch(client, /绿皮书|黄皮书/)
   assert.doesNotMatch(client, /import RewriteTab|import AgentTab|import ScheduleTab|import PosterTab|生成配对码/)
@@ -64,7 +65,7 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
   assert.match(operator, /当前 X 账号/)
   assert.doesNotMatch(operator, /排期|海报|ScheduleTab|PosterTab/)
   assert.doesNotMatch(operator, /RadarTab|BoardTab/)
-  assert.match(agentTab, /href="\/docs"[^>]*>智能体手册</)
+  assert.match(agentTab, /href="\/docs"[^>]*>大互动智能体（手册）</)
   assert.match(operator, /signedIn &&/)
   assert.doesNotMatch(whitepaper, /查看智能体与获取方式|走进圆桌会场|打开日历/)
   assert.match(whitepaper, /href="\/roundtable"/)
@@ -74,5 +75,5 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
   assert.match(shortRoute, /code === 'x'/)
   assert.match(calendar, /href="\/x-workbench#agents"/)
   assert.match(calendar, /const title = '大互动日历'/)
-  assert.match(yellowbook, /const title = '智能体手册'/)
+  assert.match(yellowbook, /const title = '大互动智能体（手册）'/)
 })

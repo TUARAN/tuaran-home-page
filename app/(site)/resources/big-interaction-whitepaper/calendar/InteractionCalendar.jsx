@@ -12,8 +12,6 @@ import {
   shanghaiDateKey,
   shiftMonth,
 } from '../../../../../lib/interaction/dailyTop/model.js'
-import { executionDates } from '../../../../../lib/interaction/grokbotExecutions/model.js'
-import GrokbotExecutionRecords from './GrokbotExecutionRecords'
 import styles from './calendar.module.css'
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
@@ -23,15 +21,13 @@ function monthTitle(yearMonth) {
   return `${year}年${Number(month)}月`
 }
 
-export default function InteractionCalendar({ days, activities = [], initialToday, executions = null }) {
+export default function InteractionCalendar({ days, activities = [], initialToday }) {
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days])
   const activityDates = useMemo(() => new Set(activities.map((day) => day.date)), [activities])
   const topDates = useMemo(() => days.map((day) => day.date), [days])
-  const executionDateList = useMemo(() => (executions ? executionDates(executions) : []), [executions])
-  const executionByDate = useMemo(() => new Set(executionDateList), [executionDateList])
   const availableDates = useMemo(
-    () => [...new Set([...topDates, ...activities.map((day) => day.date), ...executionDateList])].sort(),
-    [topDates, activities, executionDateList],
+    () => [...new Set([...topDates, ...activities.map((day) => day.date)])].sort(),
+    [topDates, activities],
   )
   const initialSelected = resolveSelectedDate(null, initialToday, availableDates)
   const [today, setToday] = useState(initialToday)
@@ -53,12 +49,6 @@ export default function InteractionCalendar({ days, activities = [], initialToda
     const url = new URL(window.location.href)
     url.searchParams.set('date', date)
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
-    if (executionByDate.has(date)) {
-      requestAnimationFrame(() => {
-        const target = document.getElementById(`grokbot-day-${date}`) || document.getElementById('grokbot-executions')
-        target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
-    }
   }
 
   const day = byDate.get(selected) || null
@@ -92,12 +82,12 @@ export default function InteractionCalendar({ days, activities = [], initialToda
               className={[
                 date === selected ? styles.selected : '',
                 date === today ? styles.today : '',
-                byDate.has(date) || activityDates.has(date) || executionByDate.has(date) ? styles.recorded : '',
+                byDate.has(date) || activityDates.has(date) ? styles.recorded : '',
               ].filter(Boolean).join(' ')}
               onClick={() => choose(date)}
             >
               {Number(date.slice(-2))}
-              {byDate.has(date) || activityDates.has(date) || executionByDate.has(date) ? <i /> : null}
+              {byDate.has(date) || activityDates.has(date) ? <i /> : null}
             </button>
           ) : <span key={`empty-${index}`} />)}
         </div>
@@ -187,7 +177,6 @@ export default function InteractionCalendar({ days, activities = [], initialToda
         </div>
       </section>
     </div>
-      {executions ? <GrokbotExecutionRecords records={executions} selectedDate={selected} /> : null}
     </>
   )
 }

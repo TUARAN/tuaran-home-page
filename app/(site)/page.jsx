@@ -56,6 +56,7 @@ import HomeAllianceBanner from './components/HomeAllianceBanner'
 import HomeDiarySeries from './components/HomeDiarySeries'
 import HomeYearSummaryCard from './components/HomeYearSummaryCard'
 import HomeGithubTrending from './components/HomeGithubTrending'
+import HomeBranchEvolution from './components/HomeBranchEvolution'
 import HomeSectionCouplet from './components/HomeSectionCouplet'
 import archivedDiary from '../../public/data/article-archive/diary-self-reflection.json'
 import { previewFromDiary } from '../../lib/diary/diarySeries.mjs'
@@ -865,6 +866,8 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
           </section>
         </aside>
       </HomeMasonry>
+
+      <HomeBranchEvolution />
 
       <HomeDownloadCards />
 

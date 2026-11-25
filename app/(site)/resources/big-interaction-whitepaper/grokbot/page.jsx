@@ -1,4 +1,3 @@
-import Link from 'next/link'
 
 import { loadGrokbotExecutions } from '../../../../../lib/interaction/grokbotExecutions/load.js'
 import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
@@ -29,7 +28,6 @@ export default function GrokbotPage() {
       <ManualPaper tone="green">
         <PageContainer width="standard" className={styles.page}>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-          <Link className={styles.back} href="/x-workbench#agents">← 智能体</Link>
           <header className={styles.masthead}>
             <h1>{title}</h1>
           </header>

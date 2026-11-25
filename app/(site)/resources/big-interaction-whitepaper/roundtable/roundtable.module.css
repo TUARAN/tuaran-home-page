@@ -1,7 +1,4 @@
 .page { padding-top: 16px; padding-bottom: 72px; color: #213a31; }
-.back { display: inline-flex; color: #1d6840; font-size: 13px; font-weight: 700; text-decoration: none; }
-.back:hover { color: #103c25; }
-.back:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 3px; }
 .masthead { max-width: 1088px; margin: 8px 0 14px; }
 .kicker { margin: 0 0 10px; color: #2e6745; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
 .masthead h1 { margin: 0; color: #143628; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(28px, 4vw, 38px); font-weight: 700; line-height: 1.15; }

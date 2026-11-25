@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { getD1 } from '../../../../../lib/db/d1.js'
@@ -74,7 +73,6 @@ export default async function BigInteractionCalendarPage() {
     <ManualPaper tone="green">
     <PageContainer width="standard" className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <Link className={styles.back} href="/x-workbench#agents">← 智能体</Link>
       <header className={styles.masthead}>
         <h1>{title}</h1>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>

@@ -16,7 +16,13 @@ import {
   handleDailyTopPost,
 } from '../../lib/interaction/dailyTop/http.js'
 import { gitDailyTopDays } from '../../lib/interaction/dailyTop/gitCatalog.js'
-import { expectedWindow, legacyPublicationWindow, profileUrlFor } from '../../lib/interaction/dailyTop/model.js'
+import {
+  expectedWindow,
+  legacyPublicationWindow,
+  legacyRecordingWindow,
+  profileUrlFor,
+  validateDailyTopDay,
+} from '../../lib/interaction/dailyTop/model.js'
 import { INTEGRATION_WEBHOOKS } from '../../lib/site/integrationCatalog.js'
 
 const SECRET = 'test-daily-top-secret'
@@ -63,6 +69,29 @@ function retarget(day, date, patch = {}) {
 function envWith(bucket, secret = SECRET) {
   return { [DAILY_TOP_INGEST_SECRET_ENV]: secret, CONTENT_FEED: bucket }
 }
+
+test('counted-day window matches production ingest for date=D', () => {
+  const gitDay = gitDailyTopDays()[0]
+  const top = gitDay.top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown }))
+  const day = validateDailyTopDay({
+    schemaVersion: 1,
+    date: '2026-11-24',
+    timezone: 'Asia/Shanghai',
+    window: expectedWindow('2026-11-24'),
+    metric: gitDay.metric,
+    metricLabel: gitDay.metricLabel,
+    subject: gitDay.subject,
+    excludedHandles: [...gitDay.excludedHandles],
+    opponents: 256,
+    events: 597,
+    top,
+  }, '2026-11-24.json')
+  assert.deepEqual(day.window, {
+    start: '2026-11-24T00:00:00+08:00',
+    end: '2026-11-25T00:00:00+08:00',
+  })
+  assert.notDeepEqual(day.window, legacyRecordingWindow('2026-11-24'))
+})
 
 test('published evenings 2026-11-10 and 2026-11-11 keep the measured top ten', () => {
   const days = gitDailyTopDays()

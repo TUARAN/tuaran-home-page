@@ -5577,6 +5577,22 @@
     animation: site-pick-dot-breathe 3.6s ease-in-out infinite;
   }
 
+  .site-header-pick-icon::before {
+    display: none;
+  }
+
+  .site-header-pick-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    flex: none;
+    border-radius: 0.45rem;
+    background: var(--pick-badge-bg);
+    color: var(--pick-badge-ink);
+  }
+
   .site-header-pick-green::before {
     animation-delay: 1.8s;
   }
@@ -5633,12 +5649,14 @@
 
   .site-header-pick-shop,
   .site-header-pick-shop:visited {
-    --pick-edge: #e6d7b8;
-    --pick-hover-edge: #cfb479;
-    --pick-background: #faf6ea;
-    --pick-hover-background: #f5eeda;
-    --pick-dot: #c99a2e;
-    --pick-ink: #8a6a1f;
+    --pick-edge: #f0d0b8;
+    --pick-hover-edge: #dd9c70;
+    --pick-background: #fdf2ea;
+    --pick-hover-background: #fbe6d7;
+    --pick-dot: #d9772f;
+    --pick-ink: #a04d1a;
+    --pick-badge-bg: #f7dcc4;
+    --pick-badge-ink: #a04d1a;
     color: var(--pick-ink);
   }
 
@@ -5663,12 +5681,14 @@
 
   .dark .site-header-pick-shop,
   .dark .site-header-pick-shop:visited {
-    --pick-edge: #5a4d2e;
-    --pick-hover-edge: #8a7444;
-    --pick-background: #2a2417;
-    --pick-hover-background: #352c1a;
-    --pick-dot: #d9b45c;
-    --pick-ink: #d9b45c;
+    --pick-edge: #6b3f24;
+    --pick-hover-edge: #a3663c;
+    --pick-background: #33210f;
+    --pick-hover-background: #402a14;
+    --pick-dot: #f29a55;
+    --pick-ink: #f4b27f;
+    --pick-badge-bg: #4a2e18;
+    --pick-badge-ink: #f4b27f;
   }
 
   @media (prefers-reduced-motion: reduce) {

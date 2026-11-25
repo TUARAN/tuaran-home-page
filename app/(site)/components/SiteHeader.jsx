@@ -56,23 +56,34 @@ const NAV_GROUPS = [
 const HEADER_RECOMMENDATIONS = [
   { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', tone: 'book', kind: 'page' },
   { href: 'https://x.2aran.com/', label: 'X大互动', labelEn: 'X大互动', tone: 'green', kind: 'page' },
-  { href: '/shop', label: '甄选小店', labelEn: 'Shop', tone: 'shop', kind: 'page' },
+  { href: '/shop', label: '甄选小店', labelEn: 'Shop', tone: 'shop', kind: 'page', icon: 'shop' },
 ]
+
+const RECOMMENDATION_ICONS = {
+  shop: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6.2 8h11.6l1.1 11.2a1 1 0 0 1-1 1.1H6.1a1 1 0 0 1-1-1.1L6.2 8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M9 10.5V6.5a3 3 0 0 1 6 0v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
+}
 
 const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'checkin', 'about'].includes(channel.key))
 
 function RecommendationLink({ item, onNavigate }) {
   const { locale } = useLocale()
   const toneClass = item.tone === 'book' ? 'site-header-pick-book' : item.tone === 'shop' ? 'site-header-pick-shop' : 'site-header-pick-green'
+  const icon = item.icon ? RECOMMENDATION_ICONS[item.icon] : null
   return <Link
     href={item.href}
     onClick={onNavigate}
-    className={`site-header-pick ${toneClass}`}
+    className={`site-header-pick ${icon ? 'site-header-pick-icon ' : ''}${toneClass}`}
     data-analytics-event="entry_click"
     data-analytics-surface="global_nav_recommendation"
     data-analytics-destination-kind={item.kind}
     data-analytics-destination-id={item.href}
   >
+    {icon ? <span className="site-header-pick-badge" aria-hidden="true">{icon}</span> : null}
     <span>{pick(locale, item.label, item.labelEn)}</span>
   </Link>
 }

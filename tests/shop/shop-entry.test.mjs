@@ -38,10 +38,13 @@ test('every available shop item has a valid href; coming items stay placeholder'
   }
 })
 
-test('site header picks include 甄选小店 with its own tone next to X大互动', () => {
+test('site header picks include 甄选小店 with shop icon badge next to X大互动', () => {
   assert.match(siteHeaderSource, /label: '甄选小店'/)
   assert.match(siteHeaderSource, /href: '\/shop'/)
   assert.match(siteHeaderSource, /tone: 'shop'/)
+  assert.match(siteHeaderSource, /icon: 'shop'/)
+  assert.match(siteHeaderSource, /site-header-pick-badge/)
+  assert.match(siteHeaderSource, /site-header-pick-icon/)
   // 类名必须逐字出现在源码里，避免动态拼接导致样式丢失。
   assert.match(siteHeaderSource, /'site-header-pick-shop'/)
   const pickBlock = siteHeaderSource.match(/const HEADER_RECOMMENDATIONS = \[[\s\S]*?\]/)?.[0] ?? ''
@@ -53,8 +56,12 @@ test('site header picks include 甄选小店 with its own tone next to X大互�
 test('globals.css styles the shop pick tone in light and dark themes', () => {
   assert.match(globalsCss, /\.site-header-pick-shop,/)
   assert.match(globalsCss, /\.dark \.site-header-pick-shop,/)
-  assert.match(globalsCss, /--pick-dot: #c99a2e;/)
-  assert.match(globalsCss, /--pick-dot: #d9b45c;/)
+  assert.match(globalsCss, /\.site-header-pick-icon::before/)
+  assert.match(globalsCss, /\.site-header-pick-badge/)
+  assert.match(globalsCss, /--pick-dot: #d9772f;/)
+  assert.match(globalsCss, /--pick-badge-bg: #f7dcc4;/)
+  assert.match(globalsCss, /--pick-dot: #f29a55;/)
+  assert.match(globalsCss, /--pick-badge-bg: #4a2e18;/)
 })
 
 test('/shop is registered as an indexable static page', () => {

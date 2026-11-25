@@ -163,7 +163,7 @@ test('calendar page renders the five ranking columns and an empty state', async 
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/InteractionCalendar.jsx', import.meta.url), 'utf8'),
   ])
   assert.match(page, /const canonicalUrl = 'https:\/\/x\.2aran\.com\/calendar'/)
-  assert.match(page, /<a href=\{path\}>\{canonicalUrl\}<\/a>/)
+  assert.doesNotMatch(page, /<a href=\{path\}>\{canonicalUrl\}<\/a>/)
   assert.match(page, /canonical: path/)
   assert.match(page, /application\/ld\+json/)
   assert.match(view, /排名/)

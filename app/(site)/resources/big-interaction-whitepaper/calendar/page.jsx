@@ -78,7 +78,6 @@ export default async function BigInteractionCalendarPage() {
       <header className={styles.masthead}>
         <h1>{title}</h1>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>
-        <p className={styles.permalink}><a href={path}>{canonicalUrl}</a></p>
       </header>
       <InteractionCalendar days={days} activities={activities} initialToday={today} />
     </PageContainer>

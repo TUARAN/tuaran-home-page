@@ -25,7 +25,6 @@ export default function RoundtablePage() {
           <header className={styles.masthead}>
             <h1>{title}</h1>
             <p className={styles.metric}>{snapshot.count.toLocaleString('en-US')} 位伙伴 · 采集更新 {updated} UTC</p>
-            <p className={styles.permalink}><a href={path}>{canonicalUrl}</a></p>
           </header>
           <RoundtableHall />
           <RoundtableGuestbook />

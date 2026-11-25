@@ -127,7 +127,7 @@ git push origin --delete refs/archive/<名称>          # 确认不再需要后�
 
 标签只用于发布与版本，按 Git 约定：对外发布用带说明的 annotated tag（`git tag -a`），私人临时标记用 lightweight tag 且不推送。不用标签记录分支、PR 或合并前状态。
 
-2026-11-25 之前按旧规范推送过一批 `archive/*` 标签，从此不再新增。存量的迁移与清理记录在 Issue #622。
+2026-11-25 之前按旧规范推送过 92 个 `archive/*` 标签，已于当天清理：62 个迁到 `refs/archive/*`，30 个与 PR 引用指向同一提交，随后删除全部标签。对照表见 Issue #622。
 
 ## 依赖与磁盘
 

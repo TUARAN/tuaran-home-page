@@ -60,10 +60,13 @@ test('馆藏同时收录出版作品和在线书，封面路径可用', () => {
 
 test('黄皮书和绿皮书正文页使用对应纸色', () => {
   const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
-  assert.match(read('app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx'), /ManualPaper tone="yellow"/)
+  assert.match(read('app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx'), /<XPage[\s\S]*?tone="yellow"/)
   assert.match(read('app/(site)/tools/syncblog-publisher/docs/page.jsx'), /ManualPaper tone="yellow"/)
-  assert.match(read('app/(site)/resources/big-interaction-whitepaper/page.jsx'), /ManualPaper tone="green"/)
-  assert.match(read('app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx'), /ManualPaper tone="green"/)
+  assert.match(read('app/(x)/x-workbench/XPage.jsx'), /tone = 'green'[\s\S]*<ManualPaper tone=\{tone\}>/)
+  for (const path of ['app/(site)/resources/big-interaction-whitepaper/page.jsx', 'app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx']) {
+    assert.match(read(path), /<XPage/)
+    assert.doesNotMatch(read(path), /tone="yellow"/)
+  }
   assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-sheet: #faf6ee/)
   assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-cloth: #a67c2d/)
   assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-sheet: #f4f7f2/)

@@ -49,7 +49,7 @@ export default function XSiteFrame({ active, children }) {
             {!loading && signedIn ? (
               <>
                 <a className={s.accountLink} href="https://2aran.com/account" title={accountLabel}>{accountLabel}</a>
-                <Link className={s.btn} href="/x-workbench/ops">后台</Link>
+                <Link className={`${s.btn} ${s.btnDev}`} href="/x-workbench/ops" title="后台暂停开发">后台<span className={s.beta}>开发中</span></Link>
                 <a className={s.btn} href={logoutHref}>退出</a>
               </>
             ) : null}

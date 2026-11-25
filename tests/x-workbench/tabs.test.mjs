@@ -6,7 +6,7 @@ import { WORKBENCH_MENU_GROUPS, WORKBENCH_MENU_ITEMS } from '../../app/(x)/x-wor
 
 test('X大互动导航收束为智能体产品与读本', () => {
   assert.deepEqual(WORKBENCH_MENU_GROUPS.map((group) => [group.label, group.items.map((item) => item.label)]), [
-    ['产品', ['大互动智能体']],
+    ['产品', ['大互动智能体', '大互动智能体手册']],
     ['读本', ['大互动理论', '大互动日历', '大互动圆桌', 'GrokBot 秘籍']],
   ])
   const labels = WORKBENCH_MENU_ITEMS.map((item) => item.label)
@@ -15,6 +15,7 @@ test('X大互动导航收束为智能体产品与读本', () => {
   }
   assert.deepEqual(WORKBENCH_MENU_ITEMS.filter((item) => item.href).map((item) => [item.label, item.href, Boolean(item.external)]), [
     ['大互动智能体', '/x-workbench#agents', false],
+    ['大互动智能体手册', '/docs', false],
     ['大互动理论', '/theory', false],
     ['大互动日历', '/calendar', false],
     ['大互动圆桌', '/roundtable', false],

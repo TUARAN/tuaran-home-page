@@ -5,6 +5,7 @@ export const WORKBENCH_MENU_GROUPS = [
     label: '产品',
     items: [
       { id: 'agents', label: '大互动智能体', href: '/x-workbench#agents' },
+      { id: 'docs', label: '大互动智能体手册', href: '/docs' },
     ],
   },
   {

@@ -6,12 +6,12 @@ import XSiteFrame from './XSiteFrame'
 import { xPageNeighbors } from './tabs'
 import s from './xPage.module.css'
 
-// X大互动 五个入口页共用的外壳：顶栏高亮、纸面、页头、上一页 / 下一页。
-export default function XPage({ active, title, intro, meta, after = null, className = '', children }) {
+// X大互动 各入口页共用的外壳：顶栏高亮、纸面、页头、上一页 / 下一页。
+export default function XPage({ active, title, intro, meta, tone = 'green', after = null, className = '', children }) {
   const { group, prev, next } = xPageNeighbors(active)
   return (
     <XSiteFrame active={active}>
-      <ManualPaper tone="green">
+      <ManualPaper tone={tone}>
         <PageContainer width="standard" className={`${s.page} ${className}`}>
           <header className={s.head}>
             {group ? <p className={s.kicker}>{group.label}</p> : null}

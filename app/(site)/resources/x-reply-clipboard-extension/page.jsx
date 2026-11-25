@@ -2,14 +2,12 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import Link from 'next/link'
-import XSiteFrame from '../../../(x)/x-workbench/XSiteFrame'
+import XPage from '../../../(x)/x-workbench/XPage'
 import Image from 'next/image'
 import {
   IconArrowRight,
   IconBell,
   IconBolt,
-  IconBrandChrome,
-  IconBrandX,
   IconMessageCircle,
   IconRobot,
   IconShieldLock,
@@ -21,7 +19,6 @@ import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
-import PageContainer from '../../components/PageContainer'
 import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
 import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import SharePageButton from '../../components/SharePageButton'
@@ -367,7 +364,7 @@ const VERSION_HISTORY = [
 ]
 
 export const metadata = {
-  title,
+  title: { absolute: 'X 大互动智能体插件｜X大互动' },
   description,
   keywords: [
     'X 评论回复',
@@ -454,97 +451,64 @@ const TECH_NOTES = [
 
 export default function XReplyClipboardResourcePage() {
   return (
-    <XSiteFrame active="/extension">
-    <PageContainer className="py-6 md:py-10">
+    <XPage
+      active="/extension"
+      title="X 大互动智能体插件"
+      intro="评论、点赞、关注、发帖、社群和清理，在本地面板里按排班轮换。"
+      meta={<><span>本地源码 v{SOURCE_VERSION}</span><span>下载包 v{DOWNLOAD_VERSION || '待核对'}</span><span>Manifest V3 · 本地运行 · 多模型可选</span></>}
+    >
       <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
-      <header className="relative isolate overflow-hidden rounded-[28px] border border-slate-800 bg-[#050814] px-5 py-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.28)] sm:px-8 sm:py-8 md:rounded-[36px] md:px-10 md:py-10">
-        <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(56,189,248,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.16)_1px,transparent_1px)] [background-size:42px_42px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" aria-hidden="true" />
-        <div className="absolute -left-24 top-16 -z-10 h-72 w-72 rounded-full bg-cyan-500/25 blur-[90px]" aria-hidden="true" />
-        <div className="absolute -right-24 -top-16 -z-10 h-80 w-80 rounded-full bg-violet-600/30 blur-[100px]" aria-hidden="true" />
-
-        <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-xs">
-          <Link href="/tools" className="text-cyan-300 no-underline transition hover:text-cyan-200">工具库</Link>
-          <span aria-hidden="true">/</span>
-          <Link href="/tools#x-platform" className="text-slate-400 no-underline transition hover:text-white">X 工具</Link>
-          <span aria-hidden="true">/</span>
-          <Link href="/tools#browser-extensions" className="text-slate-400 no-underline transition hover:text-white">浏览器扩展</Link>
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> 本地源码 v{SOURCE_VERSION}
-          </span>
+      <section className="max-w-3xl">
+        <p className="m-0 text-[15px] leading-8 text-slate-700 dark:text-slate-300">
+          同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。标为本地测试的 v5 功能尚未打包，交付版本以实际文件为准。
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <DownloadButton />
+          <Link
+            href={`/resources/${RESOURCE_SLUG}/docs`}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-900 no-underline transition hover:border-slate-900 dark:border-white/20 dark:bg-white/10 dark:text-white"
+          >
+            大互动智能体手册
+          </Link>
+          <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享智能体" />
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title={title}
+              summary={shareText}
+              url={`/resources/${RESOURCE_SLUG}`}
+              category="tools"
+              slug={RESOURCE_SLUG}
+              tags={['X 平台', 'Chrome 插件', '智能体']}
+              kindLabel="智能体"
+            />
+          </ArticleActionsDropdown>
         </div>
+      </section>
 
-        <div className="mt-8 w-full">
-          <div className="min-w-0">
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
-                <IconBrandX size={15} aria-hidden="true" />
-                X Interaction Copilot
-              </span>
-              <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-300/15 px-3 py-1.5 text-xs font-bold text-amber-200">VIP 智能体 · 密码领取</span>
-            </div>
-            <h1 className="text-[36px] font-black leading-[1.12] tracking-[-0.04em] text-white sm:text-[46px] lg:text-[50px]">
-              X 大互动智能体
-              <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              评论、点赞、关注、发帖、社群和清理任务集中在本地面板。同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。
-            </p>
-            <p className="mt-3 max-w-2xl text-xs leading-6 text-slate-400">以下功能说明对应本地源码 v{SOURCE_VERSION}。站内 ZIP 下载包配置为 v{DOWNLOAD_VERSION || '待核对'}；标为本地测试的 v5 功能尚未打包，交付版本以实际文件为准。</p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <DownloadButton />
-              <Link
-                href={`/resources/${RESOURCE_SLUG}/docs`}
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15"
-              >
-                大互动智能体手册
-              </Link>
-              <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享智能体" />
-              <ArticleActionsDropdown label="更多">
-                <DistributeContentButton
-                  title={title}
-                  summary={shareText}
-                  url={`/resources/${RESOURCE_SLUG}`}
-                  category="tools"
-                  slug={RESOURCE_SLUG}
-                  tags={['X 平台', 'Chrome 插件', '智能体']}
-                  kindLabel="智能体"
-                />
-              </ArticleActionsDropdown>
-            </div>
-            <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400">
-              <span className="inline-flex items-center gap-1.5"><IconBrandChrome size={15} className="text-cyan-300" /> Manifest V3</span>
-              <span className="inline-flex items-center gap-1.5"><IconShieldLock size={15} className="text-emerald-300" /> 本地运行</span>
-              <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> 多模型可选</span>
-              <span>本地源码 v{SOURCE_VERSION} · 下载包配置 v{DOWNLOAD_VERSION || '待核对'}</span>
-            </div>
-          </div>
-
-          <figure className="mx-auto mt-8 w-full lg:mt-10">
-            <div className="relative aspect-[2974/1844] overflow-hidden rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
-              <Image
-                src="/images/x-reply-clipboard-extension/panel-dual-account.webp"
-                alt="X 大互动智能体同时开在 @tarsixseveneig1 与 @tuaranx：左侧评论首页正在执行，右侧排班台显示当前任务和等待安排"
-                width={2974}
-                height={1844}
-                sizes="(min-width: 1120px) 1008px, calc(100vw - 72px)"
-                priority
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </div>
-            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">双账号实拍 · @tarsixseveneig1 / @tuaranx</figcaption>
-          </figure>
+      <figure className="mx-0 mb-0 mt-8 w-full">
+        <div className="relative aspect-[2974/1844] overflow-hidden rounded-2xl border border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.12)] dark:border-white/10">
+          <Image
+            src="/images/x-reply-clipboard-extension/panel-dual-account.webp"
+            alt="X 大互动智能体同时开在 @tarsixseveneig1 与 @tuaranx：左侧评论首页正在执行，右侧排班台显示当前任务和等待安排"
+            width={2974}
+            height={1844}
+            sizes="(min-width: 1120px) 1008px, calc(100vw - 72px)"
+            priority
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         </div>
-      </header>
+        <figcaption className="mt-3 text-center text-xs leading-5 text-slate-500">双账号实拍 · @tarsixseveneig1 / @tuaranx</figcaption>
+      </figure>
 
-      <article className="prose-tuaran mt-12 !max-w-none">
+      <article className="prose-tuaran mt-10 !max-w-none">
         <div className="not-prose relative mb-14 overflow-hidden rounded-[26px] border border-blue-200/70 bg-gradient-to-r from-blue-50 via-white to-violet-50 p-5 shadow-[0_16px_50px_rgba(37,99,235,0.09)] dark:border-blue-400/15 dark:from-[#0a1830] dark:via-[#0b1120] dark:to-[#1b1030] sm:p-7">
           <div className="absolute -right-10 -top-16 h-44 w-44 rounded-full bg-violet-400/20 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="m-0 inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-cyan-300">
-                <IconBolt size={14} /> Ready to launch
+              <p className="m-0 text-xs font-semibold tracking-[0.14em] inline-flex items-center gap-2 text-blue-600 dark:text-cyan-300">
+                <IconBolt size={14} /> 获取插件
               </p>
-              <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black tracking-[-0.02em] text-slate-950 dark:text-white">
+              <h2 className="m-0 mt-2 border-0 p-0 text-[22px] font-extrabold leading-tight text-slate-950 dark:text-white">
                 把互动工作流装进 Chrome
               </h2>
               <p className="m-0 mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -559,7 +523,7 @@ export default function XReplyClipboardResourcePage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold tracking-[0.14em] text-blue-600 dark:text-cyan-300">功能与运行方式</p>
-              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">六组功能，按计划运行</h2>
+              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-slate-950 dark:text-white md:text-[28px]">六组功能，按计划运行</h2>
             </div>
             <p className="m-0 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">顶部页签可切换到已有专用 X 窗口，或新建窗口；任务进度独立保存。</p>
           </div>
@@ -585,8 +549,8 @@ export default function XReplyClipboardResourcePage() {
         </section>
 
         <div className="not-prose mt-16">
-          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-rose-600 dark:text-rose-300">Safety boundary</p>
-          <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">使用前，先看清平台边界</h2>
+          <p className="m-0 text-xs font-semibold tracking-[0.14em] text-rose-600 dark:text-rose-300">平台边界</p>
+          <h2 className="m-0 mt-2 border-0 p-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-slate-950 dark:text-white md:text-[28px]">使用前，先看清平台边界</h2>
         </div>
         <div className="not-prose relative my-8 overflow-hidden rounded-[26px] border border-rose-200/80 bg-gradient-to-br from-rose-50 via-white to-orange-50 p-6 text-sm leading-7 text-slate-700 shadow-[0_16px_45px_rgba(225,29,72,0.08)] dark:border-rose-400/20 dark:from-[#250d19] dark:via-[#120d18] dark:to-[#211109] dark:text-rose-100 sm:p-7">
           <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-rose-400/15 blur-3xl" aria-hidden="true" />
@@ -613,13 +577,13 @@ export default function XReplyClipboardResourcePage() {
         </div>
 
         <div className="not-prose mt-16" id="version-history">
-          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">Release stream</p>
-          <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">版本记录</h2>
+          <p className="m-0 text-xs font-semibold tracking-[0.14em] text-violet-600 dark:text-violet-300">版本记录</p>
+          <h2 className="m-0 mt-2 border-0 p-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-slate-950 dark:text-white md:text-[28px]">版本记录</h2>
         </div>
         <div className="not-prose my-8 overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#080d19]">
           <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-cyan-50 via-blue-50 to-violet-50 px-6 py-5 dark:border-white/10 dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-violet-950/30 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-300">Changelog</p>
+              <p className="m-0 text-xs font-semibold tracking-[0.14em] text-sky-600 dark:text-sky-300">更新日志</p>
               <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到多任务排班</h3>
             </div>
             <span className="w-fit rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
@@ -645,8 +609,8 @@ export default function XReplyClipboardResourcePage() {
         </div>
 
         <div className="not-prose mt-16">
-          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-cyan-300">Setup protocol</p>
-          <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">安装与启动</h2>
+          <p className="m-0 text-xs font-semibold tracking-[0.14em] text-blue-600 dark:text-cyan-300">安装</p>
+          <h2 className="m-0 mt-2 border-0 p-0 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-slate-950 dark:text-white md:text-[28px]">安装与启动</h2>
         </div>
         <ol className="not-prose my-8 grid list-none gap-3 p-0 md:grid-cols-2">
           {INSTALL_STEPS.map((step, index) => (
@@ -663,7 +627,7 @@ export default function XReplyClipboardResourcePage() {
               <IconBolt size={17} className="text-cyan-300" />
               <h3 className="m-0 text-base font-bold text-white">运行细节</h3>
             </div>
-            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-slate-500">Runtime notes</span>
+            <span className="text-xs text-slate-400">{TECH_NOTES.length} 条</span>
           </div>
           <ul className="m-0 grid list-none gap-0 p-0 md:grid-cols-2">
             {TECH_NOTES.map((note, index) => (
@@ -679,8 +643,8 @@ export default function XReplyClipboardResourcePage() {
           <div className="absolute -right-12 -top-20 h-52 w-52 rounded-full border border-white/15" aria-hidden="true" />
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Launch your workflow</p>
-              <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black text-white">准备好后，从最新版开始</h2>
+              <p className="m-0 text-xs font-semibold tracking-[0.14em] text-cyan-100">开始使用</p>
+              <h2 className="m-0 mt-2 border-0 p-0 text-[22px] font-extrabold leading-tight text-white">准备好后，从最新版开始</h2>
               <p className="m-0 mt-2 text-sm text-blue-100">联系站长获取密码后即可下载；更新扩展时保留原目录并重新加载即可。</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -691,7 +655,6 @@ export default function XReplyClipboardResourcePage() {
         </div>
       </article>
       <ArticleFooterCta />
-    </PageContainer>
-    </XSiteFrame>
+    </XPage>
   )
 }

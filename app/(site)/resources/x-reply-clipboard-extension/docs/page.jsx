@@ -6,9 +6,7 @@ import Image from 'next/image'
 
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import { getResourceDelivery } from '../../../../../lib/content/resourceCatalog'
-import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
-import ManualPaper from '../../../components/book-reader/ManualPaper'
-import PageContainer from '../../../components/PageContainer'
+import XPage from '../../../../(x)/x-workbench/XPage'
 import DocsHashNavigation from './DocsHashNavigation'
 import DocsToc from './DocsToc'
 import PostWaveTimeline from './PostWaveTimeline'
@@ -33,7 +31,7 @@ const description =
   'X 大互动智能体使用手册：快速开始、十九项任务、排班设置、异常恢复、数据维护与版本记录。'
 
 export const metadata = {
-  title,
+  title: { absolute: `${title}｜X大互动` },
   description,
   alternates: { canonical: DOCS_PATH },
   openGraph: {
@@ -204,7 +202,7 @@ function Section({ id, index, title: sectionTitle, summary, children }) {
       <header className="mb-6 flex items-start gap-4 border-b border-[var(--site-line)] pb-5">
         <span className="mt-1 shrink-0 font-serif text-[12px] tracking-[0.14em] text-[var(--site-faint)]">第{index}章</span>
         <div className="min-w-0 flex-1">
-          <h2 className="m-0 font-serif text-[25px] font-semibold leading-tight text-[var(--site-ink)] md:text-[30px]">{sectionTitle}</h2>
+          <h2 className="m-0 font-serif text-[22px] font-semibold leading-tight text-[var(--site-ink)] md:text-[26px]">{sectionTitle}</h2>
           <p className="mt-2 text-[13px] leading-6 text-[var(--site-muted)]">{summary}</p>
         </div>
       </header>
@@ -216,7 +214,7 @@ function Section({ id, index, title: sectionTitle, summary, children }) {
 }
 
 function Part({ id, number, title }) {
-  return <header id={id} className="scroll-mt-24 border-t-2 border-[var(--site-ink)] pb-2 pt-7"><p className="font-serif text-[12px] tracking-[0.24em] text-[var(--site-faint)]">第{number}篇</p><h2 className="mt-2 font-serif text-[28px] font-semibold text-[var(--site-ink)] md:text-[34px]">{title}</h2></header>
+  return <header id={id} className="scroll-mt-24 border-t-2 border-[var(--site-ink)] pb-2 pt-7"><p className="font-serif text-[12px] tracking-[0.24em] text-[var(--site-faint)]">第{number}篇</p><h2 className="mt-2 font-serif text-[24px] font-semibold text-[var(--site-ink)] md:text-[28px]">{title}</h2></header>
 }
 
 function PaceTable({ id, caption, headers, rows, note }) {
@@ -263,33 +261,24 @@ function TaskBlock({ id, badge, title: blockTitle, summary, children }) {
 
 export default function XReplyClipboardDocsPage() {
   return (
-    <XSiteFrame active="/docs">
-    <ManualPaper tone="yellow">
-    <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
+    <XPage
+      active="/docs"
+      tone="yellow"
+      title={title}
+      intro="安装、启动排班，十九项任务的规则，风控恢复与版本记录。"
+      meta={<><span>核对至本地源码 v{SOURCE_VERSION}</span><span>下载包 v{DOWNLOAD_VERSION}</span></>}
+    >
       <DocsHashNavigation />
-      <div className="mb-8 max-w-3xl">
-        <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--site-faint)]">
-          <Link href="/tools" className="no-underline transition hover:text-[var(--site-ink)]">工具库</Link>
-          <span aria-hidden="true">/</span>
-          <Link href={RESOURCE_PATH} className="no-underline transition hover:text-[var(--site-ink)]">X 大互动智能体</Link>
-          <span aria-hidden="true">/</span>
-          <span className="text-[var(--site-ink)]">大互动智能体手册</span>
-        </div>
-        <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">{title}</h1>
-        <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
-          从第一篇的安装与运行开始，依次阅读任务、配置、边界与维护。版本沿革和运营记录收在第四篇；也可以从左侧目录直达某一章、某一节。
-        </p>
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Link href={RESOURCE_PATH} className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
-            返回插件介绍
-          </Link>
-          <a href="#history" className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
-            查看版本演进
-          </a>
-          <a href="#quick-start" className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
-            快速开始
-          </a>
-        </div>
+      <div className="mb-8 flex flex-wrap gap-2">
+        <a href="#quick-start" className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
+          快速开始
+        </a>
+        <a href="#history" className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
+          版本演进
+        </a>
+        <Link href={RESOURCE_PATH} className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
+          获取插件
+        </Link>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
@@ -993,8 +982,6 @@ export default function XReplyClipboardDocsPage() {
           </Section>
         </article>
       </div>
-    </PageContainer>
-    </ManualPaper>
-    </XSiteFrame>
+    </XPage>
   )
 }

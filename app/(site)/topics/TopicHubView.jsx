@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { TOPIC_HUB_GROUPS } from '../../../lib/content/topicHubs'
+import { latestHubDate, listHubRecent } from '../../../lib/content/topicHubRecent'
 import { SITE_AUTHORITY_LINKS } from '../../../lib/site/siteNav'
 import PageContainer from '../components/PageContainer'
 
@@ -32,7 +33,9 @@ export function topicHubJsonLd(hub) {
 function hubSections(hub) {
   return TOPIC_HUB_GROUPS.map((group) => ({
     ...group,
-    items: hub.leads.filter((lead) => lead.group === group.id),
+    items: hub.leads
+      .filter((lead) => lead.group === group.id)
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))),
   })).filter((group) => group.items.length)
 }
 
@@ -57,68 +60,91 @@ function AuthorityIndex({ current }) {
   )
 }
 
-function TopicLead({ lead, groupTitle }) {
+function TopicLead({ lead }) {
   return (
     <Link
       href={lead.href}
-      className="group block border-b border-[var(--site-line)] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] dark:hover:bg-[#151d27]"
+      className="group flex h-full flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 no-underline transition hover:-translate-y-0.5 hover:border-[var(--site-line-strong)] hover:shadow-[0_8px_22px_rgba(60,50,20,0.08)] hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)]"
     >
-      <div className="px-[0.9rem] py-[0.7rem] md:px-5 md:py-4">
-        <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="shrink-0 text-sm text-[var(--site-faint)]">▪</span>
-          {lead.date ? (
-            <span className="shrink-0 whitespace-nowrap text-xs text-[var(--site-faint)] dark:text-gray-400">{lead.date}</span>
-          ) : null}
-          {lead.section ? (
-            <span className="inline-flex rounded-full border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
-              {lead.section}
-            </span>
-          ) : null}
-          <span className="inline-flex rounded-full border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
-            {groupTitle}
-          </span>
-        </div>
-        <h3 className="text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:ml-5 md:text-[17px] md:leading-7">
-          {lead.label}
-        </h3>
-        {lead.note ? (
-          <p className="mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] md:ml-5 md:mt-2 md:line-clamp-2 md:text-sm md:leading-relaxed">
-            {lead.note}
-          </p>
+      <div className="mb-2 flex items-center gap-2 text-[11px] text-[var(--site-faint)]">
+        {lead.date ? <span className="font-mono">{lead.date}</span> : null}
+        {lead.section ? (
+          <span className="rounded-full bg-black/5 px-2 py-[1px] dark:bg-white/10">{lead.section}</span>
         ) : null}
-        <p className="mt-1 text-[11px] text-[var(--site-faint)] md:ml-5 md:mt-2 md:text-[13px]">打开 →</p>
       </div>
+      <h3 className="mb-0 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)]">
+        {lead.label}
+      </h3>
+      {lead.note ? (
+        <p className="mb-0 mt-1.5 line-clamp-2 text-[13px] leading-6 text-[var(--site-muted)]">{lead.note}</p>
+      ) : null}
     </Link>
+  )
+}
+
+function RecentStrip({ items }) {
+  if (!items.length) return null
+  return (
+    <section className="mb-8" aria-label="最近更新">
+      <div className="mb-3 flex items-baseline gap-3">
+        <span className="inline-block h-2 w-2 rounded-full bg-[#d9772f]" aria-hidden="true" />
+        <h2 className="mb-0 text-[17px] font-bold text-[var(--site-ink)]">最近更新</h2>
+        <span className="text-[12px] text-[var(--site-faint)]">按发布时间，持续追加</span>
+      </div>
+      <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map((item) => (
+          <li key={item.href}>
+            <Link
+              href={item.href}
+              className="group flex h-full flex-col rounded-xl border border-[#e4d3b4] border-l-[3px] border-l-[#d9772f] bg-[#fff8ec] p-4 no-underline transition hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(120,80,20,0.12)] hover:no-underline dark:border-[#5a4630] dark:border-l-[#f29a55] dark:bg-[#241b12]"
+            >
+              <span className="mb-1.5 font-mono text-[11px] text-[#a0763a] dark:text-[#d6a56b]">{item.date}</span>
+              <span className="text-[15px] font-semibold leading-snug text-[#2a2214] group-hover:underline dark:text-[#f1e2c8]">{item.label}</span>
+              {item.note ? (
+                <span className="mt-1.5 line-clamp-2 text-[12.5px] leading-6 text-[#6a5a40] dark:text-[#bda987]">{item.note}</span>
+              ) : null}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
 export default function TopicHubView({ hub }) {
   const sections = hubSections(hub)
+  const recent = listHubRecent(hub.slug)
+  const latest = latestHubDate(hub, recent)
 
   return (
     <PageContainer className="grid gap-8 py-6 md:py-8 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
       <AuthorityIndex current={hub.path} />
       <div className="min-w-0">
-        <header className="mb-6 border-b border-[var(--site-line)] pb-4">
-          <p className="text-[13px] text-[var(--site-faint)]">主线</p>
-          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
-            <h1 className="font-serif text-2xl font-semibold tracking-wide text-[var(--site-ink)] md:text-3xl">{hub.title}</h1>
-            <p className="font-mono text-[12px] text-[var(--site-faint)]">{hub.leads.length} 条</p>
+        <header className="mb-6 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] px-5 py-5 md:px-7 md:py-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--site-faint)]">主线 · Topic</p>
+            <div className="flex flex-wrap items-center gap-2 text-[12px] text-[var(--site-muted)]">
+              <span className="rounded-full border border-[var(--site-line)] px-2.5 py-0.5">{hub.leads.length} 条收录</span>
+              {latest ? <span className="rounded-full border border-[#e4d3b4] bg-[#fff8ec] px-2.5 py-0.5 text-[#8a5a1a] dark:border-[#5a4630] dark:bg-[#241b12] dark:text-[#d6a56b]">最近更新 {latest}</span> : null}
+            </div>
           </div>
-          <p className="mt-3 max-w-3xl text-[15px] leading-7 text-[var(--site-muted)]">{hub.description}</p>
+          <h1 className="mb-0 mt-3 border-b-0 pb-0 font-serif text-[1.9rem] font-bold leading-tight tracking-wide text-[var(--site-ink)] md:text-[2.3rem]">{hub.title}</h1>
+          <p className="mb-0 mt-2 max-w-3xl text-[14.5px] leading-7 text-[var(--site-muted)]">{hub.description}</p>
         </header>
 
-        <div className="space-y-10">
+        <RecentStrip items={recent} />
+
+        <div className="space-y-8">
           {sections.map((section) => (
             <section key={section.id} aria-labelledby={`${hub.slug}-${section.id}-title`} id={`${hub.slug}-${section.id}`}>
-              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-[var(--site-line)] pb-2">
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                 <h2 id={`${hub.slug}-${section.id}-title`} className="text-[17px] font-bold text-[var(--site-ink)]">{section.title}</h2>
                 <p className="text-[12px] text-[var(--site-faint)]">{section.note} · {section.items.length} 条</p>
               </div>
-              <ul className="m-0 list-none p-0">
+              <ul className="m-0 grid list-none gap-3 p-0 md:grid-cols-2">
                 {section.items.map((lead) => (
                   <li key={lead.href}>
-                    <TopicLead lead={lead} groupTitle={section.title} />
+                    <TopicLead lead={lead} />
                   </li>
                 ))}
               </ul>

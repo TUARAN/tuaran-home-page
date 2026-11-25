@@ -81,7 +81,8 @@ export default function HomeBranchEvolution() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       const r = drawBranchEvolution(ctx, model, view, W, H)
-      if (performance.now() - lastHud > 120) {
+      // 播放中节流 HUD；暂停、拖动、播完时每帧都要刷新，否则会停在旧日期
+      if (!view.playing || performance.now() - lastHud > 120) {
         lastHud = performance.now()
         setHud({ date: fmtDate(r.T), main: r.mainCount, active: r.active, merged: r.merged, seek: Math.round(view.p / model.p1 * 1000) })
       }
@@ -120,10 +121,10 @@ export default function HomeBranchEvolution() {
 
   if (failed) return null
 
-  const controlClass = 'rounded-md border border-[#30363d] bg-[#161b22] px-2.5 py-1 text-[12px] text-[#c9d1d9] disabled:opacity-50'
+  const controlClass = 'shrink-0 rounded-md border border-[#30363d] bg-[#161b22] px-2 py-0.5 text-[12px] text-[#c9d1d9] disabled:opacity-50'
 
   return (
-    <section ref={rootRef} className="home-branch-evolution relative z-[1] mb-6" aria-labelledby="home-branch-evolution-title">
+    <section ref={rootRef} className="home-download-section home-branch-evolution" aria-labelledby="home-branch-evolution-title">
       <div className="home-work-heading">
         <div>
           <p className="home-kicker">Git · {model ? <T zh={`快照 ${model.generatedAt}`} en={`Snapshot ${model.generatedAt}`} /> : 'tuaran-home-page'}</p>
@@ -132,37 +133,35 @@ export default function HomeBranchEvolution() {
           </h2>
         </div>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-[#252d36] bg-[#0d1117] text-[#c9d1d9]">
-        <div className="flex flex-wrap items-end justify-between gap-3 px-4 pt-3">
-          <div>
-            <div className="text-[20px] font-semibold tabular-nums text-[#f0f6fc]">{hud.date || '—'}</div>
-            <div className="mt-1 flex flex-wrap gap-4 text-[12px] tabular-nums text-[#8b949e]">
-              <span><T zh="main 提交" en="main commits" /> <b className="text-[#f0f6fc]">{hud.main}</b></span>
-              <span><T zh="并行分支" en="Active branches" /> <b className="text-[#f0f6fc]">{hud.active}</b></span>
-              <span><T zh="已合入" en="Merged" /> <b className="text-[#f0f6fc]">{hud.merged}</b></span>
-            </div>
+      <div className="mt-3 overflow-hidden rounded-xl border border-[#252d36] bg-[#0d1117] text-[#c9d1d9]">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 pt-2 text-[11px] tabular-nums text-[#8b949e]">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            <span className="text-[13px] font-semibold text-[#f0f6fc]">{hud.date || '—'}</span>
+            <span><T zh="main" en="main" /> <b className="text-[#f0f6fc]">{hud.main}</b></span>
+            <span><T zh="并行" en="Active" /> <b className="text-[#f0f6fc]">{hud.active}</b></span>
+            <span><T zh="已合入" en="Merged" /> <b className="text-[#f0f6fc]">{hud.merged}</b></span>
           </div>
-          <div className="flex flex-wrap gap-3 text-[12px] text-[#8b949e]">
+          <div className="flex flex-wrap gap-x-2.5">
             {LEGEND.map((item) => (
               <span key={item.zh}>
-                <i className="mr-1 inline-block h-2.5 w-2.5 rounded-full align-[-1px]" style={{ background: item.color }} />
+                <i className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: item.color }} />
                 <T zh={item.zh} en={item.en} />
               </span>
             ))}
           </div>
         </div>
-        <canvas ref={canvasRef} className="block h-[360px] w-full md:h-[440px]" role="img" aria-label="本站 Git 分支演进动画" />
-        <div className="flex flex-wrap items-center gap-2 border-t border-[#21262d] px-4 py-2.5">
-          <button type="button" className={controlClass} onClick={togglePlay} disabled={!model}>
-            {playing ? <T zh="⏸ 暂停" en="⏸ Pause" /> : <T zh="▶ 播放" en="▶ Play" />}
+        <canvas ref={canvasRef} className="block h-[200px] w-full md:h-[240px]" role="img" aria-label="本站 Git 分支演进动画" />
+        <div className="flex items-center gap-2 border-t border-[#21262d] px-3 py-2">
+          <button type="button" className={controlClass} onClick={togglePlay} disabled={!model} aria-label={playing ? '暂停' : '播放'}>
+            {playing ? '⏸' : '▶'}
           </button>
-          <button type="button" className={controlClass} onClick={restart} disabled={!model}>
-            <T zh="⟲ 重播" en="⟲ Replay" />
+          <button type="button" className={controlClass} onClick={restart} disabled={!model} aria-label="重播">
+            ⟲
           </button>
-          <select className={controlClass} value={speed} onChange={onSpeed} aria-label="播放速度">
+          <select className={`${controlClass} hidden sm:block`} value={speed} onChange={onSpeed} aria-label="播放速度">
             {SPEEDS.map((o) => <option key={o.value} value={o.value}>{o.zh}</option>)}
           </select>
-          <select className={controlClass} value={win} onChange={onWin} aria-label="镜头范围">
+          <select className={`${controlClass} hidden sm:block`} value={win} onChange={onWin} aria-label="镜头范围">
             {WINDOWS.map((o) => <option key={o.value} value={o.value}>{o.zh}</option>)}
           </select>
           <input
@@ -172,7 +171,7 @@ export default function HomeBranchEvolution() {
             value={hud.seek}
             onChange={onSeek}
             disabled={!model}
-            className="min-w-[120px] flex-1 accent-[#58a6ff]"
+            className="min-w-0 flex-1 accent-[#58a6ff]"
             aria-label="播放进度"
           />
         </div>

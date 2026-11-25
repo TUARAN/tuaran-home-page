@@ -36,14 +36,14 @@ Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]`
 历史遗留的 `codex/*`、`cursor/*`、`claude/*` 等工具前缀分支不再新开；已存在的按生命周期正常清理，不必改名。需要区分同一任务的多条分支时，用任务名区分，不要退回工具前缀。
 
 - 一件事一个分支，一个分支一个 PR。几篇调研各开各的，不合并到同一个分支。
-- 名称只写任务，不加 `-backup`、`-done`、`-v2` 之类后缀。需要保留旧版本时打 tag。
+- 名称只写任务，不加 `-backup`、`-done`、`-v2` 之类后缀。需要保留旧版本时按「归档」推到 `refs/archive/*`，不另开分支，也不打标签。
 
 ## 生命周期
 
 1. 从最新的 `main` 开分支。
 2. 在分支上提交，推送，开 PR。PR 正文按 Issue 优先工作流写 `Closes #N` 或 `Related: #N`。
-3. CI 通过后等站长说“合”，在 **squash 合并之前** 给 PR 分支 tip 打 `archive/*` tag（见下文「合并前归档」），再 squash 合并。
-4. 合并后当天清理：远端分支由 GitHub 自动删除，本地分支和 worktree 由本机清理；本机新打的 `archive/*` 推送到 `origin`。
+3. CI 通过后等站长说“合”，再 squash 合并。合并前的分支线由 GitHub 的 `refs/pull/<N>/head` 保留，不另打标签（见下文「合并后追溯」）。
+4. 合并后当天清理：远端分支由 GitHub 自动删除，本地分支和 worktree 由本机清理。
 5. 分支超过 7 天没有新提交：要么推进，要么按“归档”处理后删除。
 
 ## 数量上限
@@ -80,53 +80,54 @@ git worktree remove <路径>
 
 worktree 里有未提交文件时 git 会拒绝。先用 `git -C <路径> status` 看清楚：自动生成的快照可以加 `--force` 丢弃，手写内容先提交或备份。
 
-## 合并前归档
+## 合并后追溯
 
-本仓库 squash 合并后，`main` 历史呈一条线，分支名会从图谱里消失。为了在 SourceTree 等工具里仍能指回「合并前的 worktree / 分支线」，**每次 squash 合并前**都给该 PR 分支 tip 打 `archive/*` tag。tag 不占分支名额，也不替代 Issue / PR 正文里的任务说明。
+本仓库 squash 合并后，`main` 历史呈一条线，分支名会从 SourceTree 等工具的图谱里消失。GitHub 为每个 PR 永久保留 `refs/pull/<N>/head`，指向 PR 分支的最后一次提交；远端分支删除后这个引用仍在。经 PR 合并的分支线以它为准，合并前后都不另打标签。
 
-推荐顺序（站长说「合」之后、执行 `gh pr merge` 之前）：
-
-```bash
-# 1) 取 PR 分支最后一次提交的 SHA（示例：PR #540）
-SHA=$(gh pr view 540 --json commits --jq '.commits[-1].oid')
-BRANCH=$(gh pr view 540 --json headRefName --jq .headRefName)
-
-# 2) tag 名：去掉 feat/fix/research/content/chore 及历史 codex|cursor|claude 前缀
-#    feat/x-home-reading-nav → archive/x-home-reading-nav
-
-git tag archive/<名称> "$SHA"
-# 可选：附 PR / Issue，便于在标签列表里辨认
-# git tag -a archive/<名称> "$SHA" -m "PR #540 · $BRANCH · Closes #539"
-
-# 3) 再 squash 合并并删远端分支；随后本地 worktree / gone 分支照旧清理
-
-# 4) 批量合并后推送 tag（避免 tag 只留在本机）
-git push origin --tags
-```
-
-若分支已删、只剩 GitHub 记录，可从已合并 PR 的 commits 最后一项取 `oid` 补打 tag（与上表相同）。
-
-恢复临时查看线（不长期占分支名额）：
+需要在本机重新看某条已合并的分支线：
 
 ```bash
-git branch <分支名> archive/<名称>
-# 看完可删：git branch -D <分支名>
-```
-
-- **与 PR 的对应关系**：权威叙事仍在 GitHub PR / Issue；`archive/*` 是合并前代码状态的 SHA 书签。
-- **不做的事**：不为「图上好看」长期保留已合并的远程分支；不把执行工具名写进 tag（与分支命名一致）。
-
-## 归档
-
-除「合并前归档」外，对**尚未合并**、但超过 7 天无提交或不确定是否还要用的分支，也可先打 `archive/*` 再删本地分支：
-
-```bash
-git tag archive/<名称> <分支名>
+# 拉回 PR #540 的分支线，临时建一个本地分支查看
+git fetch origin pull/540/head:<分支名>
+# 看完删除，不长期占分支名额
 git branch -D <分支名>
 ```
 
-- tag 名去掉任务类型前缀，例如 `content/weekly-rss` → `archive/weekly-rss`。
-- 删除分支前确认 tag 已指向预期提交；已合并的 PR 优先用「合并前归档」流程，避免漏打。
+需要在 SourceTree 等工具里一次看到全部 PR 分支线，可以把所有 PR 引用拉到本机的 `refs/pull/` 命名空间。它们不算分支，不占数量上限：
+
+```bash
+git fetch origin '+refs/pull/*/head:refs/pull/*/head'
+```
+
+- **与 PR 的对应关系**：权威叙事在 GitHub PR / Issue；`refs/pull/<N>/head` 是 GitHub 维护的合并前代码状态，不需要本机补记。
+- **不做的事**：不为「图上好看」长期保留已合并的远程分支；不用标签记录分支。
+
+## 归档
+
+只有**没有 PR**、但要留住代码的分支才需要归档，例如超过 7 天无提交、或不确定是否还要用的本地分支。归档推到自定义命名空间 `refs/archive/<名称>`，再删本地分支：
+
+```bash
+git push origin <分支名>:refs/archive/<名称>
+git branch -D <分支名>
+```
+
+- 名称去掉任务类型前缀，例如 `content/weekly-rss` → `refs/archive/weekly-rss`。
+- `refs/archive/*` 不出现在 GitHub 的 Branches / Tags 页，`git clone` 和默认 `git fetch` 也不会拉取。需要时显式取回：
+
+```bash
+git fetch origin 'refs/archive/*:refs/archive/*'   # 拉回全部归档
+git branch <分支名> refs/archive/<名称>               # 恢复其中一条
+git push origin --delete refs/archive/<名称>          # 确认不再需要后删除
+```
+
+- 删除本地分支前，用 `git ls-remote origin refs/archive/<名称>` 确认远端归档已指向预期提交。
+- 已开过 PR 的分支不归档，直接依赖「合并后追溯」。
+
+## 标签
+
+标签只用于发布与版本，按 Git 约定：对外发布用带说明的 annotated tag（`git tag -a`），私人临时标记用 lightweight tag 且不推送。不用标签记录分支、PR 或合并前状态。
+
+2026-11-25 之前按旧规范推送过一批 `archive/*` 标签，从此不再新增。存量的迁移与清理记录在 Issue #622。
 
 ## 依赖与磁盘
 
@@ -158,7 +159,7 @@ Git worktree **共享** `.git/objects`，但 **`node_modules` 不进 Git**，不
 每周或每次合并一批 PR 后执行一次：
 
 1. `git fetch --prune`
-2. 核对刚合并的 PR 是否都有对应 `archive/*` tag；缺则从 PR commits 补打并 `git push origin --tags`。
+2. 核对没有 PR 的搁置分支，在删除前已推到 `refs/archive/*`。
 3. 按“合并后清理”处理远端已删除的分支。
 4. `git branch | wc -l` 与 `git worktree list`，确认没有超过上限。
 5. 对超过 7 天没动的分支，二选一：推进，或归档后删除。

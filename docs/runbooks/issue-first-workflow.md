@@ -127,7 +127,7 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 
 内容稿可以以 `review_ready: false` 进入 Git。助手不把该字段改成 `true`，也不调用后台发布或审批接口。`review_ready` 标记人工复核是否完成，不代替发布动作。调研的创作正本、后台审批和 72 小时待审批写入 D1 的规则，以 [research/README.md](../../research/README.md) 和 [content-storage-rollout.md](content-storage-rollout.md) 为准。未得到站长「合」之前，内容稿留在 PR 上，不直接推 `main`，避免启动那段计时。普通文章仍只通过 `/admin/articles` 或对应管理 API 发布。
 
-站长说「合」之后，先按 [分支管理规范](../specs/branch-management.md) 给 PR 分支 tip 打 `archive/*` tag，再 squash 合并；批量合并后推送 tag。助手不自行合并，也不改用普通 merge 收口。
+站长说「合」之后直接 squash 合并。合并前的分支线由 GitHub 的 `refs/pull/<N>/head` 保留，不另打标签，见 [分支管理规范](../specs/branch-management.md) 的「合并后追溯」。助手不自行合并，也不改用普通 merge 收口。
 
 ## 模板
 

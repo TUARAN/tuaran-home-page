@@ -32,7 +32,7 @@ export default function AdminBranchRulesPage() {
   return (
     <AdminPageGate label="分支规范" returnTo="/admin/branch-rules">
       <AdminPage hideTitle title="分支规范">
-        <AdminBook title="分支规范" description="分支命名、生命周期与归档" groups={[{ id: "rules", items: [{ id: "scope", title: "适用范围" }, ...chapters.map(({ id, title }) => ({ id, title }))] }]}><AdminBookChapter id="scope" title="适用范围">
+        <AdminBook title="分支规范" description="分支命名、生命周期、追溯与归档" groups={[{ id: "rules", items: [{ id: "scope", title: "适用范围" }, ...chapters.map(({ id, title }) => ({ id, title }))] }]}><AdminBookChapter id="scope" title="适用范围">
           <div
             className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
             dangerouslySetInnerHTML={{ __html: render(intro.trim()) }}

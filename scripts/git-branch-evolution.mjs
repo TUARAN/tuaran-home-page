@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // 从本地 git 历史导出首页「分支演进」动画的数据快照。
-// 线上构建拿不到本机的分支与 archive 标签，所以快照提交进仓库；刷新时重跑：
+// 线上构建拿不到本机的分支与归档引用，所以快照提交进仓库。刷新前先拉 PR 与归档引用：
+//   git fetch origin '+refs/pull/*/head:refs/pull/*/head' 'refs/archive/*:refs/archive/*'
 //   npm run data:git-branch-evolution
+// PR 分支名用 gh 查询；gh 不可用时显示为「PR #N」。
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -12,11 +14,13 @@ const DAY = 86400
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 1 << 28 }).trim()
 const tryGit = (...args) => { try { return git(...args) } catch { return '' } }
 const lines = (s) => s.split('\n').filter(Boolean)
+// PR 与归档引用来自远端，主线优先取 origin/main，避免本地 main 落后时把已合并的 PR 判成搁置
+const MAIN = tryGit('rev-parse', '--verify', '-q', 'origin/main') ? 'origin/main' : 'main'
 
 // 1. main 第一父链，附每个提交改动的文件（用于识别 squash 落点）
 const SEP = '\x1e'
 const main = []
-for (const block of git('log', 'main', '--first-parent', '--name-only', `--format=${SEP}%H%x09%ct%x09%P%x09%s`).split(SEP).slice(1)) {
+for (const block of git('log', MAIN, '--first-parent', '--name-only', `--format=${SEP}%H%x09%ct%x09%P%x09%s`).split(SEP).slice(1)) {
   const [head, ...files] = block.split('\n')
   const [h, t, parents, s] = head.split('\t')
   main.push({ h, t: +t, p: parents.split(' '), s, files: new Set(files.filter(Boolean)) })
@@ -48,15 +52,28 @@ for (const c of main) {
   branches.push({ name, forkT: base ? base.t : times[0], endT: c.t, commits: times, status: 'merged' })
 }
 
-// 3. 其余引用：archive 标签、本地与远端分支
-const refs = lines(git('for-each-ref', '--format=%(objectname)\t%(*objectname)\t%(refname)', 'refs/tags/archive', 'refs/heads', 'refs/remotes'))
+// 3. 其余引用：PR 引用 refs/pull/N/head、归档 refs/archive/*、旧版 archive/* 标签、本地与远端分支
+const TYPE_PREFIX = /^(feat|fix|research|content|chore|codex|cursor|claude)\//
+const prNames = new Map()
+try {
+  const prs = JSON.parse(execFileSync('gh', ['pr', 'list', '--state', 'all', '--limit', '5000', '--json', 'number,headRefName'], { encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'ignore'] }))
+  for (const pr of prs) prNames.set(String(pr.number), pr.headRefName.replace(TYPE_PREFIX, ''))
+} catch {}
+
+const refs = lines(git('for-each-ref', '--format=%(objectname)\t%(*objectname)\t%(refname)', 'refs/pull', 'refs/archive', 'refs/tags/archive', 'refs/heads', 'refs/remotes'))
   .map((l) => l.split('\t'))
   .map(([obj, peeled, ref]) => ({ tip: peeled || obj, ref }))
-  .filter((r) => !/\/(main|HEAD)$/.test(r.ref))
+  .filter((r) => !/\/(main|HEAD|merge)$/.test(r.ref))
+
+const refName = (ref) => {
+  const pr = ref.match(/^refs\/pull\/(\d+)\/head$/)
+  if (pr) return prNames.get(pr[1]) || `PR #${pr[1]}`
+  return ref.replace(/^refs\/(archive|tags\/archive|heads|remotes\/[^/]+)\//, '')
+}
 
 const byTip = new Map()
 for (const { tip, ref } of refs) {
-  const name = ref.replace(/^refs\/(tags\/archive|heads|remotes\/[^/]+)\//, '')
+  const name = refName(ref)
   const e = byTip.get(tip) || { tip, name, published: false, live: false }
   if (ref.startsWith('refs/heads/')) e.live = true
   else { e.published = true; e.name = name }
@@ -68,7 +85,7 @@ const candidates = []
 const seen = new Map()
 for (const e of byTip.values()) {
   if (coveredTips.has(e.tip)) continue
-  const unique = lines(tryGit('cherry', 'main', e.tip)).filter((l) => l.startsWith('+ ')).map((l) => l.slice(2))
+  const unique = lines(tryGit('cherry', MAIN, e.tip)).filter((l) => l.startsWith('+ ')).map((l) => l.slice(2))
   if (!unique.length) continue
   for (const h of unique) seen.set(h, (seen.get(h) || 0) + 1)
   candidates.push({ ...e, unique })
@@ -80,7 +97,7 @@ for (const e of candidates) {
   if (!own.length) continue
   const times = commitTimes(own)
   const firstT = times[0], tipT = times[times.length - 1]
-  const base = mainByHash.get(tryGit('merge-base', 'main', e.tip))
+  const base = mainByHash.get(tryGit('merge-base', MAIN, e.tip))
   const forkT = base && base.t <= firstT && base.t >= firstT - 30 * DAY ? base.t : firstT - 600
   const files = new Set(lines(tryGit('show', '--name-only', '--format=', ...own)))
 

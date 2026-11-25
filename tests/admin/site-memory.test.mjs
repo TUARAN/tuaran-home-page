@@ -30,7 +30,7 @@ test('site memory API is owner-guarded and reads D1 versions', async () => {
 })
 
 test('vault loads from the owner-guarded API and has no browser decryption', async () => {
-  const src = await read('app/(site)/context-memory/MemoryVault.jsx')
+  const src = await read('app/(admin)/admin/context-memory/MemoryVault.jsx')
   assert.match(src, /fetch\('\/api\/admin\/site-memory'/)
   assert.match(src, /\/api\/admin\/site-memory\?id=/)
   for (const gone of ['PBKDF2', 'AES-GCM', 'decryptBlob', 'deriveKey', 'passphrase', 'type="password"']) {
@@ -43,7 +43,8 @@ test('admin page and nav describe login-visible snapshots, not a password gate',
   assert.match(page, /const PAGE_TITLE = '站点记忆'/)
   assert.doesNotMatch(page, /输入密码|本机解密|解密查看/)
   assert.match(page, /登录可见/)
-  assert.match(page, /owner 鉴权/)
+  const vault = await read('app/(admin)/admin/context-memory/MemoryVault.jsx')
+  assert.match(vault, /owner 鉴权/)
 
   const item = ADMIN_NAV_CHILD_ITEMS.find((entry) => entry.href === '/admin/context-memory')
   assert.equal(item?.label, '站点记忆')

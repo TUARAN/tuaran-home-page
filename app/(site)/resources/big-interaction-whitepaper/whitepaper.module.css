@@ -17,7 +17,7 @@
 .paper { min-width: 0; max-width: 870px; }
 .section { scroll-margin-top: 90px; margin: 0 0 72px; padding-bottom: 64px; border-bottom: 1px solid #d8e2d5; }
 .sectionIndex { margin: 0 0 18px; color: #4c8b58; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
-.section h1, .section h2 { margin: 0 0 28px; color: #193b2c; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(31px, 3.4vw, 45px); font-weight: 700; line-height: 1.3; letter-spacing: .02em; }
+.section h1, .section h2 { margin: 0 0 28px; color: #193b2c; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(24px, 2.4vw, 30px); font-weight: 700; line-height: 1.3; letter-spacing: .02em; }
 .section>h3 { scroll-margin-top: 92px; margin: 36px 0 15px; color: #20553a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 22px; font-weight: 700; }
 .section>p:not(.sectionIndex), .section li { color: #465b4e; font-size: 15px; line-height: 2.05; }
 .section>p { margin: 0 0 19px; }
@@ -63,7 +63,7 @@
 
 .exhibition { scroll-margin-top: 90px; margin: 0 0 76px; padding: 0 0 65px; border-bottom: 1px solid #d8e2d5; }
 .exhibitionHeader { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 25px; }
-.exhibitionHeader h2 { margin: 0; color: #193b2c; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(28px, 3vw, 40px); line-height: 1.3; }
+.exhibitionHeader h2 { margin: 0; color: #193b2c; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(24px, 2.4vw, 30px); line-height: 1.3; }
 .exhibitionHeader p:last-child { margin: 10px 0 0; color: #66806b; font-size: 13px; line-height: 1.7; }
 .exhibitionControls { display: flex; align-items: center; gap: 7px; flex: none; }
 .exhibitionControls span { margin-right: 6px; color: #2b6846; font: 700 13px ui-monospace, monospace; white-space: nowrap; }

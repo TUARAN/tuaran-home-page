@@ -1,13 +1,10 @@
 import Link from 'next/link'
-import BookIdentity from '../../components/book-reader/BookIdentity'
-import XSiteFrame from '../../../(x)/x-workbench/XSiteFrame'
-import ManualPaper from '../../components/book-reader/ManualPaper'
+import XPage from '../../../(x)/x-workbench/XPage'
 import { archiveImageView, archiveShanghaiDate } from '../../../../lib/interaction/archiveImage'
 import archive from '../../../../lib/interaction/bigInteractionArchive.json'
 
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
-import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
 import ChapterNav from './ChapterNav'
 import PlateExhibition from './PlateExhibition'
@@ -41,7 +38,7 @@ function ArchivePostImages({ images }) {
 }
 
 export const metadata = {
-  title: `${bookTitle}｜互动、反馈与边界`,
+  title: { absolute: `${bookTitle}｜X大互动` },
   description,
   keywords: ['大互动理论', '真实互动', '反馈', '互动质量', '自我成长', '社交关系'],
   alternates: { canonical: path },
@@ -132,23 +129,21 @@ const jsonLd = {
 
 export default function BigInteractionWhitepaperPage() {
   return (
-    <XSiteFrame active="/theory">
-    <ManualPaper tone="green">
-      <PageContainer width="standard" className={styles.page}>
+    <XPage
+      active="/theory"
+      title={title}
+      intro="从好好照顾自己，到在互动中认识自己、拓展还能退出的边界。"
+      meta={(
+        <>
+          <time dateTime={published}>{published}</time>
+          <span>更新 {updated}</span>
+          <span>四章 · 约 6 分钟</span>
+          <ContentPvBeacon category="resource" slug="big-interaction-whitepaper" display prefix="·" />
+        </>
+      )}
+      after={<ContentEngagement contentKey="resource:big-interaction-whitepaper" width="standard" />}
+    >
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-
-        <header className={styles.masthead}>
-          <BookIdentity kind="实践读本" />
-
-          <h1>{title}</h1>
-          <p className={styles.deck}>从好好照顾自己，到在互动中认识自己、拓展还能退出的边界。</p>
-          <p className={styles.metaLine}>
-            <time dateTime={published}>{published}</time>
-            <span>更新 {updated}</span>
-            <span>四章 · 约 6 分钟</span>
-            <ContentPvBeacon category="resource" slug="big-interaction-whitepaper" display prefix="·" />
-          </p>
-        </header>
 
         <div className={styles.readingLayout}>
           <ChapterNav chapters={chapters} />
@@ -312,14 +307,10 @@ export default function BigInteractionWhitepaperPage() {
         <footer className={styles.footer}>
           <span>大互动理论 · TUARAN · {published.slice(0, 4)} 年 10 月</span>
           <div className={styles.footerActions}>
-            <Link href="/roundtable">大互动圆桌</Link>
             <a href="#foreword">返回序言 ↑</a>
             <SharePageButton title={bookTitle} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享本书" />
           </div>
         </footer>
-      </PageContainer>
-      <ContentEngagement contentKey="resource:big-interaction-whitepaper" width="standard" />
-    </ManualPaper>
-    </XSiteFrame>
+    </XPage>
   )
 }

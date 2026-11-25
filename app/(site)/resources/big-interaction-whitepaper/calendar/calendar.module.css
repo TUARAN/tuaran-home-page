@@ -46,7 +46,7 @@
 .dateLabel input { min-height: 36px; padding: 0 10px; color: #173d2a; font-weight: 600; }
 .board { min-width: 0; padding: 16px 16px 8px; }
 .eyebrow { margin: 0; color: #2b784b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
-.boardHead h2 { margin: 4px 0 6px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 28px; line-height: 1.2; }
+.boardHead h2 { margin: 4px 0 6px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 22px; line-height: 1.2; }
 .windowLine { margin: 0; color: #425f4b; font-size: 13px; font-weight: 600; line-height: 1.6; }
 .tableWrap { overflow-x: auto; margin-top: 8px; }
 .board table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.55; }
@@ -67,7 +67,8 @@
 
 
 .executions { margin-top: 18px; border: 1px solid #c6dac7; border-radius: 16px; background: linear-gradient(160deg, #f3f8f0, #fbfcf8); padding: 18px 16px 16px; }
-.execHead h2 { margin: 4px 0 8px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 28px; line-height: 1.2; }
+.executions > h2 { margin: 0 0 8px; font-size: 22px; line-height: 1.35; }
+.execHead h2 { margin: 4px 0 8px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 22px; line-height: 1.2; }
 .execLead, .execNote, .execMeta, .execAppend { margin: 0 0 8px; color: #425f4b; font-size: 13px; font-weight: 600; line-height: 1.7; }
 .execLead { color: #203f2f; font-size: 15px; }
 .execNote { color: #5d7364; font-weight: 500; }

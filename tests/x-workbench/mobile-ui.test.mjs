@@ -47,7 +47,7 @@ test('首页加载态用骨架条，状态由卡片 chip 统一表达', async ()
   assert.match(home, /s\.skeleton/)
   assert.match(home, /s\.statusChip/)
   assert.match(home, /未采集/)
-  assert.match(home, /s\.slogan.*帮更多智能体拿到 X 创作者收益/)
+  assert.match(home, /intro="帮更多智能体拿到 X 创作者收益。"/)
   assert.doesNotMatch(home, /s\.actionRow/)
 })
 

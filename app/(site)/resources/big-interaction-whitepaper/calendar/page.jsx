@@ -5,11 +5,8 @@ import { interactionAgentHandles } from '../../../../../lib/interaction/agentPoo
 import { loadOwnActivityDaysForPool } from '../../../../../lib/interaction/dailyTop/ownActivity.js'
 import { DAILY_TOP_METRIC_LABEL, DAILY_TOP_SUBJECT, shanghaiDateKey } from '../../../../../lib/interaction/dailyTop/model.js'
 import { loadCombinedDailyTopDays } from '../../../../../lib/interaction/dailyTop/store.js'
-import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
-import ManualPaper from '../../../components/book-reader/ManualPaper'
-import PageContainer from '../../../components/PageContainer'
+import XPage from '../../../../(x)/x-workbench/XPage'
 import InteractionCalendar from './InteractionCalendar'
-import styles from './calendar.module.css'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -30,6 +27,7 @@ function edgeBindings() {
 const path = '/calendar'
 const canonicalUrl = 'https://x.2aran.com/calendar'
 const title = '大互动日历'
+const intro = '选一天，看前一自然日里互动最多的十个账号，以及本账号各项任务完成了几次。'
 const description = '按 Asia/Shanghai 选择日期，查看前一自然日与他人的互动前十、本账号各任务完成次数。'
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -40,13 +38,13 @@ const jsonLd = {
   inLanguage: 'zh-CN',
   isPartOf: {
     '@type': 'WebPage',
-    name: '智能体',
-    url: 'https://x.2aran.com/x-workbench#agents',
+    name: 'X大互动',
+    url: 'https://x.2aran.com/',
   },
 }
 
 export const metadata = {
-  title,
+  title: { absolute: `${title}｜X大互动` },
   description,
   alternates: { canonical: path },
   openGraph: {
@@ -69,17 +67,9 @@ export default async function BigInteractionCalendarPage() {
     activities = []
   }
   return (
-    <XSiteFrame active="/x-workbench#agents">
-    <ManualPaper tone="green">
-    <PageContainer width="standard" className={styles.page}>
+    <XPage active="/calendar" title={title} intro={intro} meta={<span>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</span>}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <header className={styles.masthead}>
-        <h1>{title}</h1>
-        <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>
-      </header>
       <InteractionCalendar days={days} activities={activities} initialToday={today} />
-    </PageContainer>
-    </ManualPaper>
-    </XSiteFrame>
+    </XPage>
   )
 }

@@ -13,6 +13,28 @@ import {
 } from '../../../lib/home/homeMasonryLazy.mjs'
 import styles from './HomeMasonry.module.css'
 
+// 瀑布流测量：先切到 Grid 再量高度，保证行跨度按 Grid 列宽计算。
+// 必须自包含（只用参数和浏览器全局），因为同一份源码会被序列化成首屏内联脚本。
+function measureMasonryGrid(grid) {
+  if (!grid) return
+  grid.dataset.masonryReady = 'true'
+  const gridStyles = getComputedStyle(grid)
+  const row = parseFloat(gridStyles.gridAutoRows) || 8
+  const gap = parseFloat(gridStyles.rowGap) || 16
+  const nodes = [...grid.children].filter((item) => item.classList.contains('home-masonry-item'))
+  for (const item of nodes) {
+    const content = item.firstElementChild
+    if (!content || !item.getClientRects().length) continue
+    // 卡片自身高度也算进去：内容从无到有时，卡片外框尺寸会变，行跨度据此重算。
+    const height = Math.max(content.getBoundingClientRect().height, item.getBoundingClientRect().height)
+    item.style.gridRowEnd = `span ${Math.max(1, Math.ceil((height + gap) / (row + gap)))}`
+  }
+}
+
+// 首屏内联脚本：紧跟在网格后面执行，在浏览器首次绘制前就排好 Grid，
+// 避免先按 CSS 多栏绘制、水合后再跳成 Grid 造成整页卡片换位闪烁。
+const MASONRY_PRE_PAINT_SCRIPT = `try{(${measureMasonryGrid.toString()})(document.currentScript&&document.currentScript.previousElementSibling)}catch(e){}`
+
 // 三区懒挂载：
 // - load：视口内，内容已挂载
 // - preload：预加载区内，提前挂载且加载后不再卸载（triggerOnce）
@@ -39,17 +61,7 @@ export default function HomeMasonry({ children, eagerCount = SSR_EAGER_COUNT, pr
 
     function measure() {
       frame = 0
-      const gridStyles = getComputedStyle(grid)
-      const row = parseFloat(gridStyles.gridAutoRows) || 8
-      const gap = parseFloat(gridStyles.rowGap) || 16
-      for (const item of nodes) {
-        const content = item.firstElementChild
-        if (!content || !item.getClientRects().length) continue
-        // 卡片自身高度也算进去：内容从无到有时，卡片外框尺寸会变，行跨度据此重算。
-        const height = Math.max(content.getBoundingClientRect().height, item.getBoundingClientRect().height)
-        item.style.gridRowEnd = `span ${Math.max(1, Math.ceil((height + gap) / (row + gap)))}`
-      }
-      grid.dataset.masonryReady = 'true'
+      measureMasonryGrid(grid)
     }
 
     function schedule() {
@@ -134,21 +146,25 @@ export default function HomeMasonry({ children, eagerCount = SSR_EAGER_COUNT, pr
   }, [mounted, preloadMargin])
 
   return (
-    <div ref={gridRef} className="home-main-grid">
-      {items.map((child, index) => {
-        if (mounted.has(index)) return child
-        // 占位继承原卡片的类名，保留 hidden lg:block 等响应式规则，避免移动端露出本应隐藏的侧栏。
-        const placeholderClassName = resolvePlaceholderClassName(child?.props?.className)
-        return (
-          <div key={`home-lazy-placeholder-${index}`} className={placeholderClassName} aria-hidden="true">
-            <div className={styles.placeholder} style={{ minHeight: PLACEHOLDER_HEIGHT }}>
-              <span className={`${styles.bar} ${styles.barTitle}`} />
-              <span className={styles.bar} />
-              <span className={`${styles.bar} ${styles.barShort}`} />
+    <>
+      {/* data-masonry-ready 与卡片 gridRowEnd 由首屏内联脚本在水合前写入，属于预期的属性差异。 */}
+      <div ref={gridRef} className="home-main-grid" suppressHydrationWarning>
+        {items.map((child, index) => {
+          if (mounted.has(index)) return child
+          // 占位继承原卡片的类名，保留 hidden lg:block 等响应式规则，避免移动端露出本应隐藏的侧栏。
+          const placeholderClassName = resolvePlaceholderClassName(child?.props?.className)
+          return (
+            <div key={`home-lazy-placeholder-${index}`} className={placeholderClassName} aria-hidden="true">
+              <div className={styles.placeholder} style={{ minHeight: PLACEHOLDER_HEIGHT }}>
+                <span className={`${styles.bar} ${styles.barTitle}`} />
+                <span className={styles.bar} />
+                <span className={`${styles.bar} ${styles.barShort}`} />
+              </div>
             </div>
-          </div>
-        )
-      })}
-    </div>
+          )
+        })}
+      </div>
+      <script dangerouslySetInnerHTML={{ __html: MASONRY_PRE_PAINT_SCRIPT }} />
+    </>
   )
 }

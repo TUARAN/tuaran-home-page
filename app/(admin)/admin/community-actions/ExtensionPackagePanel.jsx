@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, StatusPill } from '../../components/ui'
 const OPTIONS = {
-  x: { href: 'https://x.2aran.com/extension', docs: 'https://x.2aran.com/docs', docsLabel: '大互动智能体（手册）' },
+  x: { href: 'https://x.2aran.com/extension', docs: 'https://x.2aran.com/docs', docsLabel: '大互动智能体手册' },
   'ai-distributor': { href: '/tools/syncblog-publisher', docs: '/tools/syncblog-publisher/docs', docsLabel: '黄皮书' },
 }
 export default function ExtensionPackagePanel({ pluginId }) {

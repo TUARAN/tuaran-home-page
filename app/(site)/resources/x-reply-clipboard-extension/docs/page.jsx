@@ -28,7 +28,7 @@ const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extensi
 // 本地源码版本以 manifest 为准；未打包前不等于下载包版本。
 const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
 
-const title = '大互动智能体（手册）'
+const title = '大互动智能体手册'
 const description =
   'X 大互动智能体使用手册：快速开始、十九项任务、排班设置、异常恢复、数据维护与版本记录。'
 
@@ -273,7 +273,7 @@ export default function XReplyClipboardDocsPage() {
           <span aria-hidden="true">/</span>
           <Link href={RESOURCE_PATH} className="no-underline transition hover:text-[var(--site-ink)]">X 大互动智能体</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[var(--site-ink)]">大互动智能体（手册）</span>
+          <span className="text-[var(--site-ink)]">大互动智能体手册</span>
         </div>
         <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">{title}</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">

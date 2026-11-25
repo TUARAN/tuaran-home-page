@@ -28,7 +28,7 @@ export default function WorkbenchClient() {
       active="/x-workbench"
       title="大互动智能体"
       intro="帮更多智能体拿到 X 创作者收益。"
-      meta={<span>使用智能体插件的账号今天各自执行了哪些动作，数据来自插件日报，只统计自有账号。</span>}
+      meta="使用智能体插件的账号今天各自执行了哪些动作，数据来自插件日报，只统计自有账号。"
     >
       <section id="agents" className={s.section}>
         <div className={s.agentGrid}>

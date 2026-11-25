@@ -30,7 +30,7 @@
 .tab:hover { color: var(--ink); background: var(--wash); }
 .tabOn { color: var(--accentInk); font-weight: 800; }
 .tabOn::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
-.tab:focus-visible, .btn:focus-visible, .input:focus-visible, .pill:focus-visible, .searchBtn:focus-visible, .cta:focus-visible, .agentHandle:focus-visible, .fold summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.tab:focus-visible, .btn:focus-visible, .input:focus-visible, .pill:focus-visible, .searchBtn:focus-visible, .hdrPrimary:focus-visible, .hdrGhost:focus-visible, .avatarBtn:focus-visible, .menuItem:focus-visible, .agentHandle:focus-visible, .fold summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .spacer { flex: 1; }
 .search { display: flex; align-items: center; background: var(--blueSoft); border: 1px solid transparent; border-radius: 999px; padding: 3px 3px 3px 16px; gap: 6px; min-width: 240px; }
 .search:focus-within { background: #fff; border-color: var(--ink); }
@@ -38,12 +38,23 @@
 .search input::placeholder { color: var(--sub); }
 .searchBtn { border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 6px 16px; cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; }
 .searchBtn:hover { background: var(--accentInk); }
-.cta { background: var(--accent); color: #fff !important; border-radius: 999px; padding: 8px 18px; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
-.cta:hover { background: var(--accentInk); }
-.accountBar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; }
-.accountHint { color: var(--faint); font-size: 14px; padding: 0 8px; }
-.accountLink { font-size: 14px; font-weight: 600; color: var(--sub); text-decoration: none; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.accountLink:hover { color: var(--ink); }
+/* 顶栏操作区：一个主按钮 + 一个账号入口。账号动作（账号、后台、退出）收进头像菜单，
+   不再并排堆在顶栏里；所有顶栏按钮共用同一高度与圆角。 */
+.barActions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
+.hdrPrimary, .hdrGhost { height: 36px; padding: 0 16px; border: 1px solid transparent; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 700; line-height: 1; text-decoration: none; white-space: nowrap; }
+.hdrPrimary { background: var(--accent); border-color: var(--accent); color: #fff !important; }
+.hdrPrimary:hover { background: var(--accentInk); border-color: var(--accentInk); }
+.hdrGhost { background: #fff; border-color: var(--line2); color: var(--ink); }
+.hdrGhost:hover { border-color: var(--ink); background: var(--wash); }
+.hdrLoading { width: 36px; height: 36px; border-radius: 50%; background: var(--blueSoft); }
+.accountWrap { position: relative; }
+.avatarBtn { width: 36px; height: 36px; padding: 0; border: 1px solid var(--ink); border-radius: 50%; background: var(--ink); color: #fff; font: inherit; font-size: 14px; font-weight: 800; line-height: 1; display: grid; place-items: center; cursor: pointer; }
+.avatarBtn:hover { background: var(--blue2); border-color: var(--blue2); }
+.accountMenu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 196px; padding: 6px; display: grid; gap: 2px; background: #fff; border: 1px solid var(--cardLine); border-radius: 14px; box-shadow: 0 12px 32px rgba(15, 20, 25, .14); }
+.menuWho { margin: 4px 10px 6px; color: var(--faint); font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menuItem { min-height: 44px; padding: 0 10px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+.menuItem:hover { background: var(--wash); }
+.menuExit { color: var(--sub); font-weight: 500; }
 
 /* 主体 */
 .main { max-width: 1328px; margin: 0 auto; padding: 28px 24px calc(80px + env(safe-area-inset-bottom, 0px)); }
@@ -58,7 +69,6 @@
 .btn { border: 1px solid var(--line2); background: #fff; border-radius: 999px; padding: 7px 16px; cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 36px; box-sizing: border-box; }
 .btn:hover { background: var(--wash); border-color: var(--ink); color: var(--ink); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-.btnDev { gap: 6px; color: var(--sub); }
 .primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .primary:hover { color: #fff; background: var(--accentInk); border-color: var(--accentInk); }
 .link { border: 0; background: none; padding: 0; color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line2); }
@@ -233,9 +243,8 @@
   .logo { width: 30px; height: 30px; font-size: 16px; }
   .brandName { font-size: 16px; }
   .brandSub { font-size: 10px; }
-  .cta { order: 2; margin-left: auto; padding: 7px 13px; font-size: 13px; min-height: 38px; }
-  .accountBar { order: 3; gap: 6px; }
-  .tabs { order: 4; flex: 0 0 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-padding-inline: 12px; gap: 0;
+  .barActions { order: 2; gap: 6px; }
+  .tabs { order: 3; flex: 0 0 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-padding-inline: 12px; gap: 0;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%); }
   .tabs::-webkit-scrollbar { display: none; }
   .menuGroup { flex-wrap: nowrap; flex: none; }
@@ -258,7 +267,9 @@
   .opsStatus { top: 64px; }
   .pairRevoke { margin-left: 0; }
   .panelFoot .btn { flex: 1; }
-  .barInner { padding: 5px 12px 0; }
+  .barInner { padding: 6px 12px 0; }
+  .hdrPrimary, .hdrGhost { height: 40px; padding: 0 16px; }
+  .avatarBtn, .hdrLoading { width: 40px; height: 40px; }
   .main { padding: 16px 12px calc(96px + env(safe-area-inset-bottom, 0px)); }
   .section { margin-bottom: 28px; scroll-margin-top: 100px; }
   .sectionHead { gap: 10px; margin-bottom: 14px; }
@@ -297,9 +308,9 @@
   .fold summary { min-height: 44px; }
 }
 
-/* 窄屏手机：数据行改两行流式，避免六个指标互相挤压 */
+/* 窄屏手机：行动区只留一个账号头像，主按钮保持可见但收窄内边距 */
 @media (max-width: 380px) {
-  .cta { display: none; }
+  .hdrPrimary { padding: 0 13px; }
   .slogan { font-size: 19px; }
   .metricRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
   .metricCell dd { font-size: 15px; }
@@ -307,10 +318,10 @@
 
 /* 触屏按下反馈；动效仍尊重系统的「减少动态效果」设置 */
 @media (hover: none) {
-  .btn:active, .tab:active, .pill:active, .cta:active { background: var(--blueSoft); }
-  .primary:active { background: var(--accentInk); color: #fff; }
+  .btn:active, .tab:active, .pill:active, .hdrGhost:active, .menuItem:active { background: var(--blueSoft); }
+  .primary:active, .hdrPrimary:active { background: var(--accentInk); color: #fff; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .btn, .tab, .pill, .heroCard, .search, .searchBtn, .cta, .agentCard { transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .btn, .tab, .pill, .heroCard, .search, .searchBtn, .hdrPrimary, .hdrGhost, .avatarBtn, .menuItem, .agentCard { transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
   .skeleton { animation: skeletonShift 1.4s ease-in-out infinite; }
 }

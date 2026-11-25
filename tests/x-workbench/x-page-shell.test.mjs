@@ -44,7 +44,12 @@ test('插件页用共用外壳，标题统一后缀', async () => {
   assert.match(source, /title: \{ absolute: 'X 大互动智能体插件｜X大互动' \}/)
 })
 
-test('后台按钮标为开发中', async () => {
+test('后台入口收进账号菜单并标为开发中', async () => {
   const frame = await page('(x)/x-workbench/XSiteFrame.jsx')
-  assert.match(frame, /href="\/x-workbench\/ops"[^>]*>后台<span className=\{s\.beta\}>开发中<\/span>/)
+  // 账号动作不再并排堆在顶栏：头像按钮 + role="menu" 弹层收纳账号、后台、退出
+  assert.match(frame, /className=\{s\.avatarBtn\}[^>]*aria-haspopup="menu"/)
+  assert.match(frame, /role="menu"/)
+  assert.match(frame, /href="\/x-workbench\/ops"[^>]*>站长后台<span className=\{s\.beta\}>开发中<\/span>/)
+  assert.match(frame, /href=\{logoutHref\}>退出登录</)
+  assert.doesNotMatch(frame, /className=\{s\.accountBar\}|className=\{s\.cta\}/)
 })

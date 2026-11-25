@@ -10,15 +10,12 @@ import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
 import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/site/engineeringWorks'
+import { X_CHROME_FREE_PATHS } from '../../../lib/site/xSiteRoutes'
 
+// X大互动页面自带 XSiteFrame 导航；短路径与改写目标都从 xSiteRoutes 派生，新增页面不必在这里再登记。
 const HIDE_CHROME_PATHS = new Set([
   '/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup',
-  '/docs', '/theory', '/calendar', '/roundtable', '/extension',
-  '/resources/x-reply-clipboard-extension',
-  '/resources/x-reply-clipboard-extension/docs',
-  '/resources/big-interaction-whitepaper',
-  '/resources/big-interaction-whitepaper/calendar',
-  '/resources/big-interaction-whitepaper/roundtable',
+  ...X_CHROME_FREE_PATHS,
 ])
 const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge'])
 

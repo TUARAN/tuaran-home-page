@@ -216,14 +216,17 @@ test('trending month helpers validate keys, shift across year boundaries, and bu
   assert.deepEqual(trendingMonthMatrix(''), [])
 })
 
-test('the trending page keeps a server-rendered calendar without client components or buttons', async () => {
+test('the trending page keeps a server-rendered compact calendar without client components or buttons', async () => {
   const [page, helper] = await Promise.all([
     readFile(new URL('../app/(site)/tools/github-trending/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../lib/page-data/githubTrending.js', import.meta.url), 'utf8'),
   ])
   assert.doesNotMatch(page, /['"]use client['"]/)
   assert.match(page, /trendingMonthMatrix/)
-  assert.match(page, /<details[\s\S]*按月历选日期[\s\S]*<\/details>/s)
+  assert.match(page, /aria-label="按月历选日期"/)
+  // 日历常驻展示，不再折叠，也不保留旧的日期胶囊。
+  assert.doesNotMatch(page, /<details|<summary/)
+  assert.doesNotMatch(page, /rounded-full border px-3 py-1/)
   assert.match(page, /month=\$\{month\}/)
   assert.doesNotMatch(page, /<button/)
   assert.match(helper, /export function trendingMonthMatrix/)

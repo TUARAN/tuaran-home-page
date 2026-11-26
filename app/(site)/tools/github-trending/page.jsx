@@ -98,102 +98,68 @@ export default async function GitHubTrendingPage({ searchParams }) {
         </p>
       </header>
 
-      {snapshot.dates.length > 0 && (
-        <nav aria-label="选择日期" className="mt-5 flex flex-wrap gap-2">
-          {snapshot.dates.map((date) => {
-            const selected = date === snapshot.selectedDate
-            const href = date === defaultDate ? GITHUB_TRENDING_PATH : `${GITHUB_TRENDING_PATH}?date=${date}`
-            return (
-              <Link
-                key={date}
-                href={href}
-                aria-current={selected ? 'page' : undefined}
-                className={[
-                  'rounded-full border px-3 py-1 text-xs tabular-nums transition',
-                  selected
-                    ? 'border-[var(--site-ink)] bg-[var(--site-ink)] text-[var(--page-bg)]'
-                    : 'border-[var(--site-line-strong)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
-                ].join(' ')}
-              >
-                {date}
-                {date === snapshot.today ? ' · 今天' : date === snapshot.latest ? ' · 最新' : ''}
-              </Link>
-            )
-          })}
-        </nav>
-      )}
-
       {calendarCells.length > 0 && (
-        <details className="mt-3 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3">
-          <summary className="cursor-pointer select-none text-xs text-[var(--site-muted)] marker:content-none hover:text-[var(--site-ink)]">
-            按月历选日期
-          </summary>
-          <div className="mt-3 max-w-xs" role="group" aria-label="月历选日期">
-            <div className="flex items-center justify-between text-xs">
-              {hasPrevMonth ? (
-                <Link href={monthHref(prevMonth)} className="text-[var(--site-muted)] hover:text-[var(--site-ink)]">
-                  ← 上个月
-                </Link>
-              ) : (
-                <span aria-disabled="true" className="text-[var(--site-faint)]">← 上个月</span>
-              )}
-              <strong className="tabular-nums">{monthTitle(visibleMonth)}</strong>
-              {hasNextMonth ? (
-                <Link href={monthHref(nextMonth)} className="text-[var(--site-muted)] hover:text-[var(--site-ink)]">
-                  下个月 →
-                </Link>
-              ) : (
-                <span aria-disabled="true" className="text-[var(--site-faint)]">下个月 →</span>
-              )}
-            </div>
-            <div className="mt-2 grid grid-cols-7 gap-y-1 text-center text-[11px] text-[var(--site-faint)]" aria-hidden="true">
-              {CALENDAR_WEEKDAYS.map((label) => <span key={label}>{label}</span>)}
-            </div>
-            <div className="grid grid-cols-7 gap-y-1 text-center text-xs tabular-nums">
-              {calendarCells.map((date, index) => {
-                if (!date) return <span key={`empty-${index}`} />
-                const available = availableDates.has(date)
-                const selected = date === snapshot.selectedDate
-                const isToday = date === snapshot.today
-                if (!available) {
-                  return (
-                    <span
-                      key={date}
-                      aria-label={`${date}，暂无数据`}
-                      className={[
-                        'mx-auto flex h-7 w-7 items-center justify-center rounded-full',
-                        isToday ? 'text-[var(--site-muted)] underline decoration-dotted underline-offset-2' : 'text-[var(--site-faint)]',
-                      ].join(' ')}
-                    >
-                      {Number(date.slice(8))}
-                    </span>
-                  )
-                }
-                const href = date === defaultDate ? GITHUB_TRENDING_PATH : `${GITHUB_TRENDING_PATH}?date=${date}`
+        <nav aria-label="按月历选日期" className="mt-5 w-56">
+          <div className="flex items-center justify-between text-xs text-[var(--site-muted)]">
+            {hasPrevMonth ? (
+              <Link href={monthHref(prevMonth)} aria-label={`查看${monthTitle(prevMonth)}`} className="px-1 hover:text-[var(--site-ink)]">←</Link>
+            ) : (
+              <span aria-disabled="true" className="px-1 text-[var(--site-faint)]">←</span>
+            )}
+            <strong className="tabular-nums text-[var(--site-ink)]">{monthTitle(visibleMonth)}</strong>
+            {hasNextMonth ? (
+              <Link href={monthHref(nextMonth)} aria-label={`查看${monthTitle(nextMonth)}`} className="px-1 hover:text-[var(--site-ink)]">→</Link>
+            ) : (
+              <span aria-disabled="true" className="px-1 text-[var(--site-faint)]">→</span>
+            )}
+          </div>
+          <div className="mt-1 grid grid-cols-7 text-center text-[10px] leading-4 text-[var(--site-faint)]" aria-hidden="true">
+            {CALENDAR_WEEKDAYS.map((label) => <span key={label}>{label}</span>)}
+          </div>
+          <div className="mt-0.5 grid grid-cols-7 text-center text-[11px] tabular-nums">
+            {calendarCells.map((date, index) => {
+              if (!date) return <span key={`empty-${index}`} />
+              const available = availableDates.has(date)
+              const selected = date === snapshot.selectedDate
+              const isToday = date === snapshot.today
+              if (!available) {
                 return (
-                  <Link
+                  <span
                     key={date}
-                    href={href}
-                    aria-current={selected ? 'date' : undefined}
-                    aria-label={isToday ? `${date}，今天` : date}
+                    aria-label={`${date}，暂无数据`}
                     className={[
-                      'mx-auto flex h-7 w-7 items-center justify-center rounded-full transition',
-                      selected
-                        ? 'bg-[var(--site-ink)] text-[var(--page-bg)]'
-                        : 'text-[var(--site-muted)] hover:bg-[color-mix(in_srgb,var(--site-line)_45%,transparent)] hover:text-[var(--site-ink)]',
-                      isToday && !selected ? 'border border-dashed border-[var(--site-line-strong)]' : '',
+                      'mx-auto flex h-6 w-6 items-center justify-center rounded-full',
+                      isToday ? 'text-[var(--site-muted)] underline decoration-dotted underline-offset-2' : 'text-[var(--site-faint)]',
                     ].join(' ')}
                   >
                     {Number(date.slice(8))}
-                  </Link>
+                  </span>
                 )
-              })}
-            </div>
+              }
+              const href = date === defaultDate ? GITHUB_TRENDING_PATH : `${GITHUB_TRENDING_PATH}?date=${date}`
+              return (
+                <Link
+                  key={date}
+                  href={href}
+                  aria-current={selected ? 'date' : undefined}
+                  aria-label={isToday ? `${date}，今天` : date}
+                  className={[
+                    'mx-auto flex h-6 w-6 items-center justify-center rounded-full transition',
+                    selected
+                      ? 'bg-[var(--site-ink)] text-[var(--page-bg)]'
+                      : 'text-[var(--site-muted)] hover:bg-[color-mix(in_srgb,var(--site-line)_45%,transparent)] hover:text-[var(--site-ink)]',
+                    isToday && !selected ? 'border border-dashed border-[var(--site-line-strong)]' : '',
+                  ].join(' ')}
+                >
+                  {Number(date.slice(8))}
+                </Link>
+              )
+            })}
           </div>
-        </details>
+        </nav>
       )}
 
-      <section className="mt-6" aria-live="polite">
+      <section className="mt-5" aria-live="polite">
         {snapshot.status === 'ok' ? (
           <>
             <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm text-[var(--site-muted)]">

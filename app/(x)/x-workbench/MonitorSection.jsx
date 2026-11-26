@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 
 import { ACTION_LABELS } from '../../../lib/x/workbench/observeCore'
 import { summarizeReports } from '../../../lib/x/workbench/monitorPublic'
@@ -26,7 +25,6 @@ const RESULT_CLASS = { success: s.resultOk, failed: s.resultBad, skipped: s.resu
 
 const todayInShanghai = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const adjacentDate = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10)
-const clock = (value) => new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))
 
 function EventLine({ label, event }) {
   if (!event) return null
@@ -45,8 +43,6 @@ export default function MonitorSection() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [calendarOpen, setCalendarOpen] = useState(false)
-  const [busyKey, setBusyKey] = useState('')
-  const [note, setNote] = useState('')
   const requestRef = useRef(0)
   const dateRef = useRef(date)
   dateRef.current = date
@@ -77,28 +73,6 @@ export default function MonitorSection() {
     if (!next || next === date) return
     setDate(next)
     load({ nextDate: next })
-  }
-
-  const sendCommand = async (deviceId, command, label) => {
-    if (!deviceId) return
-    setBusyKey(`${deviceId}:${command}`)
-    setNote('')
-    try {
-      const res = await fetch('/api/admin/community-actions/monitor', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ deviceId, command }),
-        signal: AbortSignal.timeout(15000),
-      })
-      const body = await res.json().catch(() => null)
-      setNote(res.ok ? `${label}已排队，等插件心跳执行` : body?.error === 'MIGRATION_REQUIRED' ? '指令表还没就绪' : '指令下发失败')
-      if (res.ok) load({ quiet: true })
-    } catch {
-      setNote('指令下发失败')
-    } finally {
-      setBusyKey('')
-    }
   }
 
   const devices = data?.devices || []
@@ -260,27 +234,6 @@ export default function MonitorSection() {
         ) : null}
       </div>
 
-      {data?.owner ? (
-        <details className={s.ownerPanel}>
-          <summary>站长操作</summary>
-          <p className={s.hint}>指令走插件心跳执行；排班与动作明细在「插件与排班」。</p>
-          {note ? <p className={s.hint} role="status">{note}</p> : null}
-          {devices.map((device) => (
-            <div key={device.id} className={s.ownerRow}>
-              <span className={s.deviceWho}>@{device.accountHandle || '账号待识别'}</span>
-              <div className={s.ownerActions}>
-                <button type="button" className={s.btn} disabled={!device.id || Boolean(busyKey)} onClick={() => sendCommand(device.id, 'flow-start', '全流程启动')}>启动</button>
-                <button type="button" className={s.btn} disabled={!device.id || Boolean(busyKey)} onClick={() => sendCommand(device.id, 'flow-pause', '暂停全部')}>暂停</button>
-                <button type="button" className={s.btn} disabled={!device.id || Boolean(busyKey)} onClick={() => sendCommand(device.id, 'ext-update', '远程更新')}>更新插件</button>
-              </div>
-            </div>
-          ))}
-          <p className={s.hint}>
-            <Link href="/x-workbench/ops#plugin-console">打开插件与排班 →</Link>
-            {data.now ? ` · 数据更新于 ${clock(data.now)}` : ''}
-          </p>
-        </details>
-      ) : null}
     </section>
   )
 }

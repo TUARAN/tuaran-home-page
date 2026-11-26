@@ -1,39 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 
-import { call, message, post } from './api'
+import { message, post } from './api'
 import s from './workbench.module.css'
 
-const PERSONA_FIELDS = [
-  ['role', '定位', 120, '例如：独立开发者，记录做产品的过程'],
-  ['goal', '目标', 120, '例如：每周认识 5 位同领域创作者'],
-  ['tone', '回复方式', 80, '例如：短句、具体、不用感叹号'],
-]
-const USAGE_LABELS = { rewrite: 'AI 改写 / 找角度', image: '配图', agent_chat: '智能体对话' }
-const MEMORY_LIMIT = 30
-
-export default function AgentTab({ accounts, usage, active, onSelect, onAccounts }) {
+export default function AgentTab({ accounts, active, onSelect, onAccounts }) {
   const [handle, setHandle] = useState('')
-  const [persona, setPersona] = useState({ role: '', goal: '', tone: '' })
-  const [memory, setMemory] = useState([])
-  const [draft, setDraft] = useState('')
   const [note, setNote] = useState('')
   const [pair, setPair] = useState(null)
-
-  const load = useCallback(async (target) => {
-    setNote('')
-    setPersona({ role: '', goal: '', tone: '' })
-    setMemory([])
-    if (!target) return
-    const res = await call(`/profile?handle=${encodeURIComponent(target)}`)
-    if (!res.ok) return setNote(message(res.data))
-    setPersona({ role: '', goal: '', tone: '', ...res.data.persona })
-    setMemory(res.data.memory || [])
-  }, [])
-
-  useEffect(() => { load(active) }, [active, load])
 
   async function bind(event) {
     event.preventDefault()
@@ -45,7 +21,7 @@ export default function AgentTab({ accounts, usage, active, onSelect, onAccounts
   }
 
   async function unbind(target) {
-    if (!window.confirm(`解绑 @${target} 会同时删除它的人格与记忆，确定吗？`)) return
+    if (!window.confirm(`确定解绑 @${target} 吗？`)) return
     const res = await post('/accounts', { handle: target }, 'DELETE')
     if (!res.ok) return setNote(message(res.data))
     onAccounts()
@@ -64,105 +40,31 @@ export default function AgentTab({ accounts, usage, active, onSelect, onAccounts
     setNote(res.ok ? '已撤销全部插件连接' : message(res.data))
   }
 
-  async function save() {
-    const res = await post('/profile', { handle: active, persona, memory }, 'PUT')
-    setNote(res.ok ? `@${active} 的人格与记忆已保存` : message(res.data))
-    if (res.ok) setMemory(res.data.memory)
-  }
-
-  function addMemory(event) {
-    event.preventDefault()
-    const text = draft.trim()
-    if (!text || memory.length >= MEMORY_LIMIT) return
-    setMemory([...memory, { type: 'account', text, source: 'user', at: Date.now() }])
-    setDraft('')
-  }
-
   return (
-    <section>
+    <section className={s.opsStack}>
       {note && <p role="status" className={s.opsStatus}>{note}</p>}
 
-      <div className={s.opsGrid}>
-        <div className={s.opsSide}>
-          <section className={s.panel}>
-            <div className={s.panelHead}>
-              <h2>账号</h2>
-              <span>{accounts.length ? `已绑定 ${accounts.length} 个` : '尚未绑定'}</span>
-            </div>
-            {accounts.length > 0 && (
-              <div className={s.accountChips}>
-                {accounts.map((a) => (
-                  <span key={a.handle} className={`${s.accountChip} ${active === a.handle ? s.accountChipOn : ''}`}>
-                    <button type="button" className={s.accountPick} aria-pressed={active === a.handle} onClick={() => onSelect(a.handle)}>@{a.handle}</button>
-                    <button type="button" className={s.accountDrop} aria-label={`解绑 ${a.handle}`} onClick={() => unbind(a.handle)}>×</button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <form onSubmit={bind} className={s.bindForm}>
-              <input className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="X 账号名，不带 @" maxLength={16} aria-label="绑定 X 账号名" />
-              <button type="submit" className={`${s.btn} ${s.primary}`} disabled={!handle.trim()}>绑定</button>
-            </form>
-            <p className={`${s.note} ${s.panelNote}`}>绑定只记录账号名，不需要 X 的密码或授权。</p>
-          </section>
-
-          {usage && (
-            <section className={s.panel}>
-              <div className={s.panelHead}>
-                <h2>本月额度</h2>
-                <span>{usage.period}</span>
-              </div>
-              <dl className={`${s.metricRow} ${s.opsMetrics}`}>
-                {usage.items.map((i) => (
-                  <div key={i.kind} className={s.metricCell}>
-                    <dd>{i.used}<small className={s.metricLimit}> / {i.limit}</small></dd>
-                    <dt>{USAGE_LABELS[i.kind] || i.kind}</dt>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          )}
+      <section className={s.panel}>
+        <div className={s.panelHead}>
+          <h2>账号</h2>
+          <span>{accounts.length ? `已绑定 ${accounts.length} 个` : '尚未绑定'}</span>
         </div>
-
-        <section className={s.panel}>
-          <div className={s.panelHead}>
-            <h2>{active ? `@${active} 的人格与记忆` : '人格与记忆'}</h2>
-            {active && <span>改写与插件共用</span>}
+        {accounts.length > 0 && (
+          <div className={s.accountChips}>
+            {accounts.map((a) => (
+              <span key={a.handle} className={`${s.accountChip} ${active === a.handle ? s.accountChipOn : ''}`}>
+                <button type="button" className={s.accountPick} aria-pressed={active === a.handle} onClick={() => onSelect(a.handle)}>@{a.handle}</button>
+                <button type="button" className={s.accountDrop} aria-label={`解绑 ${a.handle}`} onClick={() => unbind(a.handle)}>×</button>
+              </span>
+            ))}
           </div>
-          {!active && <p className={s.opsEmpty}>先在左侧绑定一个 X 账号，再为它设置定位、目标和回复方式。</p>}
-          {active && (
-            <>
-              <div className={s.fieldGrid}>
-                {PERSONA_FIELDS.map(([key, label, max, placeholder]) => (
-                  <label key={key} className={s.fieldLabel}>{label}
-                    <input className={`${s.input} ${s.fieldInput}`} value={persona[key]} maxLength={max} placeholder={placeholder}
-                      onChange={(e) => setPersona({ ...persona, [key]: e.target.value })} />
-                  </label>
-                ))}
-              </div>
-              <h3 className={s.subHead}>记忆 <span className={s.subCount}>{memory.length} / {MEMORY_LIMIT}</span></h3>
-              {memory.length > 0 && (
-                <ul className={s.memoryList}>
-                  {memory.map((m, i) => (
-                    <li key={m.id || i} className={s.memoryItem}>
-                      <span className={s.memoryText}>{m.text}</span>
-                      <button type="button" className={s.link} onClick={() => setMemory(memory.filter((_, j) => j !== i))}>删除</button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <form className={s.memoryRow} onSubmit={addMemory}>
-                <input className={`${s.input} ${s.memoryInput}`} value={draft} maxLength={120} onChange={(e) => setDraft(e.target.value)} placeholder="新增一条记忆，例如：不用感叹号" aria-label="新增记忆" />
-                <button type="submit" className={s.btn} disabled={!draft.trim() || memory.length >= MEMORY_LIMIT}>添加</button>
-              </form>
-              <p className={`${s.note} ${s.panelNote}`}>写入前会按固定原则检查，要求调高上限、缩短冷却、绕开检测的内容会被拒绝。</p>
-              <div className={s.panelFoot}>
-                <button type="button" className={`${s.btn} ${s.primary}`} onClick={save}>保存</button>
-              </div>
-            </>
-          )}
-        </section>
-      </div>
+        )}
+        <form onSubmit={bind} className={s.bindForm}>
+          <input className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="X 账号名，不带 @" maxLength={16} aria-label="绑定 X 账号名" />
+          <button type="submit" className={`${s.btn} ${s.primary}`} disabled={!handle.trim()}>绑定</button>
+        </form>
+        <p className={`${s.note} ${s.panelNote}`}>绑定只记录账号名，不需要 X 的密码或授权。人格与记忆在插件本地设置。</p>
+      </section>
 
       <section className={s.panel}>
         <div className={s.panelHead}>

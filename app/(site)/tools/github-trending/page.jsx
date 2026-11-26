@@ -5,7 +5,10 @@ import {
   formatStarCount,
   GITHUB_TRENDING_PATH,
   GITHUB_TRENDING_REPO,
+  isTrendingMonthKey,
   loadGithubTrending,
+  shiftTrendingMonth,
+  trendingMonthMatrix,
 } from '../../../../lib/page-data/githubTrending'
 
 export const runtime = 'edge'
@@ -38,12 +41,37 @@ const jsonLd = {
   isAccessibleForFree: true,
 }
 
+const CALENDAR_WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
+
+function monthTitle(yearMonth) {
+  const [year, month] = yearMonth.split('-')
+  return `${Number(year)}年${Number(month)}月`
+}
+
 export default async function GitHubTrendingPage({ searchParams }) {
   const params = await searchParams
   const requestedDate = typeof params?.date === 'string' ? params.date : ''
   const snapshot = await loadGithubTrending({ date: requestedDate })
   const defaultDate = snapshot.dates.includes(snapshot.today) ? snapshot.today : snapshot.latest
   const generatedLabel = formatShanghaiDateTime(snapshot.daily?.generatedAt)
+
+  const availableDates = new Set(snapshot.dates)
+  const anchorDate = snapshot.selectedDate || snapshot.today
+  const requestedMonth = typeof params?.month === 'string' ? params.month : ''
+  const visibleMonth = isTrendingMonthKey(requestedMonth)
+    ? requestedMonth
+    : anchorDate.slice(0, 7)
+  const calendarCells = snapshot.dates.length > 0 ? trendingMonthMatrix(visibleMonth) : []
+  const prevMonth = shiftTrendingMonth(visibleMonth, -1)
+  const nextMonth = shiftTrendingMonth(visibleMonth, 1)
+  const earliestMonth = snapshot.dates.at(-1)?.slice(0, 7) || ''
+  const currentMonth = snapshot.today.slice(0, 7)
+  const hasPrevMonth = Boolean(prevMonth) && (!earliestMonth || prevMonth >= earliestMonth)
+  const hasNextMonth = Boolean(nextMonth) && nextMonth <= currentMonth
+  const keepDateQuery = snapshot.selectedDate && snapshot.selectedDate !== defaultDate
+    ? `&date=${snapshot.selectedDate}`
+    : ''
+  const monthHref = (month) => `${GITHUB_TRENDING_PATH}?month=${month}${keepDateQuery}`
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-9 text-[var(--site-ink)]">
@@ -93,6 +121,76 @@ export default async function GitHubTrendingPage({ searchParams }) {
             )
           })}
         </nav>
+      )}
+
+      {calendarCells.length > 0 && (
+        <details className="mt-3 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3">
+          <summary className="cursor-pointer select-none text-xs text-[var(--site-muted)] marker:content-none hover:text-[var(--site-ink)]">
+            按月历选日期
+          </summary>
+          <div className="mt-3 max-w-xs" role="group" aria-label="月历选日期">
+            <div className="flex items-center justify-between text-xs">
+              {hasPrevMonth ? (
+                <Link href={monthHref(prevMonth)} className="text-[var(--site-muted)] hover:text-[var(--site-ink)]">
+                  ← 上个月
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="text-[var(--site-faint)]">← 上个月</span>
+              )}
+              <strong className="tabular-nums">{monthTitle(visibleMonth)}</strong>
+              {hasNextMonth ? (
+                <Link href={monthHref(nextMonth)} className="text-[var(--site-muted)] hover:text-[var(--site-ink)]">
+                  下个月 →
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="text-[var(--site-faint)]">下个月 →</span>
+              )}
+            </div>
+            <div className="mt-2 grid grid-cols-7 gap-y-1 text-center text-[11px] text-[var(--site-faint)]" aria-hidden="true">
+              {CALENDAR_WEEKDAYS.map((label) => <span key={label}>{label}</span>)}
+            </div>
+            <div className="grid grid-cols-7 gap-y-1 text-center text-xs tabular-nums">
+              {calendarCells.map((date, index) => {
+                if (!date) return <span key={`empty-${index}`} />
+                const available = availableDates.has(date)
+                const selected = date === snapshot.selectedDate
+                const isToday = date === snapshot.today
+                if (!available) {
+                  return (
+                    <span
+                      key={date}
+                      aria-label={`${date}，暂无数据`}
+                      className={[
+                        'mx-auto flex h-7 w-7 items-center justify-center rounded-full',
+                        isToday ? 'text-[var(--site-muted)] underline decoration-dotted underline-offset-2' : 'text-[var(--site-faint)]',
+                      ].join(' ')}
+                    >
+                      {Number(date.slice(8))}
+                    </span>
+                  )
+                }
+                const href = date === defaultDate ? GITHUB_TRENDING_PATH : `${GITHUB_TRENDING_PATH}?date=${date}`
+                return (
+                  <Link
+                    key={date}
+                    href={href}
+                    aria-current={selected ? 'date' : undefined}
+                    aria-label={isToday ? `${date}，今天` : date}
+                    className={[
+                      'mx-auto flex h-7 w-7 items-center justify-center rounded-full transition',
+                      selected
+                        ? 'bg-[var(--site-ink)] text-[var(--page-bg)]'
+                        : 'text-[var(--site-muted)] hover:bg-[color-mix(in_srgb,var(--site-line)_45%,transparent)] hover:text-[var(--site-ink)]',
+                      isToday && !selected ? 'border border-dashed border-[var(--site-line-strong)]' : '',
+                    ].join(' ')}
+                  >
+                    {Number(date.slice(8))}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </details>
       )}
 
       <section className="mt-6" aria-live="polite">

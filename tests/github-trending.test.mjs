@@ -20,6 +20,9 @@ import {
   homeGithubTrendingBlurb,
   selectHomeGithubTrendingItems,
   trendingJsonUrl,
+  isTrendingMonthKey,
+  shiftTrendingMonth,
+  trendingMonthMatrix,
 } from '../lib/page-data/githubTrending.js'
 
 const INDEX = {
@@ -180,6 +183,50 @@ test('loadGithubTrending returns an unavailable state for a missing date without
   assert.equal(ok.selectedDate, '2026-11-17')
   assert.equal(ok.daily.items[1].description, '')
   assert.equal(ok.daily.items[1].language, '')
+})
+
+test('trending month helpers validate keys, shift across year boundaries, and build a Monday-first grid', () => {
+  assert.equal(isTrendingMonthKey('2026-11'), true)
+  assert.equal(isTrendingMonthKey('2026-13'), false)
+  assert.equal(isTrendingMonthKey('2026-1'), false)
+  assert.equal(isTrendingMonthKey('../secret'), false)
+
+  assert.equal(shiftTrendingMonth('2026-01', -1), '2025-12')
+  assert.equal(shiftTrendingMonth('2025-12', 1), '2026-01')
+  assert.equal(shiftTrendingMonth('2026-07', 0), '2026-07')
+  assert.equal(shiftTrendingMonth('bad', 1), '')
+
+  // 2026-11-01 是周日：周一打头的网格前补 6 个空格，30 天后尾部补到 42 格。
+  const november = trendingMonthMatrix('2026-11')
+  assert.equal(november.length, 42)
+  assert.deepEqual(november.slice(0, 6), ['', '', '', '', '', ''])
+  assert.equal(november[6], '2026-11-01')
+  assert.equal(november[35], '2026-11-30')
+  assert.deepEqual(november.slice(36), ['', '', '', '', '', ''])
+
+  // 2024-02 闰月：2 月 1 日是周四，前补 3 格，29 天后尾部补到 35 格。
+  const february = trendingMonthMatrix('2024-02')
+  assert.equal(february.length, 35)
+  assert.deepEqual(february.slice(0, 3), ['', '', ''])
+  assert.equal(february[3], '2024-02-01')
+  assert.equal(february[31], '2024-02-29')
+  assert.deepEqual(february.slice(32), ['', '', ''])
+
+  assert.deepEqual(trendingMonthMatrix('2026-13'), [])
+  assert.deepEqual(trendingMonthMatrix(''), [])
+})
+
+test('the trending page keeps a server-rendered calendar without client components or buttons', async () => {
+  const [page, helper] = await Promise.all([
+    readFile(new URL('../app/(site)/tools/github-trending/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/page-data/githubTrending.js', import.meta.url), 'utf8'),
+  ])
+  assert.doesNotMatch(page, /['"]use client['"]/)
+  assert.match(page, /trendingMonthMatrix/)
+  assert.match(page, /<details[\s\S]*按月历选日期[\s\S]*<\/details>/s)
+  assert.match(page, /month=\$\{month\}/)
+  assert.doesNotMatch(page, /<button/)
+  assert.match(helper, /export function trendingMonthMatrix/)
 })
 
 test('the public page is a server-rendered read-only tool entry', async () => {

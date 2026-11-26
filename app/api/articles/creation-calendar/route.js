@@ -1,4 +1,4 @@
-import { readContentCatalog } from '../../../../lib/content/contentCatalogRuntime'
+import { readRuntimeKnowledgeItems } from '../../../../lib/content/knowledgeRuntime'
 import { calendarPage, calendarRecord, selectCreationCalendarItems } from '../../../../lib/article/creationCalendar'
 
 export const runtime = 'edge'
@@ -15,8 +15,8 @@ export async function GET(request) {
   }
 
   try {
-    const catalog = await readContentCatalog()
-    const filtered = selectCreationCalendarItems(catalog.knowledgeItems, { year, month, date })
+    const knowledgeItems = await readRuntimeKnowledgeItems()
+    const filtered = selectCreationCalendarItems(knowledgeItems, { year, month, date })
     return Response.json({
       items: calendarPage(filtered, page).map(calendarRecord),
       total: filtered.length,

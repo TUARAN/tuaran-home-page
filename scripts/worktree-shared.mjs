@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export const BRANCH_PREFIXES = ['feat', 'fix', 'research', 'content', 'chore']
-export const MAX_WORKTREES = 3
+export const MAX_WORKTREES = 5
 
 export function branchName(type, taskSlug) {
   return `${type}/${taskSlug}`
@@ -128,6 +128,6 @@ export function linkNodeModules(mainRoot, satelliteRoot, { force = false } = {})
     fs.rmSync(satelliteModules, { force: true })
   }
 
-  fs.symlink(mainModules, satelliteModules)
+  fs.symlinkSync(mainModules, satelliteModules)
   return { action: 'linked', mainModules, satelliteModules }
 }

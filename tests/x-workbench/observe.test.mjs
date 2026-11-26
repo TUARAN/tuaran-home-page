@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import { loadObservedActions, presentObservedActions } from '../../lib/interaction/dailyTop/ownActivity.js'
 import {
+  ACTION_CATEGORIES,
   ACTION_LABELS,
   OBSERVED_AGENTS,
   THEORY_POINTS,
@@ -39,7 +40,7 @@ test('公开站观察账号池全部智能体，理论结论对得到卡片指�
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
 })
 
-test('关注与回关入库分列，展示合并为一类；没有行或没有字段时保持空', () => {
+test('分类与插件日报面板同一套八类；关注含回关，缺列保持未采集', () => {
   const actions = presentObservedActions({
     comments: 4,
     likes: 2,
@@ -47,6 +48,9 @@ test('关注与回关入库分列，展示合并为一类；没有行或没有�
     followBacks: 3,
     unfollows: 0,
     posts: 5,
+    communityShares: 2,
+    prunes: 1,
+    replyPrunes: 0,
     timelineComments: 1,
     notificationComments: 2,
     kolComments: 2,
@@ -56,20 +60,33 @@ test('关注与回关入库分列，展示合并为一类；没有行或没有�
   assert.equal(actionCount(actions, 'follows'), 4)
   assert.equal(actions.comments, 5)
   assert.equal(actions.unfollows, 0)
+  assert.equal(actions.communityShares, 2)
+  assert.equal(actions.prunes, 1)
   assert.deepEqual(ACTION_LABELS, [
-    ['posts', '发帖'],
     ['comments', '评论'],
     ['likes', '点赞'],
-    ['follows', '关注（含回关）'],
+    ['follows', '关注'],
     ['unfollows', '取关'],
+    ['posts', '发帖'],
+    ['communityShares', '社群'],
+    ['prunes', '删帖'],
+    ['replyPrunes', '删评论'],
+  ])
+  assert.deepEqual(ACTION_CATEGORIES.map(({ key }) => key), [
+    'comments', 'likes', 'follows', 'unfollows', 'posts', 'communityShares', 'prunes', 'replyPrunes',
   ])
   assert.equal(actionCount({ follows: null, followBacks: null }, 'follows'), null)
   assert.equal(actionCount({ follows: null, followBacks: 2 }, 'follows'), 2)
+  assert.equal(actionCount({ communityShares: 0 }, 'communityShares'), 0)
+  assert.equal(actionCount({}, 'prunes'), null)
   assert.equal(presentObservedActions(null), null)
   assert.equal(presentObservedActions({ comments: 1, posts: null }).posts, null)
   assert.deepEqual(blankActions(), {
     posts: null, comments: null, likes: null, follows: null, followBacks: null, unfollows: null,
+    communityShares: null, prunes: null, replyPrunes: null,
   })
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /八类/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /关注一栏含回关/)
 })
 
 test('没有日报行时动作是空，缺列不补零', async () => {

@@ -53,3 +53,30 @@ test('后台入口收进账号菜单并标为开发中', async () => {
   assert.match(frame, /href=\{logoutHref\}>退出登录</)
   assert.doesNotMatch(frame, /className=\{s\.accountBar\}|className=\{s\.cta\}/)
 })
+
+test('首页账号卡用机器人头像，五个账号各有专属造型', async () => {
+  const avatar = await page('(x)/x-workbench/AgentRobotAvatar.jsx')
+  const client = await page('(x)/x-workbench/WorkbenchClient.jsx')
+  assert.match(client, /<AgentRobotAvatar handle=\{agent\.handle\}/)
+  assert.doesNotMatch(client, /s\.agentAvatar/)
+  for (const [constName, palette] of [
+    ['BLUE_MINER', '#2563eb'],
+    ['AMBER_CAPTAIN', '#d97706'],
+    ['GREEN_THIRTEEN', '#15803d'],
+    ['VIOLET_SCANNER', '#7c3aed'],
+    ['NIGHT_DIGGER', '#1e293b'],
+  ]) {
+    assert.match(avatar, new RegExp(`const ${constName} = \\([\\s\\S]*?fill="${palette}"`), constName)
+  }
+  for (const [handle, constName] of [
+    ['tarsixseveneig1', 'BLUE_MINER'],
+    ['tuaranx', 'AMBER_CAPTAIN'],
+    ['tuaran003', 'GREEN_THIRTEEN'],
+    ['drbenjamin81269', 'VIOLET_SCANNER'],
+    ['drbenjamin5102', 'NIGHT_DIGGER'],
+  ]) {
+    assert.match(avatar, new RegExp(`${handle}: ${constName}`), handle)
+  }
+  assert.match(avatar, /GENERIC/)
+  assert.match(avatar, /viewBox="0 0 48 48"/)
+})

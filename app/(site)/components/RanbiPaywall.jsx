@@ -181,7 +181,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
                     href="#comments"
                     className="rounded-full border border-[#caa86a] bg-white px-5 py-2 text-sm font-medium text-[#7a5b1e] hover:bg-[#fffdf7] dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                   >
-                    评论 / 每日签到补燃币
+                    发表评论补燃币
                   </a>
                   <Link
                     href="/ranbi#earn"

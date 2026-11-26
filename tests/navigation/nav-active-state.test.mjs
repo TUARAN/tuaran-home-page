@@ -72,27 +72,20 @@ test('Web3 is a secondary entry owned by the content channel', () => {
   assert.equal(getActiveNavHref(sections, '/web3', new URLSearchParams()), '/web3')
 })
 
-test('check-in is a dropdown channel with center, publishing habit and Ranbi guide entries', () => {
+test('Ranbi replaces the archived check-in channel after Circle', () => {
   const keys = Array.from(SITE_CHANNELS, (channel) => channel.key)
-  const communityIndex = keys.indexOf('community')
-  const checkin = SITE_CHANNELS[communityIndex + 1]
-  assert.equal(checkin.key, 'checkin')
-  assert.equal(checkin.direct, undefined)
-  assert.equal(checkin.match('/checkin/publishing'), true)
-  assert.deepEqual(Array.from(sectionsFor('checkin')[0].items, (item) => item.label), ['签到中心', '发文打卡', '燃币说明', '燃币账本'])
-  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/ranbi/ledger'), '/ranbi/ledger')
-  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/checkin/publishing'), '/checkin/publishing')
-  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/ranbi'), '/ranbi')
-})
-
-test('Ranbi guide is a secondary entry owned by Check-in', () => {
-  const checkin = SITE_CHANNELS.find((channel) => channel.key === 'checkin')
-  const about = SITE_CHANNELS.find((channel) => channel.key === 'about')
-  assert.equal(SITE_CHANNELS.some((channel) => channel.key === 'ranbi'), false)
-  assert.equal(checkin.match('/ranbi'), true)
-  assert.equal(about.match('/ranbi'), false)
+  const ranbi = SITE_CHANNELS[keys.indexOf('community') + 1]
+  assert.equal(ranbi.key, 'ranbi')
+  assert.equal(ranbi.label, '燃币')
+  assert.equal(ranbi.href, '/ranbi')
+  assert.equal(keys.includes('checkin'), false)
+  assert.equal(ranbi.match('/ranbi'), true)
+  assert.equal(ranbi.match('/checkin'), false)
+  assert.deepEqual(Array.from(sectionsFor('ranbi')[0].items, (item) => item.label), ['燃币说明', '燃币账本'])
+  assert.equal(getActiveNavHref(sectionsFor('ranbi'), '/ranbi/ledger'), '/ranbi/ledger')
+  assert.equal(getActiveNavHref(sectionsFor('ranbi'), '/ranbi'), '/ranbi')
+  assert.equal(SITE_CHANNELS.find((channel) => channel.key === 'about').match('/ranbi'), false)
   assert.equal(SITE_CHANNELS.find((channel) => channel.key === 'community').match('/ranbi'), false)
-  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/ranbi'), '/ranbi')
 })
 
 test('x automation retrospective selects content interactives channel', () => {
@@ -161,7 +154,7 @@ test('homepage uses one header navigation with a recommendation group', async ()
   assert.match(header, /X大互动/)
   assert.match(header, /site-header-recommendations flex shrink-0/)
   assert.doesNotMatch(header, /hidden 2xl:inline-flex|site-nav-cluster-other/)
-  assert.match(header, /\['community', 'checkin', 'about'\]/)
+  assert.match(header, /\['community', 'ranbi', 'about'\]/)
   assert.match(header, /site-mobile-quick-nav/)
   assert.doesNotMatch(header, /MOBILE_NAV_GROUPS|移动端主导航/)
   assert.doesNotMatch(css, /\.site-nav-cluster-other|\.site-mobile-quick-link \+ \.site-mobile-quick-link/)

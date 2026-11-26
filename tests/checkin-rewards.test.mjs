@@ -50,25 +50,19 @@ test('make-up card is seeded as a live digital reward with its own ledger', asyn
   assert.match(migration, /'30',?\s*'digital'|30, 'digital'/)
 })
 
-test('check-in entry shares session state and keeps an accessible animated gift control', async () => {
-  const [headerSource, circlesSource, topicSource, pageSource, providerSource, cssSource] = await Promise.all([
+test('check-in is archived: nav shows Ranbi, old pages redirect and APIs return 410', async () => {
+  const [headerSource, cssSource, nextConfig, checkinApi, publishingApi] = await Promise.all([
     readFile(new URL('../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/(site)/circles/page.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/(site)/circles/CircleTopicPage.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/(site)/checkin/CheckinRewardsClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/(site)/components/SessionProvider.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/globals.css', import.meta.url), 'utf8'),
+    readFile(new URL('../next.config.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/points/checkin/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/publishing-checkins/route.js', import.meta.url), 'utf8'),
   ])
-  assert.match(headerSource, /site-nav-checkin-gift/)
-  assert.match(headerSource, /account\.points\?\.checkedInToday/)
-  assert.doesNotMatch(circlesSource, /CheckinGiftEntry|community-checkin-entry/)
-  assert.doesNotMatch(topicSource, /CheckinGiftEntry|circle-topic-checkin-entry/)
-  assert.match(pageSource, /account\.refreshPoints\(\)/)
-  assert.match(providerSource, /refreshPoints/)
-  assert.match(cssSource, /@keyframes checkin-gift-rock/)
-  assert.match(cssSource, /prefers-reduced-motion: reduce/)
-  assert.match(cssSource, /\.site-nav-checkin-gift\s*\{[\s\S]*?color:\s*#237052;/)
-  assert.doesNotMatch(headerSource, /site-nav-checkin-gift.*is-checked/)
+  assert.doesNotMatch(headerSource, /site-nav-checkin-gift|checkedInToday|IconGift/)
+  assert.doesNotMatch(cssSource, /checkin-/)
+  assert.match(nextConfig, /source: '\/checkin', destination: '\/ranbi'/)
+  assert.match(nextConfig, /source: '\/checkin\/:path\*', destination: '\/ranbi'/)
+  for (const api of [checkinApi, publishingApi]) assert.match(api, /status: 410/)
 })
 
 test('gift shop seeds the signed Programmer Growth Notes reward', async () => {

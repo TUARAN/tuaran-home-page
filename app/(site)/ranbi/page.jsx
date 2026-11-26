@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '燃币说明 · 获取与使用资源权益',
   description:
-    '燃币用于留住读者、激励站内行为，不以盈利为目的。不支持充值、提现或现金兑换；可通过签到、评论、活动和游戏获得，并兑换内容、工具和礼物，可兑换的东西会继续增加。',
-  keywords: ['燃币', '获取燃币', '涂阿燃', 'tuaran', '积分', '资源权益', '签到', '交流'],
+    '燃币用于留住读者、激励站内行为，不以盈利为目的。不支持充值、提现或现金兑换；可通过评论、活动和游戏获得，并兑换内容和工具，可兑换的东西会继续增加。',
+  keywords: ['燃币', '获取燃币', '涂阿燃', 'tuaran', '积分', '资源权益', '交流'],
   alternates: { canonical: '/ranbi' },
 }
 
@@ -72,9 +72,9 @@ export default async function RanbiPage() {
           获取和使用资源权益
         </h1>
         <p className="mt-3 text-[14px] leading-7 text-[var(--site-muted)]">
-          燃币用来留住读者，并激励签到、评论和站内参与，<strong className="text-[var(--site-ink)]">不以盈利为目的</strong>。
+          燃币用来留住读者，并激励评论和站内参与，<strong className="text-[var(--site-ink)]">不以盈利为目的</strong>。
           <strong className="text-[var(--site-ink)]">固定总量 21,000,000 枚，永不增发。不支持充值、提现、交易或现金兑换。</strong>
-          签到、有效评论、活动和游戏会按站内行为发放；余额可以兑换内容、工具和礼物，可兑换的东西会继续增加。
+          有效评论、活动和游戏会按站内行为发放；余额可以兑换内容和工具，可兑换的东西会继续增加。
         </p>
         <div className="mt-5">
           <RanbiBalance />
@@ -86,7 +86,7 @@ export default async function RanbiPage() {
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">一、你能获得什么</h2>
         <p className="text-[14px] leading-7 text-[var(--site-muted)]">
           <span className="font-medium text-[var(--site-ink)]">燃币不支持充值。</span>
-          签到、评论、活动和游戏这些站内行为会发放燃币；连续参与和有效互动留在账号里，再用来兑换内容、工具和礼物。可兑换范围会继续增加。
+          评论、活动和游戏这些站内行为会发放燃币；有效互动留在账号里，再用来兑换内容和工具。可兑换范围会继续增加。
           每个访客都有试用额度；登录后，已解锁内容、已领取工具和余额流水会保留在账号中。
           内容或工具只结算一次，之后可以长期打开。燃币不可提现，也不兑换真实货币。
         </p>
@@ -150,7 +150,7 @@ export default async function RanbiPage() {
       <section id="earn" className="mb-10 scroll-mt-24">
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">三、怎么获得</h2>
         <p className="mb-4 text-[14px] leading-7 text-[var(--site-muted)]">
-          游客解锁受保护资源时获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
+          游客解锁受保护资源时获得试用额度；登录后可通过有效评论、已开放的活动和游戏获取。
           所有奖励都从公开储备池转出，储备池耗尽后停止发放。
           活动与游戏奖励按各项目规则发放。余额不够用时，可以{' '}
           <Link href="/contact" className="underline underline-offset-2">联系站长</Link>
@@ -243,10 +243,10 @@ export default async function RanbiPage() {
         <h2 className="mb-2 text-[15px] font-semibold text-[#7a5b1e] dark:text-amber-200">一眼速查</h2>
         <ul className="space-y-1.5 text-[13px] leading-6 text-[#8a7a55] dark:text-amber-300/80">
           <li>· 燃币用于用户留存和行为激励，不以盈利为目的，<strong>不支持充值</strong>。</li>
-          <li>· 按签到、评论、活动等站内行为获得，可兑换内容、工具和礼物，可兑换范围会继续增加。</li>
+          <li>· 按评论、活动等站内行为获得，可兑换内容和工具，可兑换范围会继续增加。</li>
           <li>· 固定总量 <strong>{formatAmount(RANBI_TOTAL_SUPPLY)}</strong> 枚，所有奖励从储备池转出，任何入口都不能增发。</li>
           <li>· 游客首次尝试资源领取 <strong>{R.guestSeed}</strong> 燃币 → 够体验约 {Math.floor(R.guestSeed / R.resourceDefaultCost)} 篇文字内容。</li>
-          <li>· 注册 / 绑定一次性 <strong>{R.register}</strong> 燃币，之后每天签到 +{R.checkin}、评论 +{R.comment}。</li>
+          <li>· 注册 / 绑定一次性 <strong>{R.register}</strong> 燃币，之后有效评论 +{R.comment}。</li>
           <li>· 调研、资料、资源内容统一 {R.resourceDefaultCost} / 篇；工具包 / 安装包 {R.toolDefaultCost} / 项，进入内容或领取时自动扣减，解锁后永久有效。</li>
           <li>· 壁纸、音乐等免费资源不消耗燃币，但领取/打开会进入“我的领取记录”。</li>
           <li>· 评论奖励每日最多 +{R.commentDailyCap}，流水可查、重复操作不重复记账。</li>

@@ -1,76 +1,10 @@
-import { getD1 } from '../../../../lib/db/d1'
-import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
-import { getUserRole } from '../../../../lib/auth/userDirectory'
-import {
-  cleanupRateLimits,
-  enforceRateLimits,
-  getClientIp,
-  rateLimitResponse,
-} from '../../../../lib/auth/abuseControls'
-import { awardCheckin, countCheckins, getBalance, getPointRules } from '../../../../lib/ledger/points'
-
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const FIVE_MINUTES_MS = 5 * 60 * 1000
-const DAY_MS = 24 * 60 * 60 * 1000
-
-/** 每日签到赚燃币（自然日内幂等：重复签到不重复发）。游客不可签到。 */
-export async function POST(req) {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 })
-
-    const userId = String(user.id)
-    if ((await getUserRole(userId)) === 'blocked') {
-      return Response.json({ error: 'USER_BLOCKED' }, { status: 403 })
-    }
-
-    const db = getD1()
-    const rules = await getPointRules(db)
-    const ip = getClientIp(req)
-    const limit = await enforceRateLimits(db, [
-      { scope: 'points:checkin:user:day', subject: userId, limit: 5, windowMs: DAY_MS },
-      { scope: 'points:checkin:ip:5m', subject: ip, limit: 20, windowMs: FIVE_MINUTES_MS },
-    ])
-    if (!limit.ok) return rateLimitResponse(limit)
-
-    if (user.provider === 'email' && user.status === 'pending') {
-      const checkins = await countCheckins(db, userId)
-      if (checkins >= rules.pendingCheckinLimit) {
-        return Response.json(
-          {
-            error: 'EMAIL_ACTIVATION_REQUIRED',
-            pendingCheckinLimit: rules.pendingCheckinLimit,
-            balance: await getBalance(db, userId),
-          },
-          { status: 403 }
-        )
-      }
-    }
-
-    const result = await awardCheckin(db, userId)
-    await cleanupRateLimits(db).catch(() => {})
-
-    if (result.error) {
-      return Response.json(
-        { ok: false, error: result.error, balance: result.balance },
-        { status: result.status || 409 }
-      )
-    }
-
-    return Response.json({
-      ok: true,
-      awarded: result.awarded,
-      gained: result.gained ?? (result.awarded ? rules.checkin : 0),
-      bonus: result.bonus || 0,
-      balance: result.balance ?? (await getBalance(db, userId)),
-      alreadyCheckedIn: !result.awarded,
-      streak: result.streak || 0,
-      week: result.week || [],
-      nextMilestone: result.nextMilestone || null,
-    })
-  } catch {
-    return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
-  }
+// 签到功能已归档，接口保留 410 供旧客户端识别。
+function archived() {
+  return Response.json({ error: 'ARCHIVED', message: 'Check-in has been archived.' }, { status: 410 })
 }
+
+export const GET = archived
+export const POST = archived

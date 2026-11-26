@@ -45,13 +45,13 @@ test('contact channels keep WeChat first and leave payment codes out', async () 
 
 test('navigation points at the contact page without adding a top-level channel', async () => {
   const nav = await source('lib/site/siteNav.js')
-  const channelKeys = nav.match(/key: '(content|tools|systems|community|checkin|about)'/g) || []
+  const channelKeys = nav.match(/key: '(content|tools|systems|community|ranbi|about)'/g) || []
   assert.deepEqual(channelKeys, [
     "key: 'content'",
     "key: 'tools'",
     "key: 'systems'",
     "key: 'community'",
-    "key: 'checkin'",
+    "key: 'ranbi'",
     "key: 'about'",
   ])
   assert.match(nav, /href: '\/about'[\s\S]{0,240}href: '\/contact', label: '联系'/)

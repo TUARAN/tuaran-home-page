@@ -138,6 +138,9 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // 签到与发文打卡已归档，旧链接统一落到燃币说明。
+      { source: '/checkin', destination: '/ranbi', permanent: false },
+      { source: '/checkin/:path*', destination: '/ranbi', permanent: false },
       {
         source: '/publications',
         destination: '/resources/books',

@@ -4,6 +4,63 @@ import { useMemo, useState } from 'react'
 
 import { buildChangelogPeriods, CHANGELOG_PERIOD_VIEWS } from '../../../lib/automation/changelogPeriods'
 import { getChangelogPeriodSummary } from '../../../lib/automation/changelogPeriodSummaries'
+import {
+  averageChangelogRatings,
+  CHANGELOG_RATING_DIMENSIONS,
+  CHANGELOG_RATING_META,
+  getChangelogRating,
+} from '../../../lib/automation/changelogRatings'
+
+function ChangelogRating({ rating, caption }) {
+  if (!rating) return null
+  const { scale, rater, ratedAt } = CHANGELOG_RATING_META
+  return (
+    <section
+      aria-label={`${rater} 评分`}
+      className="mt-4 rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_55%,transparent)] p-3 md:p-4"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-accent)]">
+          {caption}
+        </p>
+        <p className="text-[12px] text-[var(--site-muted)]">
+          总评
+          <span className="ml-1.5 font-serif text-[20px] font-semibold text-[var(--site-ink)]">
+            {rating.overall.toFixed(1)}
+          </span>
+          <span className="text-[11px] text-[var(--site-faint)]"> / {scale}</span>
+        </p>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+        {CHANGELOG_RATING_DIMENSIONS.map(({ id, label, hint }) => {
+          const value = rating.scores[id]
+          return (
+            <div key={id} title={hint}>
+              <div className="flex items-baseline justify-between text-[12px]">
+                <dt className="text-[var(--site-muted)]">{label}</dt>
+                <dd className="font-mono text-[12px] text-[var(--site-ink)]">
+                  {Number.isInteger(value) ? value : value.toFixed(1)}
+                </dd>
+              </div>
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--site-line)]">
+                <div
+                  className="h-full rounded-full bg-[var(--site-accent)]"
+                  style={{ width: `${(value / scale) * 100}%` }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </dl>
+      {rating.note ? (
+        <p className="mt-3 text-[12.5px] leading-6 text-[var(--site-muted)]">{rating.note}</p>
+      ) : null}
+      <p className="mt-2 text-right text-[11px] text-[var(--site-faint)]">
+        评分：{rater} · {ratedAt}
+      </p>
+    </section>
+  )
+}
 
 function ChangelogItemList({ items, markerClass }) {
   if (!items?.length) return null
@@ -168,11 +225,23 @@ export default function ChangelogTimelineClient({ entries }) {
             </div>
 
             {view === 'week' ? (
-              <div className="divide-y divide-[var(--site-line)]">
-                {period.entries.map((entry) => <ChangelogEntry key={entry.version} entry={entry} />)}
+              <div>
+                <div className="divide-y divide-[var(--site-line)]">
+                  {period.entries.map((entry) => <ChangelogEntry key={entry.version} entry={entry} />)}
+                </div>
+                <ChangelogRating
+                  rating={getChangelogRating(period.entries[0]?.week)}
+                  caption="Weekly Score · 本周评分"
+                />
               </div>
             ) : (
-              <PeriodSummary period={period} view={view} />
+              <div>
+                <PeriodSummary period={period} view={view} />
+                <ChangelogRating
+                  rating={averageChangelogRatings(period.entries.map((entry) => entry.week))}
+                  caption="Average Score · 周评分均值"
+                />
+              </div>
             )}
           </li>
         ))}

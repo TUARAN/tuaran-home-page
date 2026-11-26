@@ -67,5 +67,5 @@ export function LayoutChromeFooter() {
 
   if (hideChrome || isInteractivePage || pathname === '/') return null
 
-  return <SiteFooter className="mx-auto mb-8 mt-12 w-full max-w-[1120px] px-4" />
+  return <SiteFooter className="mt-12" />
 }

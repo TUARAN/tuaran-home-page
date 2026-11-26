@@ -12,6 +12,7 @@ import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ArticleEngagementPanel, { ArticleSupportCard } from '../../components/ArticleEngagementPanel'
 import ArticleToc, { ArticleReadingLayout } from '../../components/ArticleToc'
 import DistributeContentButton from '../../components/DistributeContentButton'
+import EgoPublishButton from '../../components/EgoPublishButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { getPublishedArticlePostBySlug } from '../../../../lib/article/articlePosts'
 import { buildArticleOgUrl } from '../../../../lib/article/articleOg'
@@ -345,6 +346,13 @@ export default async function ArticleDetailPage({ params }) {
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
             readerActions={<CopyMarkdownButton markdown={articleMarkdown} />}
           >
+            <EgoPublishButton
+              title={article.title}
+              url={articleUrl}
+              summary={article.summary || ''}
+              tags={article.tags || []}
+              markdown={articleMarkdown}
+            />
             <DistributeContentButton
               title={article.title}
               summary={article.summary}

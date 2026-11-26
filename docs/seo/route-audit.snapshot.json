@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 250,
+    "routes": 251,
     "redirects": 23,
     "private": 62,
     "registeredStatic": 121,
-    "indexable": 141,
-    "canonical": 161,
-    "openGraph": 94,
-    "jsonLd": 69,
+    "indexable": 142,
+    "canonical": 162,
+    "openGraph": 95,
+    "jsonLd": 70,
     "errors": 9,
     "warnings": 138
   },
@@ -1760,6 +1760,22 @@
         "noindex": "index",
         "openGraph": false,
         "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/claude-relay-market",
+      "file": "app/(site)/claude-relay-market/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
         "ogUrls": []
       }
     },

@@ -11,6 +11,140 @@ import {
   getChangelogRating,
 } from '../../../lib/automation/changelogRatings'
 
+const RADAR_SIZE = 240
+const RADAR_CENTER = RADAR_SIZE / 2
+const RADAR_RADIUS = 78
+
+function radarPoint(index, value, scale) {
+  const angle = -Math.PI / 2 + (index * 2 * Math.PI) / CHANGELOG_RATING_DIMENSIONS.length
+  const r = (value / scale) * RADAR_RADIUS
+  return { x: RADAR_CENTER + r * Math.cos(angle), y: RADAR_CENTER + r * Math.sin(angle), angle }
+}
+
+function formatScore(value) {
+  if (value == null) return '—'
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function ChangelogRadar({ scores, scale, title }) {
+  const [active, setActive] = useState(null)
+  const dims = CHANGELOG_RATING_DIMENSIONS
+  const rings = [0.25, 0.5, 0.75, 1]
+  const vertices = dims
+    .map((dim, index) => (scores[dim.id] == null ? null : { ...dim, index, value: scores[dim.id], ...radarPoint(index, scores[dim.id], scale) }))
+    .filter(Boolean)
+  const activeVertex = vertices.find((vertex) => vertex.id === active)
+
+  return (
+    <svg
+      viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`}
+      role="img"
+      aria-label={`${title}：${dims.map((dim) => `${dim.label} ${formatScore(scores[dim.id])}`).join('，')}`}
+      className="mx-auto w-full max-w-[260px] overflow-visible"
+      onMouseLeave={() => setActive(null)}
+    >
+      {rings.map((ring) => (
+        <polygon
+          key={ring}
+          points={dims.map((_, index) => {
+            const point = radarPoint(index, ring * scale, scale)
+            return `${point.x},${point.y}`
+          }).join(' ')}
+          fill="none"
+          stroke="var(--site-line)"
+          strokeWidth="1"
+        />
+      ))}
+      {dims.map((dim, index) => {
+        const edge = radarPoint(index, scale, scale)
+        const label = radarPoint(index, scale * 1.24, scale)
+        const cos = Math.cos(edge.angle)
+        const anchor = Math.abs(cos) < 0.2 ? 'middle' : cos > 0 ? 'start' : 'end'
+        const missing = scores[dim.id] == null
+        return (
+          <g key={dim.id}>
+            <line
+              x1={RADAR_CENTER}
+              y1={RADAR_CENTER}
+              x2={edge.x}
+              y2={edge.y}
+              stroke="var(--site-line)"
+              strokeWidth="1"
+              strokeDasharray={missing ? '3 3' : undefined}
+            />
+            <text
+              x={label.x}
+              y={label.y}
+              textAnchor={anchor}
+              dominantBaseline="middle"
+              fontSize="11"
+              fill={missing ? 'var(--site-faint)' : 'var(--site-muted)'}
+            >
+              {dim.label}
+              {missing ? ' · 无数据' : ''}
+            </text>
+          </g>
+        )
+      })}
+      {vertices.length > 2 ? (
+        <polygon
+          points={vertices.map((vertex) => `${vertex.x},${vertex.y}`).join(' ')}
+          fill="color-mix(in srgb, var(--site-accent) 16%, transparent)"
+          stroke="var(--site-accent)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      ) : null}
+      {vertices.map((vertex) => (
+        <g key={vertex.id}>
+          <circle
+            cx={vertex.x}
+            cy={vertex.y}
+            r={active === vertex.id ? 5 : 4}
+            fill="var(--site-accent)"
+            stroke="var(--site-panel)"
+            strokeWidth="2"
+          />
+          <circle
+            cx={vertex.x}
+            cy={vertex.y}
+            r="14"
+            fill="transparent"
+            onMouseEnter={() => setActive(vertex.id)}
+            onFocus={() => setActive(vertex.id)}
+            onBlur={() => setActive(null)}
+            tabIndex={0}
+            aria-label={`${vertex.label} ${formatScore(vertex.value)} / ${scale}`}
+            style={{ cursor: 'default', outline: 'none' }}
+          />
+        </g>
+      ))}
+      {activeVertex ? (
+        <g pointerEvents="none">
+          <rect
+            x={Math.min(Math.max(activeVertex.x - 34, 2), RADAR_SIZE - 70)}
+            y={activeVertex.y - 34}
+            width="68"
+            height="22"
+            rx="6"
+            fill="var(--site-ink)"
+          />
+          <text
+            x={Math.min(Math.max(activeVertex.x - 34, 2), RADAR_SIZE - 70) + 34}
+            y={activeVertex.y - 23}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="11"
+            fill="var(--site-panel)"
+          >
+            {activeVertex.label} {formatScore(activeVertex.value)}
+          </text>
+        </g>
+      ) : null}
+    </svg>
+  )
+}
+
 function ChangelogRating({ rating, caption }) {
   if (!rating) return null
   const { scale, rater, ratedAt } = CHANGELOG_RATING_META
@@ -23,35 +157,23 @@ function ChangelogRating({ rating, caption }) {
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-accent)]">
           {caption}
         </p>
-        <p className="text-[12px] text-[var(--site-muted)]">
-          总评
-          <span className="ml-1.5 font-serif text-[20px] font-semibold text-[var(--site-ink)]">
-            {rating.overall.toFixed(1)}
-          </span>
-          <span className="text-[11px] text-[var(--site-faint)]"> / {scale}</span>
+        <p className="text-[11px] text-[var(--site-faint)]">
+          满分 {scale}{rating.weeks ? ` · ${rating.weeks} 周均值` : ''}
         </p>
       </div>
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-        {CHANGELOG_RATING_DIMENSIONS.map(({ id, label, hint }) => {
-          const value = rating.scores[id]
-          return (
-            <div key={id} title={hint}>
-              <div className="flex items-baseline justify-between text-[12px]">
-                <dt className="text-[var(--site-muted)]">{label}</dt>
-                <dd className="font-mono text-[12px] text-[var(--site-ink)]">
-                  {Number.isInteger(value) ? value : value.toFixed(1)}
-                </dd>
-              </div>
-              <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--site-line)]">
-                <div
-                  className="h-full rounded-full bg-[var(--site-accent)]"
-                  style={{ width: `${(value / scale) * 100}%` }}
-                />
-              </div>
+      <div className="mt-2 grid items-center gap-4 sm:grid-cols-[minmax(0,260px)_1fr]">
+        <ChangelogRadar scores={rating.scores} scale={scale} title={caption} />
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 self-center">
+          {CHANGELOG_RATING_DIMENSIONS.map(({ id, label, hint }) => (
+            <div key={id} title={hint} className="flex items-baseline justify-between border-b border-dashed border-[var(--site-line)] pb-1 text-[12px]">
+              <dt className="text-[var(--site-muted)]">{label}</dt>
+              <dd className={`font-mono ${rating.scores[id] == null ? 'text-[var(--site-faint)]' : 'text-[var(--site-ink)]'}`}>
+                {formatScore(rating.scores[id])}
+              </dd>
             </div>
-          )
-        })}
-      </dl>
+          ))}
+        </dl>
+      </div>
       {rating.note ? (
         <p className="mt-3 text-[12.5px] leading-6 text-[var(--site-muted)]">{rating.note}</p>
       ) : null}

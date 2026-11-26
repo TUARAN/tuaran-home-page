@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 252,
+    "routes": 250,
     "redirects": 23,
     "private": 62,
-    "registeredStatic": 123,
-    "indexable": 142,
-    "canonical": 163,
-    "openGraph": 95,
-    "jsonLd": 70,
+    "registeredStatic": 121,
+    "indexable": 141,
+    "canonical": 161,
+    "openGraph": 94,
+    "jsonLd": 69,
     "errors": 9,
     "warnings": 138
   },
@@ -1684,45 +1684,6 @@
         "canonical": true,
         "canonicalValues": [
           "/changelog"
-        ],
-        "noindex": "explicit",
-        "openGraph": false,
-        "jsonLd": false,
-        "ogUrls": []
-      }
-    },
-    {
-      "path": "/checkin",
-      "file": "app/(site)/checkin/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": true,
-      "sitemap": true,
-      "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "/checkin"
-        ],
-        "noindex": "inherited",
-        "openGraph": true,
-        "jsonLd": true,
-        "ogUrls": [
-          "/checkin",
-          "https://2aran.com/checkin"
-        ]
-      }
-    },
-    {
-      "path": "/checkin/publishing",
-      "file": "app/(site)/checkin/publishing/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": false,
-      "sitemap": false,
-      "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "/checkin/publishing"
         ],
         "noindex": "explicit",
         "openGraph": false,

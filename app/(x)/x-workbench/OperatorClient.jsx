@@ -13,13 +13,7 @@ export default function OperatorClient() {
   const [ready, setReady] = useState(false)
   const [accounts, setAccounts] = useState([])
   const [handle, setHandle] = useState('')
-  const [usage, setUsage] = useState(null)
   const [returnTo, setReturnTo] = useState('https://x.2aran.com/x-workbench/ops')
-
-  const loadUsage = useCallback(async () => {
-    const usageResult = await call('/usage')
-    if (usageResult.ok) setUsage(usageResult.data)
-  }, [])
 
   const loadAccounts = useCallback(async () => {
     const res = await call('/accounts')
@@ -33,8 +27,7 @@ export default function OperatorClient() {
     setHandle((current) => (res.data.accounts.some((account) => account.handle === current) ? current : res.data.accounts[0]?.handle || ''))
     setSignedIn(true)
     setReady(true)
-    loadUsage()
-  }, [loadUsage])
+  }, [])
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
   useEffect(() => { setReturnTo(window.location.href) }, [])
@@ -55,7 +48,7 @@ export default function OperatorClient() {
           <header className={s.opsHead}>
             <div className={s.opsIntro}>
               <h1 className={s.opsTitle}>X 大互动智能体</h1>
-              <p className={s.hint}>每个 X 账号一份人格和记忆。改写会读取它们，插件里的智能体也会同步同一份。</p>
+              <p className={s.hint}>在这里绑定 X 账号、配对浏览器插件。人格与记忆直接在插件里设置。</p>
             </div>
             {accounts.length > 0 && (
               <label className={s.accountRow}>
@@ -66,7 +59,7 @@ export default function OperatorClient() {
               </label>
             )}
           </header>
-          <AgentTab accounts={accounts} usage={usage} active={handle} onSelect={setHandle} onAccounts={loadAccounts} />
+          <AgentTab accounts={accounts} active={handle} onSelect={setHandle} onAccounts={loadAccounts} />
           <PluginConsole />
         </>
       )}

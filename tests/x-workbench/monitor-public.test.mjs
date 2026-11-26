@@ -135,6 +135,6 @@ test('首页在智能体卡片之后渲染插件现场，日历默认收起', as
   assert.ok(home.indexOf('<MonitorSection />') > home.indexOf('id="agents"'))
   assert.match(section, /useState\(false\)/) // calendarOpen 默认收起
   assert.match(section, /aria-expanded=\{calendarOpen\}/)
-  assert.match(section, /data\?\.owner/)
+  assert.doesNotMatch(section, /data\?\.owner/) // 站长指令只在 /x-workbench/ops
   assert.doesNotMatch(section, /s\[`/)
 })

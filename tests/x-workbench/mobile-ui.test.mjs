@@ -58,7 +58,18 @@ test('后台手机布局有独立表单类，账号选择与智能体保留', as
   assert.match(operator, /当前 X 账号/)
   assert.match(agentTab, /s\.accountChips/)
   assert.match(agentTab, /s\.bindForm/)
-  assert.match(agentTab, /s\.fieldInput/)
   assert.match(agentTab, /s\.pairRow/)
   assert.doesNotMatch(`${operator}\n${agentTab}`, /ScheduleTab|PosterTab/)
+})
+
+test('后台只做账号绑定与插件配对，不设额度和人格', async () => {
+  const [, , operator, agentTab] = await read()
+  assert.doesNotMatch(agentTab, /本月额度|PERSONA_FIELDS|'\/profile|addMemory/)
+  assert.doesNotMatch(operator, /\/usage|usage=/)
+  assert.match(operator, /人格与记忆直接在插件里设置/)
+})
+
+test('首页插件现场不显示站长操作', async () => {
+  const monitor = await readFile(new URL('../../app/(x)/x-workbench/MonitorSection.jsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(monitor, /站长操作|sendCommand|flow-start|ext-update/)
 })

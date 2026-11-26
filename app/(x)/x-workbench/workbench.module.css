@@ -188,10 +188,6 @@
 .accountChips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .accountChip { display: inline-flex; align-items: center; gap: 4px; }
 .bindForm { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
-.fieldLabel { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
-.fieldInput { display: block; width: 100%; box-sizing: border-box; }
-.memoryRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.memoryInput { flex: 1 1 12rem; min-width: 0; }
 .pairRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pairCode { flex: 1 1 10rem; min-width: 0; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .pairNote { font-size: 13px; color: var(--sub); }
@@ -204,12 +200,9 @@
 .opsHead .accountRow { margin: 0; gap: 10px; }
 .accountLabel { font-size: 13px; font-weight: 700; color: var(--sub); white-space: nowrap; }
 .opsStatus { position: sticky; top: 76px; z-index: 4; margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--accentSoft); border: 1px solid var(--accentLine); color: var(--accentInk); font-size: 14px; font-weight: 600; }
-.opsGrid { display: grid; gap: 16px; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; margin-bottom: 16px; }
-.opsSide { display: grid; gap: 16px; min-width: 0; }
-.opsGrid .panel, .opsSide .panel { min-width: 0; }
 .panelNote { margin: 12px 0 0; line-height: 1.6; }
 .panelFoot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
-.opsEmpty { color: var(--sub); font-size: 14px; line-height: 1.7; text-align: center; padding: 40px 12px; margin: 0; background: var(--wash); border-radius: 12px; }
+.opsStack { display: grid; gap: 16px; margin-bottom: 16px; min-width: 0; }
 .panel .accountChips { margin-bottom: 14px; }
 .accountChip { border: 1px solid var(--line2); border-radius: 999px; background: #fff; overflow: hidden; gap: 0; }
 .accountChipOn { border-color: var(--accent); background: var(--accentSoft); }
@@ -219,16 +212,6 @@
 .accountDrop:hover { color: #b42318; }
 .accountPick:focus-visible, .accountDrop:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 .bindForm .input { flex: 1 1 10rem; }
-.opsMetrics { margin: 0; padding: 0; border-top: 0; }
-.metricLimit { font-size: 12px; font-weight: 500; color: var(--faint); }
-.fieldGrid { display: grid; gap: 14px; margin-bottom: 22px; }
-.fieldGrid .fieldLabel { margin: 0; }
-.fieldLabel .fieldInput { margin-top: 6px; font-weight: 400; }
-.subCount { font-size: 13px; font-weight: 500; color: var(--faint); margin-left: 6px; }
-.memoryList { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; }
-.memoryItem { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
-.memoryItem:last-child { border-bottom: 0; }
-.memoryText { flex: 1; min-width: 0; line-height: 1.5; word-break: break-word; }
 .opsSteps { list-style: none; padding: 0; margin: 14px 0 16px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .pairRevoke { margin-left: auto; color: var(--sub); }
 .opsLinks { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 600; }
@@ -288,11 +271,6 @@
 .taskTable th, .taskTable td { padding: 8px 10px; border-top: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
 .taskTable thead th { border-top: 0; color: var(--sub); font-size: 12px; font-weight: 600; }
 .taskTable th[scope="row"] { text-align: left; font-weight: 600; color: var(--ink); }
-.ownerPanel { margin-top: 16px; background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; padding: 0 16px 14px; }
-.ownerPanel summary { cursor: pointer; display: flex; align-items: center; min-height: 48px; font-size: 14px; font-weight: 800; color: var(--ink); }
-.ownerRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
-.ownerActions { display: flex; flex-wrap: wrap; gap: 6px; }
-.ownerActions .btn { min-height: 34px; padding: 4px 14px; font-size: 13px; }
 
 /* 站长控制台：排班台与动作明细，沿用白卡 + 发丝线 */
 .consoleGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
@@ -323,7 +301,6 @@
 
 /* 平板及以下：单列内容，顶栏收成「品牌 / 操作」一行 + 「导航」一行 */
 @media (max-width: 960px) {
-  .opsGrid { grid-template-columns: minmax(0, 1fr); }
   .cols, .two, .agentGrid { grid-template-columns: 1fr; }
   .barInner { gap: 0 12px; padding: 6px 12px 0; min-height: 0; }
   .brand { order: 1; gap: 8px; }
@@ -382,7 +359,6 @@
   .calendarToggle { padding: 12px; }
   .taskTable { min-width: 320px; }
   .taskTable th, .taskTable td { padding: 8px 6px; }
-  .ownerRow { align-items: flex-start; flex-direction: column; }
   .agentCard { padding: 12px 14px; border-radius: 14px; box-shadow: none; }
   .agentCard:hover { box-shadow: none; }
   .agentCardHead { gap: 10px; }
@@ -399,7 +375,7 @@
   .accountSelect { width: 100%; }
   .bindForm { width: 100%; }
   .bindForm .input { flex: 1 1 8rem; }
-  .fieldInput, .pairCode { width: 100%; }
+  .pairCode { width: 100%; }
   .pairRow .btn { flex: 0 0 auto; }
   .rank { flex-wrap: wrap; }
   .rank > span { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }

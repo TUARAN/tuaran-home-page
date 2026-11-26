@@ -83,6 +83,24 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'opus-56-fluxxrider-reaction-2026-11-26',
+    type: 'video',
+    category: 'ai',
+    title: 'Opus 5.6 强到离谱：fluxxrider 实测反应',
+    summary:
+      'Opus 5.6 is unceremoniously the most powerful model I\'ve laid my hands on. This is insane.\n\n录屏保留 fluxxrider 在 X 上的原话与现场操作节奏，方便回头对照模型版本和交互细节。',
+    tags: ['Opus 5.6', 'Claude', '模型能力', '实测', 'Cursor'],
+    date: '2026-11-26',
+    time: '09:36',
+    src: feedMediaUrl('feed/opus-56-fluxxrider-reaction-2026-11-26.mp4'),
+    poster: '/feed/posters/opus-56-fluxxrider-reaction-2026-11-26.jpg',
+    aspect: '16/9',
+    source: {
+      label: 'fluxxrider / X',
+      href: 'https://x.com/fluxxrider/status/2125701190872915996',
+    },
+  },
+  {
     id: 'white-house-ai-safety-agreement-2026-09-29',
     type: 'video',
     category: 'ai',

@@ -17,6 +17,7 @@
 Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]` 开头。Pages 略过该次预览或部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
 
 - 只有需要站长看过官方预览再说「合」的页面改动，才触发预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。
+- **文章类改动不走预览**：`research/` 调研 Markdown、内容稿与文章数据都由固定模板渲染，改动只落在内容层。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」即可直接 squash，不生成也不等待 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 与后台发布审批，预览构建替代不了这些。预览只保留给页面结构、样式、组件、运行时和接口改动。
 - 纯文档、进度说明、中间变基、同分支连推：提交说明以 `[CF-Pages-Skip]` 开头。同分支上只有那一次需要站长看的页面提交不加标记。
 - 合入 `main` 后同一标记继续生效。squash 说明以 `[CF-Pages-Skip]` 开头的提交，不作为完整的预览式生产部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。
 - 不改 Cloudflare 控制台，也不另造跳过机制。步骤见 [Issue 优先工作流](../runbooks/issue-first-workflow.md) 的「预览、内容与合并」。

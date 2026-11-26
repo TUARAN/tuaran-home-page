@@ -15,7 +15,7 @@ export const WORKBENCH_MENU_GROUPS = [
       { id: 'theory', label: '大互动理论', href: '/theory' },
       { id: 'calendar', label: '大互动日历', href: '/calendar' },
       { id: 'roundtable', label: '大互动圆桌', href: '/roundtable' },
-      { id: 'grokbot', label: 'GrokBot 秘籍', href: '/grokbot' },
+      { id: 'grokbot', label: 'Grokbot 秘籍', href: '/grokbot' },
     ],
   },
 ]

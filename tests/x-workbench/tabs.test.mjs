@@ -7,7 +7,7 @@ import { WORKBENCH_MENU_GROUPS, WORKBENCH_MENU_ITEMS } from '../../app/(x)/x-wor
 test('X大互动导航收束为智能体产品与读本', () => {
   assert.deepEqual(WORKBENCH_MENU_GROUPS.map((group) => [group.label, group.items.map((item) => item.label)]), [
     ['产品', ['大互动智能体', '大互动智能体手册']],
-    ['读本', ['大互动理论', '大互动日历', '大互动圆桌', 'GrokBot 秘籍']],
+    ['读本', ['大互动理论', '大互动日历', '大互动圆桌', 'Grokbot 秘籍']],
   ])
   const labels = WORKBENCH_MENU_ITEMS.map((item) => item.label)
   for (const removed of ['热榜', 'AI 改写', '排期', '海报', '推文榜', '账号榜', '绿皮书', '黄皮书', 'AI分发大师']) {
@@ -19,7 +19,7 @@ test('X大互动导航收束为智能体产品与读本', () => {
     ['大互动理论', '/theory', false],
     ['大互动日历', '/calendar', false],
     ['大互动圆桌', '/roundtable', false],
-    ['GrokBot 秘籍', '/grokbot', false],
+    ['Grokbot 秘籍', '/grokbot', false],
   ])
   assert.equal(WORKBENCH_MENU_GROUPS.some((group) => ['工作', '实践', '理论', '今日看板'].includes(group.label)), false)
 })

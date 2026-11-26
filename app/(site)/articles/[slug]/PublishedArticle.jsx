@@ -10,6 +10,7 @@ import ArticleComments from '../../components/ArticleComments'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
+import EgoPublishButton from '../../components/EgoPublishButton'
 import RevertToDraftButton from '../../components/RevertToDraftButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { isMarkdownDocument } from '../../../../lib/article/articleDocument.mjs'
@@ -108,6 +109,13 @@ export default function PublishedArticle({ article, siteUrl }) {
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
             readerActions={<CopyMarkdownButton markdown={markdown} />}
           >
+            <EgoPublishButton
+              title={article.title}
+              url={url}
+              summary={article.summary || article.contentText.slice(0, 160)}
+              tags={article.tags || []}
+              markdown={markdown}
+            />
             <DistributeContentButton
               title={article.title}
               summary={article.summary || article.contentText.slice(0, 160)}

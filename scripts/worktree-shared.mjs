@@ -128,6 +128,6 @@ export function linkNodeModules(mainRoot, satelliteRoot, { force = false } = {})
     fs.rmSync(satelliteModules, { force: true })
   }
 
-  fs.symlink(mainModules, satelliteModules)
+  fs.symlinkSync(mainModules, satelliteModules)
   return { action: 'linked', mainModules, satelliteModules }
 }

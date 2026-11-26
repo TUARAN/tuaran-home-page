@@ -51,7 +51,7 @@ Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]`
 | 项目 | 上限 |
 | --- | --- |
 | 本地分支 | 10 个 |
-| 同时存在的 worktree | 3 个，含主仓库 |
+| 同时存在的 worktree | 5 个，含主仓库 |
 | 单个分支的存活时间 | 7 天无动静即处理 |
 
 超过上限时，先清理再开新分支。
@@ -140,11 +140,29 @@ Git worktree **共享** `.git/objects`，但 **`node_modules` 不进 Git**，不
 - **自检**：`npm run worktree:doctor`，列出各 worktree 与 `node_modules` 是主仓实体、符号链接还是缺失。
 - Git 层所谓「稀疏」只省对象库；**疏通磁盘靠共享依赖 + 合并当天拆 worktree**，见上表数量上限。
 
+## Worktree：任务型与智能体槽位
+
+目录隔离和分支命名是两件不同的事。
+
+- **分支名**只按任务类型白名单（`feat/`、`fix/` 等）和任务名起，**不**用智能体名、工具名当分支前缀（历史 `codex/*`、`cursor/*` 已不再新开）。
+- **worktree 目录**可以按任务开，也可以按智能体或工作环境开——前者适合单次 PR，后者适合长期并行的多个助手。
+
+| 模式 | 何时用 | 创建方式 | 任务结束后 |
+| --- | --- | --- | --- |
+| **任务型** | 一次性功能 / 修复，合完就收 | `npm run worktree:add -- <类型> <任务名>` | 当天 `git worktree remove`，删本地分支 |
+| **智能体槽位** | 固定给 WorkBuddy、豆包、Cursor 等一头长期占坑 | 首次：`npm run worktree:add -- chore slot-<标识>`（`标识` 如 `workbuddy`、`doubao`）；目录落在 `…-slot-<标识>` | **保留目录**；推 PR、等合并后在该目录 `git fetch origin && git switch -c <类型>/<新任务> origin/main` |
+
+**主 worktree（`main`）**：只适合站长点名「在主仓直接改」、或 `ALLOW_MAIN_COMMIT=1` 的极小改动。其余助手默认进自己的槽位或任务型卫星目录写文件、提交。
+
+智能体槽位是否合理：**合理**，前提是槽位里仍然「一件事一个分支、一个 PR」，换任务就换分支，不把多个 Issue 混在同一未提交工作区。槽位占的是**并行写文件的坑位**，不是把分支永久绑在智能体名上。上限 5（含 `main`）时，典型分配是：`main` + 最多 4 个长期槽位，或 `main` + 若干任务型卫星；超过先 `npm run worktree:doctor` 再开。
+
+同一槽位内开工新任务前，确认无未提交手写改动；有 WIP 先提交、stash 或开任务型 worktree，避免多任务混目录。
+
 ## 工作区卫生
 
 - `public/data/memory/` 下的加密快照由 `pre-push` 钩子自动生成，会让每个 worktree 都显示“有未提交改动”。提交时只暂存任务相关文件，不把快照混进功能提交。
 - `lib/research/styleAudit.js` 由 `npm run research:style-audit` 生成，文件头写明不要手改。它只在调研批量治理的 PR 里提交。
-- worktree 只用于并行任务。任务结束当天移除，不长期保留。
+- **任务型** worktree：任务结束当天移除，不长期保留。**智能体槽位**可长期保留，但分支仍按上文换任务、按合并后清理删已合分支。
 - 本地 Codex 与聊天助手并行时，同一条 Issue 只走一条落地路径，不为同一件事再开第二个分支。
 
 ## 不做的事

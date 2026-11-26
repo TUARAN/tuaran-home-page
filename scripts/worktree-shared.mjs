@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export const BRANCH_PREFIXES = ['feat', 'fix', 'research', 'content', 'chore']
-export const MAX_WORKTREES = 3
+export const MAX_WORKTREES = 5
 
 export function branchName(type, taskSlug) {
   return `${type}/${taskSlug}`

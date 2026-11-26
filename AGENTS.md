@@ -96,7 +96,7 @@
 
 ## Git 发布规则
 
-- **开工隔离（强制）**：任何代码、配置或文档改动，先在独立 worktree 的短分支上开工，不在主工作区直接写文件或提交。主仓（`.git` 为目录）用 `npm run worktree:add -- <类型> <任务名>` 创建卫星并链主仓 `node_modules`；细则与磁盘约定见 `docs/specs/branch-management.md`「依赖与磁盘」。**卫星 worktree 禁止 `npm install` / `npm ci`**；缺依赖只在主仓安装。主工作区由多个智能体共享，在其中 `checkout` 新分支**不算隔离**——目录相同，他人未提交改动仍混在一起。`pre-commit` 钩子拒绝主工作区的任何提交，并在卫星拒绝实体 `node_modules`。站长明确要求在主工作区直接提交的小改动用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。云端 VM 的 clone 不带本机钩子配置，仍须按本条自觉开工。
+- **开工隔离（强制）**：任何代码、配置或文档改动，先在独立 worktree 的短分支上开工，不在主工作区直接写文件或提交。主仓（`.git` 为目录）用 `npm run worktree:add -- <类型> <任务名>` 创建卫星并链主仓 `node_modules`；数量上限、任务型 worktree 与按智能体占坑的槽位见 `docs/specs/branch-management.md`「Worktree：任务型与智能体槽位」与「依赖与磁盘」。**卫星 worktree 禁止 `npm install` / `npm ci`**；缺依赖只在主仓安装。主工作区由多个智能体共享，在其中 `checkout` 新分支**不算隔离**——目录相同，他人未提交改动仍混在一起。`pre-commit` 钩子拒绝主工作区的任何提交，并在卫星拒绝实体 `node_modules`。站长明确要求在主工作区直接提交的小改动用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。云端 VM 的 clone 不带本机钩子配置，仍须按本条自觉开工。
 - 分支命名、数量上限、合并后清理与归档，以 `docs/specs/branch-management.md` 为准（后台 `/admin/branch-rules`）。squash 合并后的分支线由 GitHub `refs/pull/<N>/head` 追溯，不打标签；没有 PR 的搁置分支推到 `refs/archive/<名称>` 归档。标签只用于发布与版本。
 - 用户说“push”时，只提交当前任务范围内的改动并推送当前分支；如果当前分支是 `main`，就直接推送 `main`。不要因此自动创建分支或 Pull Request。
 - 用户说“开 PR”或“建分支”时，按任务类型选前缀，创建 `<类型>/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。前缀白名单与选型见 `docs/specs/branch-management.md`。

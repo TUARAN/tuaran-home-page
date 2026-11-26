@@ -7,14 +7,14 @@ import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 
-const title = '甄选小店 · ChatGPT 与 Claude 代充'
+const title = '甄选小店 · ChatGPT 代充与 Claude 中转'
 const description =
-  '甄选小店：ChatGPT Plus / Pro 代充与 Claude 代充（离线可验证，1:6.9 汇率，可加微信沟通）已开放购买。只放站长自己用过、能对交付负责的商品。'
+  '甄选小店：ChatGPT Plus / Pro 代充与 Claude 中转两个渠道（Wokey 代充离线可验证、1:6.9 汇率；CChello 官方客户端直连、官方费率 5 折）已开放购买。只放站长自己用过、能对交付负责的商品。'
 
 export const metadata = {
   title,
   description,
-  keywords: ['甄选小店', 'ChatGPT 代充', 'ChatGPT Plus', 'Claude 代充', 'Wokey', '小店'],
+  keywords: ['甄选小店', 'ChatGPT 代充', 'ChatGPT Plus', 'Claude 代充', 'Claude 中转', 'Wokey', 'CChello', '小店'],
   alternates: { canonical: SHOP_PATH },
   openGraph: {
     title,

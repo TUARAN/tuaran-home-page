@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import XPage from './XPage'
 import MonitorSection from './MonitorSection'
+import AgentRobotAvatar from './AgentRobotAvatar'
 import { call, compact } from './api'
 import { ACTION_LABELS, OBSERVED_AGENTS, actionCount, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
@@ -35,11 +36,10 @@ export default function WorkbenchClient() {
         <div className={s.agentGrid}>
           {agents.map((agent) => {
             const hasReport = ready && Object.values(agent.actions || {}).some((value) => value != null)
-            const avatarText = String(agent.name || agent.handle || '?').slice(-2)
             return (
               <article key={agent.handle} className={s.agentCard}>
                 <div className={s.agentCardHead}>
-                  <span className={s.agentAvatar} aria-hidden="true">{avatarText}</span>
+                  <AgentRobotAvatar handle={agent.handle} className={s.agentRobot} />
                   <div className={s.agentIdentity}>
                     <h3 className={s.agentName}>{agent.name || agent.handle}</h3>
                     <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener" className={s.agentHandle}>@{agent.handle}</a>
@@ -50,7 +50,7 @@ export default function WorkbenchClient() {
                 </div>
                 <dl className={s.metricRow}>
                   {ACTION_LABELS.map(([key, label]) => (
-                    <div key={key} className={key === 'posts' ? `${s.metricCell} ${s.metricHero}` : s.metricCell}>
+                    <div key={key} className={s.metricCell}>
                       <dd><Metric ready={ready} value={actionCount(agent.actions, key)} /></dd>
                       <dt>{label}</dt>
                     </div>

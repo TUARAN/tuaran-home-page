@@ -163,6 +163,8 @@
 .agentCard:hover { border-color: var(--accentLine); box-shadow: 0 4px 16px rgba(15, 20, 25, .06); }
 .agentCardHead { display: flex; align-items: center; gap: 12px; }
 .agentAvatar { flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 800; line-height: 1; }
+.agentRobot { flex: none; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; display: block; }
+.agentRobot svg { width: 100%; height: 100%; display: block; }
 .agentIdentity { min-width: 0; flex: 1; }
 .agentName { margin: 0; font-size: 16px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
 .agentHandle { display: inline-block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--accentInk); text-decoration: none; overflow-wrap: anywhere; }
@@ -172,8 +174,7 @@
 .metricRow { display: flex; gap: 8px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
 .metricCell { flex: 1 1 0; min-width: 0; }
 .metricCell dd { margin: 0; font-size: 18px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; color: var(--ink); }
-.metricCell dt { margin-top: 3px; color: var(--sub); font-size: 12px; line-height: 1.3; }
-.metricHero dd { color: var(--accentInk); }
+.metricCell dt { margin-top: 3px; color: var(--sub); font-size: 12px; line-height: 1.3; white-space: nowrap; }
 .missing { color: var(--faint); font-weight: 600; }
 /* 加载态用骨架条代替重复文字，读取状态由卡片右上角 chip 统一表达 */
 .skeleton { display: inline-block; width: 40px; height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--line) 25%, var(--blueSoft) 50%, var(--line) 75%); background-size: 200% 100%; }
@@ -279,9 +280,9 @@
 .trendDayOn .trendCount, .trendDayOn .trendDate { color: var(--accentInk); font-weight: 700; }
 .trendDate { font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .daySummary { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-.actionGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
+.actionGrid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
 .actionGrid dd { margin: 0; font-size: 18px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
-.actionGrid dt { margin-top: 2px; color: var(--sub); font-size: 11.5px; }
+.actionGrid dt { margin-top: 2px; color: var(--sub); font-size: 11.5px; white-space: nowrap; }
 .tableWrap { margin-top: 12px; overflow-x: auto; }
 .taskTable { width: 100%; min-width: 420px; border-collapse: collapse; font-size: 13px; }
 .taskTable th, .taskTable td { padding: 8px 10px; border-top: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
@@ -376,7 +377,7 @@
   .monitorMetric:nth-child(-n+2) { border-top: 0; }
   .monitorMetric:nth-child(odd) { border-left: 0; }
   .deviceList { grid-template-columns: 1fr; }
-  .actionGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; }
+  .actionGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 8px; }
   .calendarBody { padding: 12px 12px 16px; }
   .calendarToggle { padding: 12px; }
   .taskTable { min-width: 320px; }
@@ -386,8 +387,9 @@
   .agentCard:hover { box-shadow: none; }
   .agentCardHead { gap: 10px; }
   .agentAvatar { width: 36px; height: 36px; font-size: 11px; }
+  .agentRobot { width: 36px; height: 36px; }
   .agentName { font-size: 15px; }
-  .metricRow { margin-top: 11px; padding-top: 9px; gap: 6px; }
+  .metricRow { margin-top: 11px; padding-top: 9px; gap: 6px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .metricCell dd { font-size: 16px; }
   .metricCell dt { font-size: 11px; }
   .actionRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
@@ -409,7 +411,7 @@
 @media (max-width: 380px) {
   .hdrPrimary { padding: 0 13px; }
   .slogan { font-size: 19px; }
-  .metricRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
+  .metricRow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; }
   .metricCell dd { font-size: 15px; }
 }
 

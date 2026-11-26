@@ -28,18 +28,18 @@ test('H5 触控目标与表单按手机标准，卡片数据行单列排布', as
   assert.match(phone, /\.btn \{ min-height: 44px;/)
   assert.match(phone, /\.input \{ font-size: 16px; min-height: 44px;/)
   assert.match(phone, /\.agentCard \{ padding: 12px 14px; border-radius: 14px; box-shadow: none; \}/)
-  assert.match(phone, /\.metricRow \{ margin-top: 11px; padding-top: 9px; gap: 6px; \}/)
+  assert.match(phone, /\.metricRow \{ margin-top: 11px; padding-top: 9px; gap: 6px; display: grid; grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); \}/)
   assert.match(phone, /\.actionRow \{ display: grid; grid-template-columns: 1fr 1fr;/)
 })
 
-test('首页账号卡是头像 + 身份行 + 无底色数据行，没有灰格子与主数字列', async () => {
+test('首页账号卡是机器人头像 + 身份行 + 无底色数据行，数据行四列排布', async () => {
   const [css, home] = await read()
-  assert.match(css, /\.agentAvatar \{ flex: none; width: 42px;/)
+  assert.match(css, /\.agentRobot \{ flex: none; width: 42px;/)
   assert.match(css, /\.metricRow \{ display: flex;/)
   assert.doesNotMatch(css, /agentMain|heroValue|heroMissing|heroSkeleton|metricList|grid-template-areas: "head head"/)
-  assert.match(home, /s\.agentAvatar/)
+  assert.match(home, /<AgentRobotAvatar handle=\{agent\.handle\} className=\{s\.agentRobot\} \/>/)
   assert.match(home, /s\.metricRow/)
-  assert.match(home, /s\.metricHero/)
+  assert.doesNotMatch(home, /s\.metricHero/)
 })
 
 test('首页加载态用骨架条，状态由卡片 chip 统一表达', async () => {

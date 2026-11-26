@@ -86,13 +86,15 @@ test('站长控制台数据：排班规则、指令回执与动作明细只给�
   assert.deepEqual(guest.devices[0].schedule, { enabled: true, current: 'timeline' })
 })
 
-test('日报汇总五类：关注并入回关，缺失字段按 0', () => {
+test('日报汇总八类，与插件日报面板同一套；关注并入回关，缺失字段按 0', () => {
   assert.deepEqual(summarizeReports([
-    { posts: 3, comments: 12, likes: 5, follows: 2, followBacks: 1, unfollows: 4 },
+    { posts: 3, comments: 12, likes: 5, follows: 2, followBacks: 1, unfollows: 4, communityShares: 2, prunes: 1, replyPrunes: 3 },
     { posts: 1, comments: 2 },
     null,
-  ]), { posts: 4, comments: 14, likes: 5, follows: 3, unfollows: 4 })
-  assert.deepEqual(summarizeReports(null), { posts: 0, comments: 0, likes: 0, follows: 0, unfollows: 0 })
+  ]), { comments: 14, likes: 5, follows: 3, unfollows: 4, posts: 4, communityShares: 2, prunes: 1, replyPrunes: 3 })
+  assert.deepEqual(summarizeReports(null), {
+    comments: 0, likes: 0, follows: 0, unfollows: 0, posts: 0, communityShares: 0, prunes: 0, replyPrunes: 0,
+  })
 })
 
 test('公开监控路由允许匿名读取，并挂在 x-workbench 路由表上', async () => {

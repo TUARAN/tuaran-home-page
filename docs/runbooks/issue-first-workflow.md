@@ -121,6 +121,8 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 
 只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。这类改动先留在 PR 上，那一次需要看的提交不加 `[CF-Pages-Skip]`。推送后从对应项目的 Preview 取得 `*.pages.dev` 链接，写进 PR。站长看过预览再说「合」。预览链接还没有时，PR 保持打开，不 squash。
 
+文章类改动不走预览：`research/` 调研 Markdown、内容稿与文章数据都由固定模板渲染，改动只落在内容层，预览页看不出内容层面的问题。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」就直接 squash，不生成也不等待 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 和后台发布审批。页面结构、样式、组件、运行时和接口改动仍按下面的预览流程走。
+
 纯文档、进度说明、中间变基、同分支连推不打预览。这些提交说明以 `[CF-Pages-Skip]` 开头，Pages 略过该次预览和部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。同分支上，只有需要站长看过新的官方预览再说「合」的那一次页面提交不加标记；进度说明、中间变基和其余连推都加标记，避免每次推送再排队一次构建。
 
 合入 `main` 后，Pages 看 squash 提交说明开头的同一标记。说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署，Pages 略过该次部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。跳过方式只有这一个标记。不改 Cloudflare 控制台，也不另造跳过机制。

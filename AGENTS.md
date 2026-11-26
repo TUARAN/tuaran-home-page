@@ -108,6 +108,7 @@
 
 只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。
 
+- **文章类改动不走预览**：`research/` 调研 Markdown、内容稿与文章数据由固定模板渲染，改动只在内容层。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」即可直接 squash，不等 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 与后台发布审批；预览只留给页面结构、样式、组件、运行时和接口改动。
 - 纯文档、进度说明、中间变基、同分支连推：提交说明以 `[CF-Pages-Skip]` 开头，跳过 Pages 预览和部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
 - 合入 `main` 后看同一标记。squash 提交说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。
 - 跳过方式只有提交说明开头的 `[CF-Pages-Skip]`。不另造标记，不改 `wrangler.toml`、GitHub Actions、钩子或 Cloudflare 控制台。

@@ -4,8 +4,8 @@ import ArticleDistributionClient from './ArticleDistributionClient'
 export const runtime = 'edge'
 
 export const metadata = {
-  title: '文章一键分发',
-  description: '把站内公开文章写入多个内容平台的草稿箱。',
+  title: '分发智能体',
+  description: '把站内文章交给本机智能体发到各平台，查看逐平台结果。',
   robots: { index: false, follow: false },
 }
 export default async function AdminArticleDistributionPage({ searchParams }) {
@@ -17,9 +17,9 @@ export default async function AdminArticleDistributionPage({ searchParams }) {
 
   return (
     <AdminPageGate
-      label="文章一键分发"
+      label="分发智能体"
       returnTo={returnTo}
-      description="文章选择、平台登录态和草稿写入仅站长本人可操作。"
+      description="建分发任务、查看结果仅站长本人可操作。"
     >
       <ArticleDistributionClient
         key={requestedContentKey || 'default'}

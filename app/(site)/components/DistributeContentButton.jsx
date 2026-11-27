@@ -42,7 +42,7 @@ export default function DistributeContentButton({ category, slug }) {
     <a
       href={`/admin/article-distribution?contentKey=${encodeURIComponent(contentKey)}`}
       className="article-action-button owner-only-action px-3 py-1 text-xs"
-      title="前往后台分发当前文章"
+      title="前往后台分发智能体页，为当前文章建分发任务"
     >
       <DistributeIcon />
       <span>文章分发</span>

@@ -55,44 +55,61 @@ export default function SiteFooterTrafficStats({ className = '' }) {
       ]
     : null
 
+  const row = items || [
+    { key: 'placeholder-1', value: '—', label: pick(locale, '总浏览', 'Total views'), hint: '' },
+    { key: 'placeholder-2', value: '—', label: pick(locale, '7 日 PV', '7d PV'), hint: '' },
+    { key: 'placeholder-3', value: '—', label: pick(locale, '7 日 UV', '7d UV'), hint: '' },
+  ]
+
   return (
     <Link
       href="/traffic"
       className={[
-        'group mt-5 inline-flex max-w-full flex-col gap-2 no-underline hover:no-underline sm:max-w-md',
+        'group mt-6 block w-full max-w-sm no-underline hover:no-underline',
         className,
       ].join(' ')}
       title={pick(locale, '查看完整访问统计', 'Open traffic dashboard')}
     >
-      <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--site-faint)] transition-colors group-hover:text-[var(--site-muted)]">
-        {pick(locale, '访问统计', 'Traffic')}
-      </span>
-      <span
+      <div
         className={[
-          'site-footer-traffic-stats grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-[var(--site-line)]',
-          'bg-[var(--site-line)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-ink)_4%,transparent)]',
-          !items ? 'opacity-70' : '',
+          'site-footer-traffic-stats rounded-2xl border border-[color-mix(in_srgb,var(--site-line)_85%,var(--site-ink))]',
+          'bg-[color-mix(in_srgb,var(--site-panel)_94%,#fff)]',
+          'p-3.5 shadow-[0_8px_24px_color-mix(in_srgb,var(--site-ink)_6%,transparent)]',
+          'transition-[box-shadow,transform,border-color] duration-200',
+          'group-hover:border-[color-mix(in_srgb,var(--site-ink)_18%,var(--site-line))]',
+          'group-hover:shadow-[0_10px_28px_color-mix(in_srgb,var(--site-ink)_9%,transparent)]',
+          !items ? 'opacity-75' : '',
         ].join(' ')}
         aria-label={pick(locale, '本站访问数据', 'Site visit stats')}
         aria-busy={!items}
       >
-        {(items || [
-          { key: 'placeholder-1', value: '—', label: pick(locale, '总浏览', 'Total views'), hint: '' },
-          { key: 'placeholder-2', value: '—', label: pick(locale, '7 日 PV', '7d PV'), hint: '' },
-          { key: 'placeholder-3', value: '—', label: pick(locale, '7 日 UV', '7d UV'), hint: '' },
-        ]).map((item) => (
-          <span
-            key={item.key}
-            className="flex min-w-0 flex-col items-center gap-0.5 bg-[color-mix(in_srgb,var(--site-panel)_92%,transparent)] px-2 py-2.5 text-center transition-colors group-hover:bg-[color-mix(in_srgb,var(--site-panel)_98%,transparent)]"
-            title={item.hint || undefined}
-          >
-            <strong className="font-serif text-base font-semibold tabular-nums leading-none text-[var(--site-ink)]">
-              {item.value}
-            </strong>
-            <small className="text-[10px] leading-tight text-[var(--site-muted)]">{item.label}</small>
+        <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-[color-mix(in_srgb,var(--site-line)_70%,transparent)] pb-2.5">
+          <span className="text-[13px] font-semibold tracking-wide text-[var(--site-ink)]">
+            {pick(locale, '访问统计', 'Traffic')}
           </span>
-        ))}
-      </span>
+          <span className="text-[11px] font-medium text-[var(--site-faint)] transition-colors group-hover:text-[var(--site-muted)]">
+            {pick(locale, '打开面板', 'Open dashboard')}
+            <span aria-hidden="true"> →</span>
+          </span>
+        </div>
+        <ul className="m-0 grid list-none grid-cols-3 gap-0 p-0">
+          {row.map((item, index) => (
+            <li
+              key={item.key}
+              className={[
+                'flex min-w-0 flex-col items-center gap-1 px-2 py-0.5 text-center',
+                index > 0 ? 'border-l border-[color-mix(in_srgb,var(--site-line)_75%,transparent)]' : '',
+              ].join(' ')}
+              title={item.hint || undefined}
+            >
+              <strong className="text-[17px] font-semibold tabular-nums leading-tight tracking-tight text-[var(--site-ink)]">
+                {item.value}
+              </strong>
+              <small className="text-[11px] font-medium leading-snug text-[var(--site-muted)]">{item.label}</small>
+            </li>
+          ))}
+        </ul>
+      </div>
     </Link>
   )
 }

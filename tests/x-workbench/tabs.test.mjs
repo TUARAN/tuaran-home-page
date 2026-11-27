@@ -39,7 +39,9 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
     readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8'),
   ])
 
-  assert.match(frame, /帮助一批智能体拿到创作者收益/)
+  assert.match(frame, /帮助一批智能体/)
+  assert.match(frame, /brandSloganEm/)
+  assert.match(frame, /拿到创作者收益/)
   assert.doesNotMatch(`${client}\n${frame}`, /爆点、改写|搜账号/)
   assert.match(frame, /WORKBENCH_MENU_GROUPS/)
   assert.match(frame, /group\.label/)

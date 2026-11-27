@@ -96,48 +96,63 @@ export default function InteractionCalendar({ days, activities = [], initialToda
   return (
     <>
     <div className={styles.layout}>
-      <section className={styles.picker} aria-label="选择日期">
-        <AccountBar account={account} onChoose={chooseAccount} />
-        <div className={styles.monthBar}>
-          <button type="button" onClick={() => setVisibleMonth(shiftMonth(visibleMonth, -1))}>上个月</button>
-          <strong>{monthTitle(visibleMonth)}</strong>
-          <button type="button" onClick={() => setVisibleMonth(shiftMonth(visibleMonth, 1))}>下个月</button>
+      <aside className={styles.picker} aria-label="筛选条件">
+        <div className={styles.pickerAccount}>
+          <header className={styles.pickerBlockHead}>
+            <p className={styles.pickerLabel}>智能体账号</p>
+            <p className={styles.pickerMeta}>
+              @{account}
+              {activeAgent?.name ? ` · ${activeAgent.name}` : ''}
+            </p>
+          </header>
+          <AccountBar account={account} onChoose={chooseAccount} />
         </div>
-        <div className={styles.weekdays} aria-hidden="true">
-          {WEEKDAYS.map((label) => <span key={label}>{label}</span>)}
-        </div>
-        <div className={styles.grid} role="grid" aria-label={monthTitle(visibleMonth)}>
-          {cells.map((date, index) => date ? (
-            <button
-              key={date}
-              type="button"
-              role="gridcell"
-              aria-label={date}
-              aria-pressed={date === selected}
-              aria-current={date === today ? 'date' : undefined}
-              className={[
-                date === selected ? styles.selected : '',
-                date === today ? styles.today : '',
-                byDate.has(date) || activityDatesForAccount.has(date) ? styles.recorded : '',
-              ].filter(Boolean).join(' ')}
-              onClick={() => choose(date)}
-            >
-              {Number(date.slice(-2))}
-              {byDate.has(date) || activityDatesForAccount.has(date) ? <i /> : null}
-            </button>
-          ) : <span key={`empty-${index}`} />)}
-        </div>
-        <label className={styles.dateLabel}>
-          直接选日
-          <input
-            type="date"
-            value={selected}
-            onChange={(event) => {
-              if (event.target.value) choose(event.target.value)
-            }}
-          />
-        </label>
-      </section>
+        <section className={styles.pickerCalendar} aria-label="选择日期">
+          <header className={styles.pickerBlockHead}>
+            <p className={styles.pickerLabel}>日历</p>
+            <p className={styles.pickerMeta}>有圆点表示该日有互动前十或任务次数</p>
+          </header>
+          <div className={styles.monthBar}>
+            <button type="button" onClick={() => setVisibleMonth(shiftMonth(visibleMonth, -1))}>上个月</button>
+            <strong>{monthTitle(visibleMonth)}</strong>
+            <button type="button" onClick={() => setVisibleMonth(shiftMonth(visibleMonth, 1))}>下个月</button>
+          </div>
+          <div className={styles.weekdays} aria-hidden="true">
+            {WEEKDAYS.map((label) => <span key={label}>{label}</span>)}
+          </div>
+          <div className={styles.grid} role="grid" aria-label={monthTitle(visibleMonth)}>
+            {cells.map((date, index) => date ? (
+              <button
+                key={date}
+                type="button"
+                role="gridcell"
+                aria-label={date}
+                aria-pressed={date === selected}
+                aria-current={date === today ? 'date' : undefined}
+                className={[
+                  date === selected ? styles.selected : '',
+                  date === today ? styles.today : '',
+                  byDate.has(date) || activityDatesForAccount.has(date) ? styles.recorded : '',
+                ].filter(Boolean).join(' ')}
+                onClick={() => choose(date)}
+              >
+                {Number(date.slice(-2))}
+                {byDate.has(date) || activityDatesForAccount.has(date) ? <i /> : null}
+              </button>
+            ) : <span key={`empty-${index}`} />)}
+          </div>
+          <label className={styles.dateLabel}>
+            直接选日
+            <input
+              type="date"
+              value={selected}
+              onChange={(event) => {
+                if (event.target.value) choose(event.target.value)
+              }}
+            />
+          </label>
+        </section>
+      </aside>
 
       <section className={styles.board} aria-live="polite">
         <header className={styles.boardHead}>

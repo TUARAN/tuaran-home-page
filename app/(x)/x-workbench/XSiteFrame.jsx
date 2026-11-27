@@ -44,7 +44,18 @@ export default function XSiteFrame({ active, children }) {
     <div className={`${s.app} ${s.xFrame}`}>
       <header className={s.bar}>
         <div className={s.barInner}>
-          <Link className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>帮助一批智能体拿到创作者收益</span></span></Link>
+          <Link className={s.brand} href="/x-workbench">
+            <span className={s.logo}>X</span>
+            <span className={s.brandCopy}>
+              <span className={s.brandName}>X大互动</span>
+              <span className={s.brandSlogan} role="doc-subtitle">
+                <span className={s.brandSloganShine} aria-hidden="true" />
+                <span className={s.brandSloganText}>
+                  帮助一批智能体<strong className={s.brandSloganEm}>拿到创作者收益</strong>
+                </span>
+              </span>
+            </span>
+          </Link>
           <nav className={s.tabs} aria-label="功能">
             {WORKBENCH_MENU_GROUPS.map((group) => (
               <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>

@@ -112,7 +112,7 @@ export default function SiteFooter({ className = '', showOnline = false }) {
             <span className="site-brand-mark" aria-hidden="true">T</span>
             <span className="font-serif text-lg font-semibold tracking-wide text-[var(--site-ink)]">TUARAN</span>
           </Link>
-          <p className="mt-5 max-w-xs text-sm leading-6 text-[var(--site-muted)]">
+          <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--site-muted)]">
             {pick(locale, '前端与 AI 工程、技术情报、知识库与调研。', 'Frontend & AI engineering, tech intel, knowledge base and research.')}
           </p>
           <SiteFooterTrafficStats />

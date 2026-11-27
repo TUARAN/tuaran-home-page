@@ -18,7 +18,7 @@ const WINDOWS = [
   { value: 300, zh: '近 300 提交' },
   { value: 120, zh: '近 120 提交' },
 ]
-const DEFAULT_SPEED = 80
+const DEFAULT_SPEED = 200
 const DEFAULT_WINDOW = 0
 const LEGEND = [
   { color: '#58a6ff', zh: 'main', en: 'main' },

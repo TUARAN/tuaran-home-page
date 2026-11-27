@@ -6,6 +6,8 @@
     "prepare": "node scripts/setup-hooks.mjs",
     "prebuild": "node scripts/check-tailwind-opacity-classes.mjs && node scripts/generate-a-share-company-pages.mjs && node scripts/check-public-asset-size.mjs && node scripts/audit-research-style.mjs && node scripts/generate-research-catalog.mjs && node scripts/generate-article-assets.mjs && node scripts/generate-content-catalog.mjs && node scripts/generate-research-assets.mjs && node scripts/audit-adsense-readiness.mjs && npm run seo:audit",
     "dev": "next dev -p 3000",
+    "distributor:skill": "node scripts/distributor-skill.mjs",
+    "distributor:skill:install": "node scripts/distributor-skill.mjs --install",
     "build": "next build",
     "build:check": "NEXT_DIST_DIR=.next-check next build",
     "clean:next-dist": "node scripts/clean-next-dist.mjs",

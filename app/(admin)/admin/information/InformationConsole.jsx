@@ -2,20 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/crypto'
+import {
+  VAULT_TYPE_LABEL,
+  groupVaultRecords,
+  maskSecret,
+  parseVaultNotes,
+  securitySummary,
+} from '../../../../lib/admin/informationVaultDisplay'
+import { decryptPayload } from '../../../../lib/longCompass/crypto'
 import { AdminPage, Section } from '../../components/ui'
-
-const EMPTY_FORM = {
-  type: 'account',
-  label: '',
-  account: '',
-  password: '',
-  securityFriend: '',
-  securityWork: '',
-  securityParents: '',
-  birthday: '',
-  notes: '',
-}
 
 function normalizePlain(value) {
   return {
@@ -34,47 +29,13 @@ function normalizePlain(value) {
   }
 }
 
-function formToPlain(form) {
-  return normalizePlain({
-    type: form.type,
-    label: form.label,
-    account: form.account,
-    password: form.password,
-    securityAnswers: {
-      friend: form.securityFriend,
-      work: form.securityWork,
-      parents: form.securityParents,
-    },
-    birthday: form.birthday,
-    notes: form.notes,
-  })
-}
-
-function plainToForm(plain) {
-  return {
-    type: plain.type,
-    label: plain.label,
-    account: plain.account,
-    password: plain.password,
-    securityFriend: plain.securityAnswers.friend,
-    securityWork: plain.securityAnswers.work,
-    securityParents: plain.securityAnswers.parents,
-    birthday: plain.birthday,
-    notes: plain.notes,
-  }
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="text-sm text-[#53554d] dark:text-gray-300">
-      <span className="mb-1 block">{label}</span>
-      {children}
-    </label>
-  )
-}
-
 const INPUT_CLASS =
   'w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 outline-none focus:border-[#a37b3c] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-100'
+
+const TH_CLASS =
+  'whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-[#67695d] dark:text-gray-400'
+
+const TD_CLASS = 'align-top px-3 py-2.5 text-sm text-[#15140f] dark:text-gray-100'
 
 export default function InformationConsole() {
   const [encryptedItems, setEncryptedItems] = useState([])
@@ -82,12 +43,9 @@ export default function InformationConsole() {
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
-  const [vaultPassword, setVaultPassword] = useState('')
   const [unlocked, setUnlocked] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [editingId, setEditingId] = useState('')
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [revealedId, setRevealedId] = useState('')
+  const [revealSecrets, setRevealSecrets] = useState(false)
   const [query, setQuery] = useState('')
   const [recordView, setRecordView] = useState('active')
 
@@ -113,6 +71,8 @@ export default function InformationConsole() {
       return searchableValues.some((value) => String(value || '').toLocaleLowerCase().includes(normalizedQuery))
     })
   }, [query, records, recordView])
+
+  const grouped = useMemo(() => groupVaultRecords(filteredRecords), [filteredRecords])
 
   const load = useCallback(async () => {
     setStatus('loading')
@@ -144,68 +104,10 @@ export default function InformationConsole() {
         decrypted.push({ ...item, plain: normalizePlain(await decryptPayload(item.payload, candidate)) })
       }
       setRecords(decrypted)
-      setVaultPassword(candidate)
       setPasswordInput('')
       setUnlocked(true)
     } catch {
       setMessage('口令错误，无法解密信息库。')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  function updateForm(key, value) {
-    setForm((current) => ({ ...current, [key]: value }))
-  }
-
-  function startEdit(record) {
-    if (busy || record.archivedAt != null) return
-    setEditingId(record.id)
-    setForm(plainToForm(record.plain))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  function resetForm() {
-    setEditingId('')
-    setForm(EMPTY_FORM)
-  }
-
-  async function save(event) {
-    event.preventDefault()
-    if (!form.account.trim() || !form.password || busy) return
-    setBusy(true)
-    setMessage('')
-    try {
-      const plain = formToPlain(form)
-      const payload = await encryptPayload(plain, vaultPassword)
-      const res = await fetch('/api/admin/information', {
-        method: editingId ? 'PATCH' : 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          editingId ? { id: editingId, payload } : { category: 'account', payload }
-        ),
-      })
-      const data = await res.json()
-      if (!res.ok || !data?.ok) throw new Error(data?.message || data?.error || `HTTP_${res.status}`)
-      if (editingId) {
-        setRecords((current) =>
-          current.map((item) =>
-            item.id === editingId ? { ...item, payload, plain, updatedAt: data.updatedAt } : item
-          )
-        )
-        setEncryptedItems((current) => current.map((item) =>
-          item.id === editingId ? { ...item, payload, updatedAt: data.updatedAt } : item
-        ))
-      } else {
-        setRecords((current) => [{ ...data.item, plain }, ...current])
-        setEncryptedItems((current) => [data.item, ...current])
-        setRecordView('active')
-      }
-      resetForm()
-      setMessage(editingId ? '记录已更新并重新加密。' : '记录已加密保存。')
-    } catch (error) {
-      setMessage(`保存失败：${error?.message || error}`)
     } finally {
       setBusy(false)
     }
@@ -230,8 +132,6 @@ export default function InformationConsole() {
       )
       setRecords(updateItems)
       setEncryptedItems(updateItems)
-      if (editingId === record.id) resetForm()
-      setRevealedId('')
       setMessage(action === 'archive' ? '记录已归档，可在「已归档」中恢复或删除。' : '记录已恢复到「未归档」。')
     } catch (error) {
       setMessage(`操作失败：${error?.message || error}`)
@@ -258,8 +158,6 @@ export default function InformationConsole() {
       if (!res.ok || !data?.ok) throw new Error(data?.message || data?.error || `HTTP_${res.status}`)
       setRecords((current) => current.filter((item) => item.id !== record.id))
       setEncryptedItems((current) => current.filter((item) => item.id !== record.id))
-      if (editingId === record.id) resetForm()
-      if (revealedId === record.id) setRevealedId('')
       setMessage('记录已删除。')
     } catch (error) {
       setMessage(`删除失败：${error?.message || error}`)
@@ -276,7 +174,7 @@ export default function InformationConsole() {
   return (
     <AdminPage
       title="信息金库"
-      description="账号、密码、密保答案等字段只在当前浏览器内解密；服务器和数据库只接触 AES-GCM 密文。"
+      description="条目由智能体经脚本写入 D1；此处只读浏览、复制与归档。账号与密码仅在当前浏览器内解密。"
     >
       {status === 'loading' ? (
         <p className="text-sm text-[#67695d] dark:text-gray-400">正在读取加密信息库…</p>
@@ -302,125 +200,137 @@ export default function InformationConsole() {
           {message ? <p className="mt-3 text-sm text-rose-600 dark:text-rose-300">{message}</p> : null}
         </Section>
       ) : (
-        <div className="space-y-5">
-          <Section title={editingId ? '编辑密钥' : '新增密钥'} description="保存前会在浏览器本地完成加密。">
-            <form onSubmit={save} className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <Field label="名称">
-                  <input className={INPUT_CLASS} value={form.label} onChange={(event) => updateForm('label', event.target.value)} placeholder="例如：账户 3" />
-                </Field>
-                <Field label="账号 / 登录标识 *">
-                  <input className={INPUT_CLASS} type="text" required value={form.account} onChange={(event) => updateForm('account', event.target.value)} autoComplete="off" placeholder="邮箱、用户名、手机号等" />
-                </Field>
-                <Field label="密码 *">
-                  <input className={INPUT_CLASS} type="password" required value={form.password} onChange={(event) => updateForm('password', event.target.value)} autoComplete="new-password" />
-                </Field>
-                <Field label="生日">
-                  <input className={INPUT_CLASS} type="date" value={form.birthday} onChange={(event) => updateForm('birthday', event.target.value)} />
-                </Field>
-                <Field label="密保 · 朋友">
-                  <input className={INPUT_CLASS} value={form.securityFriend} onChange={(event) => updateForm('securityFriend', event.target.value)} autoComplete="off" />
-                </Field>
-                <Field label="密保 · 工作">
-                  <input className={INPUT_CLASS} value={form.securityWork} onChange={(event) => updateForm('securityWork', event.target.value)} autoComplete="off" />
-                </Field>
-                <Field label="密保 · 父母">
-                  <input className={INPUT_CLASS} value={form.securityParents} onChange={(event) => updateForm('securityParents', event.target.value)} autoComplete="off" />
-                </Field>
-                <Field label="备注">
-                  <input className={INPUT_CLASS} value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} />
-                </Field>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="submit" disabled={busy} className="rounded-lg bg-[#15140f] px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-gray-100 dark:text-[#10161f]">
-                  {busy ? '保存中…' : editingId ? '保存修改' : '加密保存'}
-                </button>
-                {editingId ? <button type="button" onClick={resetForm} className="rounded-lg border border-[#caccc0] px-4 py-2 text-sm dark:border-[#2d3744]">取消</button> : null}
-              </div>
-            </form>
-          </Section>
-
-          <Section
-            title="密钥记录"
-            description={query.trim() ? `当前分类找到 ${filteredRecords.length} / ${viewCount} 条；搜索仅在当前浏览器内进行。` : `共 ${records.length} 条；密码与密保默认隐藏。记录需先归档，才能删除。`}
-          >
-            {message ? <p role="status" className="mb-3 text-sm text-[#67695d] dark:text-gray-400">{message}</p> : null}
-            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="记录归档状态">
+        <Section
+          title="密钥台账"
+          description={query.trim()
+            ? `当前视图 ${filteredRecords.length} / ${viewCount} 条；按类型分组。新增请走智能体脚本写入 D1。`
+            : `共 ${records.length} 条；未归档 ${records.length - archivedCount} 条。密码默认隐藏，可先归档再删除。`}
+        >
+          {message ? <p role="status" className="mb-3 text-sm text-[#67695d] dark:text-gray-400">{message}</p> : null}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="记录归档状态">
               {[['active', '未归档', records.length - archivedCount], ['archived', '已归档', archivedCount]].map(([value, label, count]) => (
                 <button
                   key={value}
                   type="button"
                   aria-pressed={recordView === value}
-                  onClick={() => { setRecordView(value); setRevealedId('') }}
+                  onClick={() => { setRecordView(value); setRevealSecrets(false) }}
                   className={`rounded-lg border px-3 py-2 text-sm ${recordView === value ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-[#10161f]' : 'border-[#caccc0] dark:border-[#2d3744]'}`}
                 >
                   {label}（{count}）
                 </button>
               ))}
             </div>
-            <div className="mb-4 flex max-w-2xl items-center gap-2">
-              <label className="min-w-0 flex-1">
-                <span className="sr-only">搜索信息金库记录</span>
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="搜索名称、账号、生日、密保答案或备注"
-                  autoComplete="off"
-                />
-              </label>
-              {query ? (
-                <button type="button" onClick={() => setQuery('')} className="shrink-0 rounded-lg border border-[#caccc0] px-3 py-2 text-sm dark:border-[#2d3744]">
-                  清空
-                </button>
-              ) : null}
+            <button
+              type="button"
+              onClick={() => setRevealSecrets((current) => !current)}
+              className="rounded-lg border border-[#caccc0] px-3 py-2 text-sm dark:border-[#2d3744]"
+            >
+              {revealSecrets ? '隐藏敏感字段' : '显示敏感字段'}
+            </button>
+            <label className="min-w-[12rem] flex-1 sm:max-w-md">
+              <span className="sr-only">搜索信息金库记录</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className={INPUT_CLASS}
+                placeholder="搜索名称、账号、备注…"
+                autoComplete="off"
+              />
+            </label>
+            {query ? (
+              <button type="button" onClick={() => setQuery('')} className="rounded-lg border border-[#caccc0] px-3 py-2 text-sm dark:border-[#2d3744]">
+                清空
+              </button>
+            ) : null}
+          </div>
+
+          {records.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">暂无记录。</p>
+          ) : filteredRecords.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">
+              {query.trim() ? '没有匹配的记录。' : recordView === 'archived' ? '暂无已归档记录。' : '暂无未归档记录，可切换到「已归档」查看。'}
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
+              <table className="w-full min-w-[1120px] border-collapse text-left">
+                <thead className="sticky top-0 z-10 bg-[#f5f6f2] dark:bg-[#0f141d]">
+                  <tr className="border-b border-[#d5d7cd] dark:border-[#252e39]">
+                    <th className={TH_CLASS}>名称</th>
+                    <th className={TH_CLASS}>登录标识</th>
+                    <th className={TH_CLASS}>密码</th>
+                    <th className={TH_CLASS}>辅助邮箱</th>
+                    <th className={TH_CLASS}>邮箱密码</th>
+                    <th className={TH_CLASS}>2FA</th>
+                    <th className={TH_CLASS}>密保</th>
+                    <th className={TH_CLASS}>生日</th>
+                    <th className={`${TH_CLASS} min-w-[200px]`}>其他备注</th>
+                    <th className={TH_CLASS}>操作</th>
+                  </tr>
+                </thead>
+                {grouped.map((group) => (
+                  <tbody key={group.type} className="divide-y divide-[#e8e9e3] dark:divide-[#1e2630]">
+                    <tr className="bg-[#eeefe9] dark:bg-[#161c26]">
+                      <td colSpan={11} className="px-3 py-2 text-xs font-semibold text-[#53554d] dark:text-gray-300">
+                        {VAULT_TYPE_LABEL[group.type] || group.type}
+                        <span className="ml-2 font-normal text-[#77796e] dark:text-gray-500">{group.records.length} 条</span>
+                      </td>
+                    </tr>
+                    {group.records.map((record) => {
+                      const plain = record.plain
+                      const archived = record.archivedAt != null
+                      const parsed = parseVaultNotes(plain.notes)
+                      const extraText = parsed.extra.join('\n')
+                      return (
+                        <tr key={record.id} className="bg-white/80 dark:bg-[#10161f]">
+                          <td className={TD_CLASS}>
+                            <div className="font-medium">{plain.label || '—'}</div>
+                            {archived ? (
+                              <p className="text-xs text-[#77796e] dark:text-gray-500">
+                                已归档 · {new Date(record.archivedAt).toLocaleString('zh-CN')}
+                              </p>
+                            ) : null}
+                          </td>
+                          <td className={`${TD_CLASS} max-w-[12rem] break-all font-mono text-xs`}>{plain.account}</td>
+                          <td className={`${TD_CLASS} font-mono text-xs`}>{maskSecret(plain.password, revealSecrets)}</td>
+                          <td className={`${TD_CLASS} max-w-[11rem] break-all text-xs`}>{parsed.recoveryEmail || '—'}</td>
+                          <td className={`${TD_CLASS} font-mono text-xs`}>{maskSecret(parsed.emailPassword, revealSecrets)}</td>
+                          <td className={`${TD_CLASS} max-w-[10rem] break-all font-mono text-xs`}>{maskSecret(parsed.twoFa, revealSecrets)}</td>
+                          <td className={`${TD_CLASS} max-w-[9rem] break-words text-xs`}>{securitySummary(plain.securityAnswers, revealSecrets)}</td>
+                          <td className={TD_CLASS}>{plain.birthday || '—'}</td>
+                          <td className={TD_CLASS}>
+                            {extraText ? (
+                              <div className="max-h-28 max-w-sm overflow-auto whitespace-pre-wrap break-words text-xs text-[#53554d] dark:text-gray-300">
+                                {extraText}
+                              </div>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className={TD_CLASS}>
+                            <div className="flex flex-col gap-1">
+                              <button type="button" onClick={() => copy(plain.account, '账号')} className="rounded border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制账号</button>
+                              <button type="button" onClick={() => copy(plain.password, '密码')} className="rounded border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制密码</button>
+                              <button type="button" disabled={busy} onClick={() => changeArchive(record)} className="rounded border border-[#caccc0] px-2 py-1 text-xs disabled:opacity-50 dark:border-[#2d3744]">
+                                {archived ? '恢复' : '归档'}
+                              </button>
+                              {archived ? (
+                                <button type="button" disabled={busy} onClick={() => remove(record)} className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">
+                                  删除
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                ))}
+              </table>
             </div>
-            {records.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">暂无记录。</p>
-            ) : filteredRecords.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">{query.trim() ? '没有匹配的记录。' : recordView === 'archived' ? '暂无已归档记录。' : '暂无未归档记录，可切换到「已归档」查看。'}</p>
-            ) : (
-              <div className="grid gap-3 lg:grid-cols-2">
-                {filteredRecords.map((record) => {
-                  const visible = revealedId === record.id
-                  const archived = record.archivedAt != null
-                  const plain = record.plain
-                  const answers = plain.securityAnswers
-                  return (
-                    <article key={record.id} className="rounded-xl border border-[#d5d7cd] bg-white/70 p-4 dark:border-[#252e39] dark:bg-[#10161f]">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-[#15140f] dark:text-gray-100">{plain.label || '账号'}</h3>
-                          {archived ? <p className="mt-1 text-xs text-[#77796e] dark:text-gray-400">已归档 · {new Date(record.archivedAt).toLocaleString('zh-CN')}</p> : null}
-                          <p className="mt-1 break-all font-mono text-sm text-[#53554d] dark:text-gray-300">{plain.account}</p>
-                        </div>
-                        <button type="button" onClick={() => setRevealedId(visible ? '' : record.id)} className="shrink-0 rounded-md border border-[#caccc0] px-2.5 py-1 text-xs dark:border-[#2d3744]">
-                          {visible ? '隐藏' : '显示'}
-                        </button>
-                      </div>
-                      <dl className="mt-4 grid gap-2 text-sm">
-                        <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">密码</dt><dd className="break-all font-mono">{visible ? plain.password : '••••••••••••'}</dd></div>
-                        {plain.birthday ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">生日</dt><dd>{plain.birthday}</dd></div> : null}
-                        {answers.friend ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">朋友</dt><dd className="break-all font-mono">{visible ? answers.friend : '••••••'}</dd></div> : null}
-                        {answers.work ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">工作</dt><dd className="break-all font-mono">{visible ? answers.work : '••••••'}</dd></div> : null}
-                        {answers.parents ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">父母</dt><dd className="break-all font-mono">{visible ? answers.parents : '••••••'}</dd></div> : null}
-                        {plain.notes ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">备注</dt><dd className="min-w-0 whitespace-pre-wrap break-words">{plain.notes}</dd></div> : null}
-                      </dl>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => copy(plain.account, '账号')} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制账号</button>
-                        <button type="button" onClick={() => copy(plain.password, '密码')} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制密码</button>
-                        {!archived ? <button type="button" disabled={busy} onClick={() => startEdit(record)} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs disabled:opacity-50 dark:border-[#2d3744]">编辑</button> : null}
-                        <button type="button" disabled={busy} onClick={() => changeArchive(record)} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs disabled:opacity-50 dark:border-[#2d3744]">{archived ? '恢复' : '归档'}</button>
-                        {archived ? <button type="button" disabled={busy} onClick={() => remove(record)} className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-700 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button> : null}
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-            )}
-          </Section>
-        </div>
+          )}
+        </Section>
       )}
     </AdminPage>
   )

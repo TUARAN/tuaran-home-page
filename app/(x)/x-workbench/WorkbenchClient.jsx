@@ -29,7 +29,7 @@ export default function WorkbenchClient() {
     <XPage
       active="/x-workbench"
       title="大互动智能体"
-      intro="插件形态本地运行，本站实时汇总状态与日报，站长可远程监看。"
+      intro="插件形态本地运行，本站实时汇总状态与日报，手机或外网打开即可监看。"
       meta="使用智能体插件的账号今天各自执行了哪些动作，数据来自插件日报，只统计自有账号。"
     >
       <section id="agents" className={s.section}>

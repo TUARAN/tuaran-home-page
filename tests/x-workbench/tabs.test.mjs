@@ -51,7 +51,7 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
   assert.doesNotMatch(frame, /name="q"/)
   assert.match(client, /id="agents"/)
   assert.doesNotMatch(client, /id="hot"/)
-  assert.match(client, /插件形态本地运行，本站实时汇总状态与日报，站长可远程监看/)
+  assert.match(client, /插件形态本地运行，本站实时汇总状态与日报，手机或外网打开即可监看/)
   assert.match(client, /agentGrid/)
   assert.match(client, /OBSERVED_AGENTS/)
   assert.doesNotMatch(client, /@TuaranX/)

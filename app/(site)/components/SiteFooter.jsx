@@ -7,6 +7,7 @@ import { useSessionAccount } from './SessionProvider'
 import { pick } from '../../../lib/site/i18n'
 import { SITE_CHANNELS, SITE_FOOTER_GROUPS, getFooterLinks, navLabel } from '../../../lib/site/siteNav'
 import { ContactDialogButton } from './ContactCards'
+import SiteFooterTrafficStats from './SiteFooterTrafficStats'
 import { useSitePresence } from './SitePresenceProvider'
 
 const FEEDBACK_ISSUES_URL = 'https://github.com/TUARAN/tuaran-home-page/issues'
@@ -112,8 +113,9 @@ export default function SiteFooter({ className = '', showOnline = false }) {
             <span className="font-serif text-lg font-semibold tracking-wide text-[var(--site-ink)]">TUARAN</span>
           </Link>
           <p className="mt-5 max-w-xs text-sm leading-6 text-[var(--site-muted)]">
-            {pick(locale, '涂阿燃的网络日志：前端与 AI 工程、技术情报、知识库与调研。', 'Frontend & AI engineering, tech intel, knowledge base and research.')}
+            {pick(locale, '前端与 AI 工程、技术情报、知识库与调研。', 'Frontend & AI engineering, tech intel, knowledge base and research.')}
           </p>
+          <SiteFooterTrafficStats />
           <p className="mt-4 text-xs text-[var(--site-faint)]">
             © 2025—2026 {pick(locale, '涂阿燃 · 网络日志', 'TUARAN · Weblog')}
           </p>

@@ -26,6 +26,14 @@ const readerDetailRouteSource = await readFile(
   new URL('../../app/api/admin/content-weekly/reader/route.js', import.meta.url),
   'utf8',
 )
+const siteTrafficStatsRouteSource = await readFile(
+  new URL('../../app/api/site-traffic-stats/route.js', import.meta.url),
+  'utf8',
+)
+const siteFooterTrafficSource = await readFile(
+  new URL('../../app/(site)/components/SiteFooterTrafficStats.jsx', import.meta.url),
+  'utf8',
+)
 
 test('anonymous readers receive a privacy-safe marker from their visitor hash', () => {
   assert.equal(readingVisitorName({
@@ -54,6 +62,15 @@ test('content reads wait for a visible engagement signal before writing', () => 
   assert.match(beaconSource, /document\.visibilityState !== 'visible'/)
   assert.match(beaconSource, /signal: 'content_read_v2'/)
   assert.doesNotMatch(beaconSource, /挂载时给 \/api\/research-pv 记一次访问/)
+})
+
+test('public footer traffic uses umami share stats without owner auth', () => {
+  assert.match(siteTrafficStatsRouteSource, /fetchPublicSiteTrafficSummary/)
+  assert.match(siteTrafficStatsRouteSource, /s-maxage=300/)
+  assert.doesNotMatch(siteTrafficStatsRouteSource, /getOwnerOrReject/)
+  assert.match(siteFooterTrafficSource, /\/api\/site-traffic-stats/)
+  assert.match(siteFooterTrafficSource, /总浏览/)
+  assert.match(siteFooterTrafficSource, /7 日 UV/)
 })
 
 test('admin analytics centralizes source roles and live integrations', () => {

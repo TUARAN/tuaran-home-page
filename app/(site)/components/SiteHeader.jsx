@@ -67,7 +67,7 @@ const RECOMMENDATION_ICONS = {
   ),
 }
 
-const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'ranbi', 'about'].includes(channel.key))
+const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['systems', 'community', 'ranbi', 'about'].includes(channel.key))
 
 function RecommendationLink({ item, onNavigate }) {
   const { locale } = useLocale()
@@ -452,45 +452,35 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
 
 function AuthorityDrawerLinks({ pathname, onNavigate }) {
   const { locale } = useLocale()
+  const hubHref = SITE_AUTHORITY_SUMMARY.href || SITE_AUTHORITY_LINKS[0]?.href || '/topics/ai-agents'
+  const isActive = SITE_AUTHORITY_LINKS.some((item) => isAuthorityLinkActive(item, pathname))
   return (
-    <section className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={navLabel(SITE_AUTHORITY_SUMMARY, locale)}>
-      <div className="px-3.5 pb-1 pt-3">
-        <p className="site-menu-desc mb-0.5 font-mono text-[10px] uppercase tracking-[0.18em]">
+    <Link
+      href={hubHref}
+      onClick={onNavigate}
+      aria-current={isActive ? 'page' : undefined}
+      className={[
+        'site-mobile-card site-mobile-authority-hub mb-3 flex items-center justify-between gap-3 overflow-hidden rounded-2xl border px-4 py-3.5 no-underline',
+        isActive ? 'is-active' : '',
+      ].join(' ')}
+      data-analytics-event="entry_click"
+      data-analytics-surface="global_nav"
+      data-analytics-destination-kind="page"
+      data-analytics-destination-id={hubHref}
+    >
+      <span className="min-w-0">
+        <span className="site-menu-desc mb-1 block font-mono text-[10px] uppercase tracking-[0.18em]">
           {navLabel(SITE_AUTHORITY_SUMMARY, locale)}
-        </p>
-        <p className="m-0 text-[12px] leading-5 text-[#c8c4b8]">
+        </span>
+        <span className="site-menu-title block text-[14px] font-semibold leading-snug">
+          {pick(locale, '浏览主线专题目录', 'Browse core topic hubs')}
+        </span>
+        <span className="site-mobile-drawer-muted mt-1 block text-[12px] leading-5">
           {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
-        </p>
-      </div>
-      <nav className="grid px-3 pb-2">
-        {SITE_AUTHORITY_LINKS.map((item, index) => {
-          const active = isAuthorityLinkActive(item, pathname)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              aria-current={active ? 'page' : undefined}
-              className={`site-mobile-authority-link${active ? ' is-active' : ''}`}
-              data-analytics-event="entry_click"
-              data-analytics-surface="global_nav"
-              data-analytics-destination-kind="page"
-              data-analytics-destination-id={item.href}
-            >
-              <span className="font-mono text-[11px] opacity-55" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block">{navLabel(item, locale)}</span>
-                <span className="block text-[11px] font-normal leading-5 opacity-65">{navDesc(item, locale)}</span>
-              </span>
-              <span className="font-mono text-[13px] opacity-70" aria-hidden="true">↗</span>
-            </Link>
-          )
-        })}
-      </nav>
-      <div className="border-t border-[#332d26] px-2 py-2">
-        <WeChatContact tone="panel" />
-      </div>
-    </section>
+        </span>
+      </span>
+      <span className="shrink-0 font-mono text-[15px] opacity-70" aria-hidden="true">→</span>
+    </Link>
   )
 }
 
@@ -1155,21 +1145,11 @@ export default function SiteHeader() {
         ].join(' ')}
       >
         {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-3 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
-        <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-        <details className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={pick(locale, '显示设置', 'Display settings')}>
-          <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3 text-[13.5px] font-medium text-[#f1f0ea] [&::-webkit-details-marker]:hidden">
-            <span className="flex items-center gap-2.5">
-              <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
-              <span>{pick(locale, '显示设置', 'Display settings')}</span>
-            </span>
-            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70" aria-hidden="true">＋</span>
-          </summary>
-          <div className="border-t border-[#332d26] px-3 pb-3 pt-3">
-            <SiteSettingsControls />
-          </div>
-        </details>
-        <section className="site-mobile-card overflow-hidden rounded-2xl border" aria-label={pick(locale, '常用入口', 'Quick links')}>
-          <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="site-mobile-quick-nav">
+        <section className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={pick(locale, '频道入口', 'Channels')}>
+          <p className="site-mobile-section-label border-b border-[var(--site-line)] px-3.5 py-2.5">
+            {pick(locale, '频道', 'Channels')}
+          </p>
+          <nav aria-label={pick(locale, '频道入口', 'Channels')} className="site-mobile-quick-nav">
             {MOBILE_PRIMARY_CHANNELS.map((channel) => (
               <Link
                 key={channel.key}
@@ -1186,6 +1166,38 @@ export default function SiteHeader() {
               </Link>
             ))}
           </nav>
+          <div className="site-mobile-shortcut-row border-t border-[var(--site-line)]">
+            {SITE_CONTENT_SHORTCUTS.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
+                className={`site-mobile-shortcut-chip ${item.match(pathname, searchParams) ? 'is-active' : ''}`}
+                data-analytics-event="entry_click"
+                data-analytics-surface="global_nav"
+                data-analytics-destination-kind={item.key === 'resources' ? 'resource' : 'page'}
+                data-analytics-destination-id={item.href}
+              >
+                {navLabel(item, locale)}
+              </Link>
+            ))}
+          </div>
+        </section>
+        <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
+        <details className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={pick(locale, '显示设置', 'Display settings')}>
+          <summary className="site-mobile-drawer-summary flex cursor-pointer list-none items-center justify-between px-3.5 py-3 text-[13.5px] font-medium [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-2.5">
+              <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
+              <span>{pick(locale, '显示设置', 'Display settings')}</span>
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70" aria-hidden="true">＋</span>
+          </summary>
+          <div className="border-t border-[var(--site-line)] px-3 pb-3 pt-3">
+            <SiteSettingsControls />
+          </div>
+        </details>
+        <section className="site-mobile-card overflow-hidden rounded-2xl border" aria-label={pick(locale, '账户与推荐', 'Account & picks')}>
           <MobileAccountPanel
             account={account}
             pathname={pathname}
@@ -1195,7 +1207,7 @@ export default function SiteHeader() {
           {!installed ? (
             <button
               type="button"
-              className="site-menu-item site-mobile-account-link flex w-full items-center justify-between border-t border-[#332d26] font-medium"
+              className="site-menu-item site-mobile-account-link flex w-full items-center justify-between border-t border-[var(--site-line)] font-medium"
               onClick={() => {
                 setMobileMenuOpen(false)
                 openInstallGuide()
@@ -1208,12 +1220,12 @@ export default function SiteHeader() {
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </button>
           ) : null}
-          {pathname !== '/' ? <div className="border-t border-[#332d26] px-3 py-3" aria-label={pick(locale, '推荐', 'Picks')}>
-            <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-[#aaa69a]">{pick(locale, '推荐', 'PICKS')}</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="border-t border-[var(--site-line)] px-3 py-3" aria-label={pick(locale, '推荐', 'Picks')}>
+            <p className="site-mobile-section-label mb-2">{pick(locale, '推荐', 'PICKS')}</p>
+            <div className="site-mobile-picks grid grid-cols-2 gap-2">
               {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
             </div>
-          </div> : null}
+          </div>
         </section>
       </div>
     </>

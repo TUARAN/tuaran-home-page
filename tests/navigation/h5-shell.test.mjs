@@ -53,6 +53,9 @@ test('H5 folds display settings into the drawer and keeps a home Codex reset ent
   // 完整设置控件收进汉堡菜单抽屉
   assert.match(headerSource, /site-mobile-drawer[\s\S]*<SiteSettingsControls \/>/)
   assert.match(headerSource, /显示设置/)
+  assert.match(headerSource, /site-mobile-shortcut-row/)
+  assert.match(headerSource, /site-mobile-picks/)
+  assert.doesNotMatch(headerSource, /pathname !== '\/' \? <div className="border-t/)
   assert.match(settingsControlsSource, /pick\(locale, '语言', 'Language'\)/)
   assert.match(settingsControlsSource, /pick\(locale, '主题', 'Theme'\)/)
   assert.match(settingsControlsSource, /首页背景/)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconRefresh } from '@tabler/icons-react'
 
@@ -69,7 +69,7 @@ function formatTime(ts) {
   }
 }
 
-export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
+export default function UsersConsole({ initialTab = 'users', initialGuestUnlock = '', mode = 'all' }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(initialTab)
   const [users, setUsers] = useState([])
@@ -332,7 +332,7 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
     }
   }
 
-  async function openGuestUnlocks(guest) {
+  const openGuestUnlocks = useCallback(async (guest) => {
     setGuestDetailTarget(guest)
     setGuestDetailStatus('loading')
     setGuestDetail(null)
@@ -352,7 +352,17 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
       setGuestDetailStatus('error')
       setGuestMessage(`读取游客解锁记录失败：${String(error?.message || error)}`)
     }
-  }
+  }, [])
+
+  const guestUnlockDeepLinkHandled = useRef('')
+  useEffect(() => {
+    const guestId = String(initialGuestUnlock || '').trim()
+    if (!tabReady || !guestId.startsWith('guest:')) return
+    if (guestUnlockDeepLinkHandled.current === guestId) return
+    guestUnlockDeepLinkHandled.current = guestId
+    if (activeTab !== 'guests') setActiveTab('guests')
+    openGuestUnlocks({ userId: guestId })
+  }, [tabReady, initialGuestUnlock, activeTab, openGuestUnlocks])
 
   function closeGuestUnlocks() {
     setGuestDetail(null)

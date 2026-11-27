@@ -1351,8 +1351,9 @@
     new: '<path d="M8 3.2v9.6M3.2 8h9.6"/>',
     settings: '<path d="M6.4 1.9h3.2l.35 1.55a4.2 4.2 0 0 1 1.25.73l1.45-.62 1.6 2.55-1.1 1.15a4.3 4.3 0 0 1 0 1.48l1.1 1.15-1.6 2.55-1.45-.62a4.2 4.2 0 0 1-1.25.73L9.6 14.1H6.4l-.35-1.55a4.2 4.2 0 0 1-1.25-.73l-1.45.62-1.6-2.55 1.1-1.15a4.3 4.3 0 0 1 0-1.48l-1.1-1.15 1.6-2.55 1.45.62a4.2 4.2 0 0 1 1.25-.73L6.4 1.9Z"/><circle cx="8" cy="8" r="1.55"/>',
     advanced: '<rect x="2.2" y="3.2" width="11.6" height="10.2" rx="1.4"/><path d="M2.2 6.4h11.6M5.2 2.3v2.2M10.8 2.3v2.2"/>',
-    narrow: '<rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1.4"/><path d="M6.2 2.6v10.8M9.7 6.1 7.6 8l2.1 1.9"/>',
-    expand: '<rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1.4"/><path d="M6.2 2.6v10.8M8.3 6.1 10.4 8 8.3 9.9"/>',
+  // Browser-style page zoom glyphs: magnifier + minus / plus (not sidebar chevrons).
+    narrow: '<circle cx="6.6" cy="6.6" r="3.9" fill="none"/><path d="M9.2 9.2 12.8 12.8"/><path d="M4.9 6.6h3.4"/>',
+    expand: '<circle cx="6.6" cy="6.6" r="3.9" fill="none"/><path d="M9.2 9.2 12.8 12.8"/><path d="M6.6 4.2v4.8M4.2 6.6h4.8"/>',
     menu: '<path d="M3 4.5h10M3 8h10M3 11.5h10"/>',
     collapse: '<rect x="4.2" y="4.2" width="7.6" height="7.6" rx="1.3"/>',
     close: '<path d="m4 4 8 8M12 4l-8 8"/>',

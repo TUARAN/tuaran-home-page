@@ -34,6 +34,7 @@
     "style:check": "node scripts/check-tailwind-opacity-classes.mjs",
     "research:style-audit": "node scripts/audit-research-style.mjs",
     "interaction:sync-agent-pool": "node scripts/sync-interaction-agent-pool.mjs",
+    "interaction:sync-kol-sources": "node scripts/sync-interaction-kol-sources.mjs",
     "taxonomy:audit": "node scripts/generate-research-catalog.mjs && node --test tests/navigation/content-taxonomy.test.mjs",
     "bookmarks:audit": "node scripts/audit-chrome-bookmarks.mjs",
     "protal:package": "node scripts/build-protal-todo-assistant-extension.mjs",

@@ -18,10 +18,35 @@
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
   ]);
-  const KOL_POOLS = Object.freeze([
+  function kolMarketForAccount(account = "") {
+    return globalThis.XrcKolMarketSources?.kolMarketForHandle?.(account)
+      || (globalThis.XrcInteractionAgentPool?.isEnglishMarket?.(account) ? "en" : "zh");
+  }
+
+  const KOL_POOLS_ZH_FALLBACK = Object.freeze([
     Object.freeze(["xupaopaogm", "thankucrypto", "hotmailfromsh", "weiyux2021", "huoshan007"]),
     Object.freeze(["alanshao111", "vicentyip", "xiaqingfeng666", "JMkernt", "DISONYYDS"])
   ]);
+
+  function poolsForMarket(market = "zh") {
+    const fromLib = globalThis.XrcKolMarketSources?.builtinPools?.(market);
+    if (Array.isArray(fromLib) && fromLib.length) return fromLib;
+    if (String(market || "").toLowerCase() === "en") return [];
+    return KOL_POOLS_ZH_FALLBACK;
+  }
+
+  function catalogForMarket(market = "zh") {
+    return poolsForMarket(market).flat();
+  }
+
+  function filterHandlesForMarket(handles, market = "zh") {
+    const list = parseKolHandles(handles);
+    if (String(market || "").toLowerCase() !== "en") return list;
+    const zhCatalog = new Set(catalogForMarket("zh").map((handle) => handle.toLowerCase()));
+    return list.filter((handle) => !zhCatalog.has(handle.toLowerCase()));
+  }
+
+  const KOL_POOLS = poolsForMarket("zh");
   const KOL_CATALOG = Object.freeze(KOL_POOLS.flat());
 
   function parseKolHandles(value) {
@@ -61,13 +86,18 @@
     }).format(new Date(Number(ms)));
   }
 
-  function qualifyingDailyPost(post, now = Date.now()) {
+  function qualifyingDailyPost(post, now = Date.now(), market = "zh") {
     const handle = parseKolHandles([post?.handle])[0] || "";
     const text = String(post?.text || "").trim();
     const likes = Number(post?.likes) || 0;
     const reposts = Number(post?.reposts) || 0;
     const at = Number(post?.at) || 0;
-    if (!handle || !at || !text || !/[\u3400-\u9fff]/u.test(text) || post?.repost || post?.reply
+    const english = String(market || "").toLowerCase() === "en";
+    const languageOk = english
+      ? (globalThis.XrcMarketProfile?.textMatchesEnglishMarket?.(text)
+        ?? (/[A-Za-z]/.test(text) && !/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}/u.test(text)))
+      : /[\u3400-\u9fff]/u.test(text);
+    if (!handle || !at || !text || !languageOk || post?.repost || post?.reply
       || beijingDayKey(at) !== beijingDayKey(now) || likes < 100 || (reposts < 10 && likes < 300)) return null;
     return { handle, score: Math.round(likes + reposts * 4), at };
   }
@@ -78,8 +108,9 @@
     const day = beijingDayKey(now);
     const previous = stored?.byAccount?.[key] || {};
     const candidates = previous.day === day ? { ...(previous.candidates || {}) } : {};
+    const market = kolMarketForAccount(account);
     for (const post of posts || []) {
-      const candidate = qualifyingDailyPost(post, now);
+      const candidate = qualifyingDailyPost(post, now, market);
       if (!candidate || candidate.handle.toLowerCase() === key) continue;
       const handleKey = candidate.handle.toLowerCase();
       if (candidate.score > (Number(candidates[handleKey]?.score) || 0)) candidates[handleKey] = candidate;
@@ -109,22 +140,25 @@
     return Math.floor((beijingDayNumber(now) - beijingDayNumber(KOL_EPOCH_ORIGIN_MS)) / KOL_POOL_DAYS);
   }
 
-  function poolIndex(now = Date.now()) {
-    const count = KOL_POOLS.length;
+  function poolIndex(now = Date.now(), market = "zh") {
+    const count = poolsForMarket(market).length || 1;
     return ((poolEpoch(now) % count) + count) % count;
   }
 
-  function poolHandles(index = poolIndex()) {
-    const count = KOL_POOLS.length;
+  function poolHandles(index = poolIndex(), market = "zh") {
+    const pools = poolsForMarket(market);
+    const count = pools.length || 1;
     const slot = ((Number(index) % count) + count) % count;
-    return KOL_POOLS[slot].slice();
+    return (pools[slot] || []).slice();
   }
 
-  function isBuiltInHandleSet(handles) {
+  function isBuiltInHandleSet(handles, market = "zh") {
     const parsed = parseKolHandles(handles);
     if (!parsed.length) return true;
-    if (sameHandleSet(parsed, KOL_CATALOG)) return true;
-    return KOL_POOLS.some((pool) => sameHandleSet(parsed, pool));
+    const pools = poolsForMarket(market);
+    const catalog = pools.flat();
+    if (sameHandleSet(parsed, catalog)) return true;
+    return pools.some((pool) => sameHandleSet(parsed, pool));
   }
 
   function discoveryHandles(discovery, account) {
@@ -141,15 +175,16 @@
     customHandles = [],
     boardHandles = [],
     discoveryHandles: discovered = [],
+    market = "zh",
     now = Date.now()
   } = {}) {
-    if (custom) return parseKolHandles(customHandles);
-    const board = parseKolHandles(boardHandles);
+    if (custom) return filterHandlesForMarket(customHandles, market);
+    const board = filterHandlesForMarket(boardHandles, market);
     if (board.length) return board;
-    const fromDiscovery = parseKolHandles(discovered);
+    const fromDiscovery = filterHandlesForMarket(discovered, market);
     // Need a full five-handle batch; otherwise use the built-in weekly pool.
     if (fromDiscovery.length >= KOL_DAILY_SIZE) return fromDiscovery;
-    return poolHandles(poolIndex(now));
+    return filterHandlesForMarket(poolHandles(poolIndex(now, market), market), market);
   }
 
   function selectTaskBatch(candidates, previous, size = KOL_DAILY_SIZE, random = Math.random) {
@@ -163,15 +198,16 @@
   }
 
   function resolveKolRoster({ storedHandles, meta, discovery, account = "", now = Date.now() } = {}) {
+    const market = kolMarketForAccount(account);
     const parsed = parseKolHandles(storedHandles);
     const epoch = poolEpoch(now);
     const explicit = meta && typeof meta.custom === "boolean" ? meta.custom : null;
-    const custom = explicit === true ? parsed.length > 0 : explicit === false ? false : !isBuiltInHandleSet(parsed);
+    const custom = explicit === true ? parsed.length > 0 : explicit === false ? false : !isBuiltInHandleSet(parsed, market);
     const handles = custom ? parsed.slice() : [];
     const source = custom ? "custom" : "leaderboard";
     const dailyByAccount = { ...(meta?.dailyByAccount || {}) };
     const nextMeta = { custom, poolEpoch: custom && meta?.poolEpoch != null ? Number(meta.poolEpoch) : epoch,
-      poolIndex: custom ? -1 : poolIndex(now), dailyByAccount };
+      poolIndex: custom ? -1 : poolIndex(now, market), market, dailyByAccount };
     if (meta?.taskBatch) nextMeta.taskBatch = meta.taskBatch;
     const persist = !sameHandleSet(parsed, handles) || explicit !== custom
       || meta?.poolEpoch !== nextMeta.poolEpoch || meta?.poolIndex !== nextMeta.poolIndex
@@ -272,6 +308,10 @@
     KOL_EPOCH_ORIGIN_MS,
     KOL_POOLS,
     KOL_CATALOG,
+    kolMarketForAccount,
+    poolsForMarket,
+    catalogForMarket,
+    filterHandlesForMarket,
     RESERVED_X_PATHS,
     parseKolHandles,
     sameHandleSet,

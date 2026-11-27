@@ -84,13 +84,13 @@ export function HomeOpenClawCards() {
 }
 
 export function HomeDownloadCards() {
-  const items = getDownloadItemsByDate()
+  const items = getDownloadItemsByDate().slice(0, 3)
   return (
     <section className="home-download-section" aria-labelledby="home-downloads-title">
       <div className="home-work-heading home-heading-with-couplet">
         <div>
           <p className="home-kicker">Downloads · {items.length}</p>
-          <h2 id="home-downloads-title" className="home-section-title"><T zh="客户端下载" en="Downloads" /></h2>
+          <h2 id="home-downloads-title" className="home-section-title"><T zh="应用下载" en="App downloads" /></h2>
         </div>
         <HomeSectionCouplet section="downloads" />
         <Link href="/tools#downloads" className="home-section-more no-underline"><T zh="查看全部" en="View all" /> →</Link>

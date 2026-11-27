@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { buildEgoPublishPrompt } from '../../../lib/article/egoPublishPrompt'
+import { buildDistributionTaskPrompt } from '../../../lib/distribution/taskPrompt'
 import { copyPlainText } from '../../../lib/content/contentClipboard'
 import { useSessionAccount } from './SessionProvider'
 
@@ -13,7 +13,7 @@ export default function EgoPublishButton({ title, url, summary = '', tags = [], 
   if (loading || !isOwner || !markdown) return null
 
   async function handleCopy() {
-    const prompt = buildEgoPublishPrompt({ title, url, summary, tags, markdown })
+    const prompt = buildDistributionTaskPrompt({ title, url, summary, tags, markdown })
     const copied = await copyPlainText(prompt)
     setState(copied ? 'copied' : 'failed')
     setTimeout(() => setState('idle'), 2000)
@@ -26,7 +26,7 @@ export default function EgoPublishButton({ title, url, summary = '', tags = [], 
       type="button"
       onClick={handleCopy}
       aria-live="polite"
-      title="复制给智能体的发布指令：用 ego lite 的 Aran 账号发布到掘金、CSDN"
+      title="复制分发任务：交给装了 2aran-distributor skill 的智能体，用 ego lite 发布到掘金、CSDN"
       className="article-action-button owner-only-action px-3 py-1 text-xs"
     >
       <EgoIcon />

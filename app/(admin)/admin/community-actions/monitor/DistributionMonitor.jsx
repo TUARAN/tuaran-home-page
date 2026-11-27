@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, AdminPage, EmptyState, Section, StatusPill } from '../../../components/ui'
 import PluginPicker from './PluginPicker'
-const TARGETS = { twitter: 'X', juejin: '掘金', xiaohongshu: '小红书', zhihu: '知乎', weibo: '微博', wechat: '公众号', csdn: 'CSDN', segmentfault: '思否', cnblogs: '博客园', tencentcloud: '腾讯云', aliyun: '阿里云', huaweicloud: '华为云' }
+import { DISTRIBUTION_PLATFORMS } from '../../../../../lib/distribution/platforms'
+const TARGETS = Object.fromEntries(DISTRIBUTION_PLATFORMS.map(platform => [platform.id, platform.shortLabel]))
 const STATUS = { pending: '等待处理', running: '正在填写', prepared: '已准备 · 待检查', manual: '需手动完成', failed: '失败', interrupted: '已中断', stopped: '已停止', idle: '空闲', generating: 'AI 生成中', updating: '更新中', stopping: '停止中', success: '已确认', claimed: '执行中', expired: '已过期' }
 const COMMAND = { 'stop-batch': '停止批次', 'stop-all': '停止全部任务', 'disable-checkin': '关闭自动签到', 'ext-update': '加载本地新版' }
 const TYPE = { opinion: '观点', article: '文章', booklet: '电子书', project: '项目' }

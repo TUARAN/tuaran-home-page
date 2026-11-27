@@ -77,6 +77,7 @@ test('首页账号卡用机器人头像，五个账号各有专属造型', async
   ]) {
     assert.match(avatar, new RegExp(`${handle}: ${constName}`), handle)
   }
+  assert.match(avatar, /mhcncheboklldif: ROSE_LANTERN/)
   assert.match(avatar, /GENERIC/)
   assert.match(avatar, /viewBox="0 0 48 48"/)
 })

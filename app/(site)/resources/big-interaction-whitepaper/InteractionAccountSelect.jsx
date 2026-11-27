@@ -2,7 +2,8 @@
 
 import { useId } from 'react'
 
-import { X_INTERACTION_AGENT_POOL } from '../../../../lib/interaction/agentPool.js'
+import { interactionAgentCatalog } from '../../../../lib/interaction/agentPool.js'
+import { interactionMarketLabel } from '../../../../lib/interaction/marketProfile.js'
 import {
   canonicalDailyTopSubject,
   dailyTopSubjectKey,
@@ -37,9 +38,9 @@ export default function InteractionAccountSelect({
         value={value}
         onChange={onChange}
       >
-        {X_INTERACTION_AGENT_POOL.map((agent) => (
+        {interactionAgentCatalog().map((agent) => (
           <option key={agent.handle} value={agent.handle}>
-            {agent.name} · @{agent.handle}
+            {agent.name} · @{agent.handle} · {interactionMarketLabel(agent.market)}
           </option>
         ))}
       </select>

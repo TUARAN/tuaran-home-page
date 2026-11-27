@@ -2121,7 +2121,8 @@
 #x-reply-clipboard-panel[data-xrc-home="agent"] .xrc-button-note strong { font-size: var(--xrc-fs-sm); font-weight: 600; }
 #x-reply-clipboard-panel[data-xrc-home="agent"] .xrc-button-note span { font-weight: 400; }
 
-/* 版本与出口 IP：图标、文字、左边距两行一致 */
+/* 账号 / 版本 / 出口 IP：图标、文字、左边距一致 */
+#x-reply-clipboard-panel .xrc-agent-pool-account,
 #x-reply-clipboard-panel .xrc-agent-version,
 #x-reply-clipboard-panel .xrc-agent-ip {
   display: flex;
@@ -2135,11 +2136,16 @@
   font-size: 11px;
   line-height: 1.3;
 }
+#x-reply-clipboard-panel .xrc-agent-pool-account .xrc-agent-icon,
 #x-reply-clipboard-panel .xrc-agent-version .xrc-agent-icon,
 #x-reply-clipboard-panel .xrc-agent-ip .xrc-agent-icon { flex: 0 0 16px; width: 16px; height: 16px; }
 #x-reply-clipboard-panel .xrc-agent-more { min-width: 236px; width: max-content; max-width: calc(100vw - 72px); }
+#x-reply-clipboard-panel .xrc-agent-pool-account .xrc-agent-label,
 #x-reply-clipboard-panel .xrc-agent-version .xrc-agent-label,
 #x-reply-clipboard-panel .xrc-agent-ip .xrc-agent-label { white-space: nowrap; }
+#x-reply-clipboard-panel .xrc-agent-pool-account[data-market="en"] .xrc-agent-label {
+  color: color-mix(in srgb, var(--xrc-accent-2, #0d9488) 82%, var(--xrc-muted));
+}
 
 #x-reply-clipboard-panel[data-xrc-home="agent"] .xrc-agent-confirm-timer {
   margin: 8px 0 0;

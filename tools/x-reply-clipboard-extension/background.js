@@ -86,6 +86,38 @@ const REPLY_COMMENT_PROMPT = [
   "严肃或难过的语境别用嬉笑表情敷衍。不复读对方整句，不编事实，不用客服腔，不写假对比和写作过程。不 @grok。"
 ].join("\n");
 
+const REPLY_TIMELINE_PROMPT_EN = [
+  "You casually reply on X. Output only the reply text, no explanation.",
+  "Always write in English only. Do not use Chinese, Japanese, or Korean, even if the post is not in English.",
+  "Keep it short and sharp; humor, empathy, or a light internet tone beat customer-service voice.",
+  "One or two sentences is enough; a few words is fine. Do not pad for completeness.",
+  "Engage one concrete point from the post. Light tease or pushback is fine. No personal attacks; no invented facts.",
+  "Do not end with a question by default. No \"not X but Y\" contrast framing. No meta lines like \"here is my reply.\"",
+  "At most one emoji; do not wrap the whole line in quotes; no marketing."
+].join("\n");
+
+const REPLY_COMMENT_PROMPT_EN = [
+  "You reply to someone who commented on your post. Output only the reply text.",
+  "Always write in English only. Do not use Chinese, Japanese, or Korean.",
+  "Short, friendly, casual English. A few words often enough; light emoji when it fits.",
+  "Stop when the point is made. No summary, lecture, or trailing question unless they asked one.",
+  "Do not repeat their whole comment. No fake contrast framing. No @grok."
+].join("\n");
+
+const CJK_REPLY_RE = /\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}/u;
+
+function replyTextHasCjk(text) {
+  return CJK_REPLY_RE.test(String(text || ""));
+}
+
+function deliverReply(reply, inviteGrok = false, market = "zh") {
+  const text = finalizeReply(reply, inviteGrok);
+  if (String(market || "").toLowerCase() === "en" && replyTextHasCjk(text)) {
+    throw new Error("英文市场：模型返回了中文，本条已拒绝");
+  }
+  return text;
+}
+
 function isLegacyBuiltInReplyCommentPrompt(value) {
   const prompt = String(value || "").trim();
   if (!prompt) return true;
@@ -257,17 +289,20 @@ function usablePostPrompt(value, fallback = POST_NORMAL_PROMPT) {
   return prompt;
 }
 
-function resolvePromptBundle(settings = {}) {
+function resolvePromptBundle(settings = {}, market = "zh") {
+  const english = String(market || "").toLowerCase() === "en";
+  const timelineDefault = english ? REPLY_TIMELINE_PROMPT_EN : REPLY_TIMELINE_PROMPT;
+  const commentDefault = english ? REPLY_COMMENT_PROMPT_EN : REPLY_COMMENT_PROMPT;
   const legacyReply = String(settings.replyPrompt || "").trim();
   const legacyPostRaw = String(settings.postPrompt || "").trim();
   const legacyPost = isLegacyBuiltInPostPrompt(legacyPostRaw) ? "" : legacyPostRaw;
   return {
-    replyTimelinePrompt: String(settings.replyTimelinePrompt || "").trim() || legacyReply || REPLY_TIMELINE_PROMPT,
+    replyTimelinePrompt: String(settings.replyTimelinePrompt || "").trim() || legacyReply || timelineDefault,
     replyCommentPrompt: (() => {
       const saved = String(settings.replyCommentPrompt || "").trim();
       if (saved && !isLegacyBuiltInReplyCommentPrompt(saved)) return saved;
       if (legacyReply && !isLegacyBuiltInReplyCommentPrompt(legacyReply)) return legacyReply;
-      return REPLY_COMMENT_PROMPT;
+      return commentDefault;
     })(),
     postNormalPrompt: String(settings.postNormalPrompt || "").trim() || legacyPost || POST_NORMAL_PROMPT,
     postPremiumPrompt: String(settings.postPremiumPrompt || "").trim() || legacyPost || POST_PREMIUM_PROMPT,
@@ -318,7 +353,7 @@ function aiSettingsStamp(value = {}) {
   });
 }
 
-async function readAiSettings() {
+async function readAiSettings(market = "zh") {
   let settings = await readStoredAiSettings();
   const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
   if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
@@ -342,7 +377,7 @@ async function readAiSettings() {
   }
   const providers = resolveReplyProviders(settings).providers;
   const apiKey = String(settings.apiKey || "").trim();
-  const prompts = resolvePromptBundle(settings);
+  const prompts = resolvePromptBundle(settings, market);
   return {
     apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "",
     baiApiKey: /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "",
@@ -561,11 +596,30 @@ async function callPlannerProvider(provider, system, user) {
   throw new Error("没有这个规划模型");
 }
 
-function notificationConversationText(conversation) {
+function notificationConversationText(conversation, english = false) {
   const turns = Array.isArray(conversation?.thread) ? conversation.thread : [];
   if (turns.length < 2 || !turns[0]?.text || !conversation?.rootPost?.text) return "";
   const ownHandle = String(conversation.rootPost.authorHandle || "").toLowerCase();
   if (!ownHandle || String(turns[0].authorHandle || "").toLowerCase() !== ownHandle) return "";
+  if (english) {
+    const lines = [`My original post:\n${String(turns[0].text).trim()}`];
+    let ownReplies = 0;
+    let otherReplies = 0;
+    for (const turn of turns.slice(1)) {
+      const author = String(turn?.authorHandle || "").toLowerCase();
+      const text = String(turn?.text || "").trim();
+      if (!text) continue;
+      if (author === ownHandle) {
+        ownReplies += 1;
+        lines.push(`My reply #${ownReplies}:\n${text}`);
+      } else {
+        otherReplies += 1;
+        lines.push(`Their reply #${otherReplies} (@${author || "unknown"}):\n${text}`);
+      }
+    }
+    lines.push("Read the thread in order. Reply only to their latest line in my voice: short, friendly, natural English. Do not repeat my original post or my older replies.");
+    return lines.join("\n\n");
+  }
   const lines = [`我的原帖：\n${String(turns[0].text).trim()}`];
   let ownReplies = 0;
   let otherReplies = 0;
@@ -585,9 +639,53 @@ function notificationConversationText(conversation) {
   return lines.join("\n\n");
 }
 
-async function callDeepSeek({ postText, conversation = null, avoidReply = "", inviteGrok = false, mode = "timeline", onProgress = () => {}, signal }) {
+function duplicateAvoidSuffix(avoidReply, english) {
+  if (!avoidReply) return "";
+  return english
+    ? `\n\nRejected as duplicate. Use a clearly different angle:\n${String(avoidReply).trim().slice(0, 180)}`
+    : `\n\n下面这句已被 X 判定为重复，请换一个明显不同的角度和说法，不能只替换个别词：\n${String(avoidReply).trim().slice(0, 180)}`;
+}
+
+function buildReplyUserContent({ postText, conversation, avoidReply, english }) {
+  const avoid = duplicateAvoidSuffix(avoidReply, english);
+  const threadText = notificationConversationText(conversation, english);
+  if (threadText) return `${threadText}${avoid}`;
+  if (conversation?.ownPost?.text) {
+    if (english) {
+      return [
+        `My post:\n${String(conversation.ownPost.text).trim().slice(0, 1200)}`,
+        `Their reply to my post:\n${String(conversation.reply?.text || "").trim().slice(0, 800)}`,
+        "Reply as me in English only. Use my post for context; do not repeat my words or treat my post as theirs. Keep it short and friendly."
+      ].join("\n\n") + avoid;
+    }
+    return [
+      `我的帖子：\n${String(conversation.ownPost.text).trim().slice(0, 1200)}`,
+      `对方针对这条帖子写的回复：\n${String(conversation.reply?.text || "").trim().slice(0, 800)}`,
+      "请站在我的立场，直接回应对方这条回复。结合我的帖子理解上下文，不要复述我的原话，也不要把我的帖子当成对方说的话。优先短句加表情，或只回表情；确有问题才简短答要点，不要反问对方。"
+    ].join("\n\n") + avoid;
+  }
+  if (conversation?.reply?.text) {
+    if (english) {
+      return [
+        `Their message to me:\n${String(conversation.reply.text).trim().slice(0, 800)}`,
+        "I could not load my original post. Reply as the person who received this, in English only: short, friendly, no meta filler. Thank them for praise or wishes; answer direct questions briefly; if they criticize vague writing, you may lightly own that it was scattered."
+      ].join("\n\n") + avoid;
+    }
+    return [
+      `对方回复给我的内容：\n${String(conversation.reply.text).trim().slice(0, 800)}`,
+      "我之前的帖子暂时没有读到。请根据对方这句话合理推测语境，以收到回复的人的身份随手接一句，短、友好、可多表情。祝福、夸赞通常表示感谢；提问只回答能确认的部分；批评表达散乱时可自然承认写散了。不要装作知道原帖结论，不要反问对方，不要把对方的话原样重复。"
+    ].join("\n\n") + avoid;
+  }
+  const tail = english
+    ? `Original post:\n${String(postText || "").trim().slice(0, 1800)}`
+    : `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}`;
+  return `${tail}${avoid}`;
+}
+
+async function callDeepSeek({ postText, conversation = null, avoidReply = "", inviteGrok = false, mode = "timeline", interactionMarket = "zh", onProgress = () => {}, signal }) {
   onProgress("正在读取模型设置…");
-  const { apiKey, replyTimelinePrompt, replyCommentPrompt, replyProviders, mobileOfficeToken, mobileOfficeVerified } = await readAiSettings();
+  const market = String(interactionMarket || "").toLowerCase() === "en" ? "en" : "zh";
+  const { apiKey, replyTimelinePrompt, replyCommentPrompt, replyProviders, mobileOfficeToken, mobileOfficeVerified } = await readAiSettings(market);
   if (!replyProviders.length) throw new Error("请至少启用一个回复模型");
 
   const communityNote = mode === "community-share";
@@ -595,10 +693,18 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
   const replyPrompt = commentReply ? replyCommentPrompt : replyTimelinePrompt;
   const grokReply = Boolean(inviteGrok);
   const replyPromptForModel = grokReply
-    ? String(replyPrompt || "").replace(/\s*不 @grok。?/u, "").trim()
+    ? String(replyPrompt || "").replace(/\s*不 @grok。?/u, "").replace(/\s*No @grok\.?/iu, "").trim()
     : replyPrompt;
-  const replyStyle = grokReply ? GROK_REPLY_PROMPT : commentReply ? "" : "这次不要提及 @grok，直接回应原帖。";
+  const replyStyle = grokReply
+    ? GROK_REPLY_PROMPT
+    : commentReply
+      ? ""
+      : (market === "en" ? "Do not mention @grok; reply to the post directly." : "这次不要提及 @grok，直接回应原帖。");
+  const commentSystemExtra = market === "en"
+    ? `${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\nIf they said happy birthday, thank them—do not wish them back. No customer-service voice. Short, friendly English; light emoji is fine. Reply in English only.`
+    : `对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n本次以短、友好、多表情为先：通常几个字就够，鼓励带 ✅😂😁🙏 一类表情；也可只回表情。不必解释或总结；具体问题才用一句话答要点。不要条条都用同一句「对对对」或同一组表情；语气贴合上下文。`;
   const replyMaxLength = communityNote ? 80 : grokReply ? 120 : commentReply ? 36 : 80;
+  const userContent = buildReplyUserContent({ postText, conversation, avoidReply, english: market === "en" });
   const messages = communityNote
     ? [
       { role: "system", content: COMMUNITY_NOTE_PROMPT },
@@ -606,36 +712,19 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
     ]
     : [
     { role: "system", content: commentReply
-      ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n本次以短、友好、多表情为先：通常几个字就够，鼓励带 ✅😂😁🙏 一类表情；也可只回表情。不必解释或总结；具体问题才用一句话答要点。不要条条都用同一句「对对对」或同一组表情；语气贴合上下文。`
+      ? `${replyPromptForModel}${commentSystemExtra}`
       : `${replyPromptForModel}\n${replyStyle}` },
-    {
-      role: "user",
-      content: [
-        notificationConversationText(conversation) || (conversation?.ownPost?.text
-          ? [
-            `我的帖子：\n${String(conversation.ownPost.text).trim().slice(0, 1200)}`,
-            `对方针对这条帖子写的回复：\n${String(conversation.reply?.text || "").trim().slice(0, 800)}`,
-            "请站在我的立场，直接回应对方这条回复。结合我的帖子理解上下文，不要复述我的原话，也不要把我的帖子当成对方说的话。优先短句加表情，或只回表情；确有问题才简短答要点，不要反问对方。"
-          ].join("\n\n")
-          : conversation?.reply?.text
-            ? [
-              `对方回复给我的内容：\n${String(conversation.reply.text).trim().slice(0, 800)}`,
-              "我之前的帖子暂时没有读到。请根据对方这句话合理推测语境，以收到回复的人的身份随手接一句，短、友好、可多表情。祝福、夸赞通常表示感谢；提问只回答能确认的部分；批评表达散乱时可自然承认写散了。不要装作知道原帖结论，不要反问对方，不要把对方的话原样重复。"
-            ].join("\n\n")
-            : `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}`),
-        avoidReply ? `\n下面这句已被 X 判定为重复，请换一个明显不同的角度和说法，不能只替换个别词：\n${String(avoidReply).trim().slice(0, 180)}` : ""
-      ].join("")
-    }
+    { role: "user", content: userContent }
   ];
   const failures = [];
   if (replyProviders.includes("mobileoffice")) {
     try {
       if (!mobileOfficeVerified) throw new Error("请先在模型设置中测试 MobileOffice 连接");
       onProgress("正在请求 MobileOffice 生成回复…");
-      const prompt = messages.map((item) => `${item.role === "system" ? "规则" : "内容"}：\n${item.content}`).join("\n\n") + "\n\n只输出回复正文。";
+      const prompt = messages.map((item) => `${item.role === "system" ? (market === "en" ? "Rules" : "规则") : (market === "en" ? "Content" : "内容")}：\n${item.content}`).join("\n\n") + (market === "en" ? "\n\nOutput only the reply text." : "\n\n只输出回复正文。");
       const reply = cleanReply(await callMobileOffice(prompt, mobileOfficeToken, signal), replyMaxLength);
       if (!reply) throw new Error("MobileOffice 没有返回可用回复");
-      return finalizeReply(reply, grokReply);
+      return deliverReply(reply, grokReply, market);
     } catch (error) {
       if (signal?.aborted) throw error;
       failures.push(`MobileOffice：${error?.message || error}`);
@@ -658,7 +747,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
         if (!response.ok) throw Object.assign(new Error(data?.error?.message || `DeepSeek 请求失败（${response.status}）`), { status: response.status });
         const reply = cleanReply(data?.choices?.[0]?.message?.content, replyMaxLength);
         if (!reply) throw new Error("DeepSeek 没有返回可用内容");
-        return finalizeReply(reply, grokReply);
+        return deliverReply(reply, grokReply, market);
       } catch (error) {
         if (signal?.aborted) throw new Error("回复任务已取消");
         failures.push(error?.name === "AbortError" ? "DeepSeek 请求超过 10 秒" : error?.message || "DeepSeek 暂不可用");
@@ -669,7 +758,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
   }
   if (replyProviders.includes("nas")) {
     onProgress(failures.length ? "DeepSeek 暂不可用，正在尝试 NAS 模型…" : "正在请求 NAS 模型生成回复…");
-    try { return finalizeReply(await callNasReplyFallback(messages, signal, replyMaxLength), grokReply); }
+    try { return deliverReply(await callNasReplyFallback(messages, signal, replyMaxLength), grokReply, market); }
     catch (error) {
       if (signal?.aborted) throw error;
       failures.push(`NAS 回退失败：${error?.message || error}`);
@@ -678,7 +767,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
   if (replyProviders.includes("bai")) {
     onProgress(failures.some((failure) => failure.startsWith("NAS"))
       ? "NAS 暂不可用，正在尝试 B.AI 模型…" : "正在请求 B.AI 模型生成回复…");
-    try { return finalizeReply(await callBaiReplyFallback(messages, signal, replyMaxLength), grokReply); }
+    try { return deliverReply(await callBaiReplyFallback(messages, signal, replyMaxLength), grokReply, market); }
     catch (error) {
       if (signal?.aborted) throw error;
       failures.push(`B.AI 回退失败：${error?.message || error}`);
@@ -1089,6 +1178,7 @@ async function handleMessage(message, onProgress = () => {}, signal) {
       avoidReply: message.avoidReply,
       inviteGrok: Boolean(message.inviteGrok),
       mode: message.mode === "notifications" ? "notifications" : "timeline",
+      interactionMarket: message.interactionMarket,
       onProgress,
       signal
     });

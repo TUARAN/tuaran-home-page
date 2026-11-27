@@ -173,6 +173,19 @@
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
+#x-reply-clipboard-panel .xrc-market-badge {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--xrc-muted);
+  overflow-wrap: anywhere;
+}
+#x-reply-clipboard-panel .xrc-market-badge[data-market="en"] {
+  color: #0f766e;
+  font-weight: 800;
+}
 #x-reply-clipboard-panel .xrc-account {
   min-width: 0;
   color: var(--xrc-text);

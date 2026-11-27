@@ -888,17 +888,66 @@
     return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   }
 
-  function paintStrip(strip, view) {
+  function interactionMarketMeta(handle) {
+    const raw = String(handle || "").replace(/^@/u, "").trim();
+    const pool = globalThis.XrcInteractionAgentPool;
+    if (!raw || !pool?.findAgent?.(raw)) return null;
+    const market = pool.resolveMarket(raw);
+    const profile = globalThis.XrcMarketProfile;
+    const poolName = pool.findAgent(raw)?.name || "";
+    const zhLabel = profile?.marketLabel?.("zh") || "中文社区";
+    return {
+      market,
+      chip: market === "en" ? "English · EN rules" : `${zhLabel} · ZH rules`,
+      line: market === "en"
+        ? `英文市场（池内）· ${poolName || raw}`
+        : `中文社区（池内）· ${poolName || raw}`,
+      title: market === "en"
+        ? "英文市场：关注英文资料、跳过 CJK 帖、AI 英文回复。面板界面仍为中文。"
+        : "中文社区市场规则"
+    };
+  }
+
+  function accountReadoutMeta(handle) {
+    const raw = String(handle || "").replace(/^@/u, "").trim();
+    if (!raw) return null;
+    const pool = interactionMarketMeta(handle);
+    if (pool) return { text: pool.line, title: pool.title, market: pool.market };
+    return { text: `账号 · @${raw}`, title: `@${raw}`, market: "" };
+  }
+
+  function paintAccountReadout(rootNode, handle) {
+    const row = rootNode?.querySelector?.("[data-xrc-agent-pool-account]");
+    if (!row) return;
+    const label = row.querySelector?.(".xrc-agent-label");
+    const meta = accountReadoutMeta(handle);
+    if (!meta) {
+      row.hidden = true;
+      if (label) label.textContent = "";
+      row.removeAttribute("data-market");
+      row.title = "";
+      return;
+    }
+    row.hidden = false;
+    if (meta.market) row.dataset.market = meta.market;
+    else row.removeAttribute("data-market");
+    row.title = meta.title;
+    if (label) label.textContent = meta.text;
+  }
+
+  function paintStrip(strip, view, rootNode) {
     if (!strip) return;
     const account = strip.querySelector("[data-xrc-agent-account]");
     const task = strip.querySelector("[data-xrc-agent-task]");
     const flow = strip.querySelector("[data-xrc-agent-flow]");
-    if (account) account.textContent = view?.account ? `@${view.account}` : "";
+    const accountHandle = view?.account || "";
+    if (account) account.textContent = accountHandle ? `@${accountHandle}` : "";
     if (task) task.textContent = view?.taskName ? view.taskName : (view?.ok === false ? "状态未读到" : "当前无任务");
     if (flow) {
       flow.textContent = view?.paused === true ? "已暂停" : view?.paused === false ? "运行中" : "状态未知";
       flow.dataset.state = view?.paused === true ? "paused" : view?.paused === false ? "running" : "unknown";
     }
+    paintAccountReadout(rootNode, accountHandle);
   }
 
   function statusStrip() {
@@ -1306,8 +1355,6 @@
     expand: '<rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1.4"/><path d="M6.2 2.6v10.8M8.3 6.1 10.4 8 8.3 9.9"/>',
     menu: '<path d="M3 4.5h10M3 8h10M3 11.5h10"/>',
     collapse: '<rect x="4.2" y="4.2" width="7.6" height="7.6" rx="1.3"/>',
-    zoomIn: '<circle cx="7" cy="7" r="4.3"/><path d="m10.2 10.2 3.3 3.3M7 5.2v3.6M5.2 7h3.6"/>',
-    zoomOut: '<circle cx="7" cy="7" r="4.3"/><path d="m10.2 10.2 3.3 3.3M5.2 7h3.6"/>',
     close: '<path d="m4 4 8 8M12 4l-8 8"/>',
     pin: '<path d="M6.1 2.2h3.8l-.5 3.1 2 1.5v1.3H4.6V6.8l2-1.5-.5-3.1Z"/><path d="M8 8.1v5.7"/>',
     trash: '<path d="M3.2 4.3h9.6M6.1 4.2V2.9h3.8v1.3M4.5 4.3l.6 8.6h5.8l.6-8.6M7 6.6v4M9 6.6v4"/>',
@@ -1423,13 +1470,17 @@
 
   function chromeReadout(className) {
     const box = el("div", className);
+    const account = el("div", "xrc-agent-pool-account");
+    account.setAttribute("data-xrc-agent-pool-account", "");
+    account.hidden = true;
+    account.append(icon("persona"), el("span", "xrc-agent-label", ""));
     const version = el("div", "xrc-agent-version");
     const versionText = el("span", "xrc-agent-label", "版本");
     versionText.setAttribute("data-xrc-agent-version", "");
     version.append(icon("tag"), versionText);
     const ip = actionButton("IP：—", "ip", "xrc-agent-ip", "ip");
     ip.setAttribute("data-xrc-agent-ip", "");
-    box.append(version, ip);
+    box.append(account, version, ip);
     return box;
   }
 
@@ -1443,9 +1494,9 @@
     return button;
   }
 
-  // Window size toggle at the top right of the chat header: zoom in to the wide layout, zoom out back.
+  // Window size toggle at the top right of the chat header: wide layout vs icon rail.
   function railZoomButton() {
-    const button = actionButton("放大面板", "rail", "xrc-agent-tool xrc-agent-zoom", "zoomIn");
+    const button = actionButton("放大面板", "rail", "xrc-agent-tool xrc-agent-zoom", "expand");
     button.title = "放大面板";
     button.setAttribute("data-xrc-agent-handle", "");
     return button;
@@ -1643,7 +1694,7 @@
       delete rootNode.dataset.xrcAgentThinking;
       rootNode.dataset.xrcAgentFresh = String(reply.at);
       await remember(rootNode, host, store);
-      if (reply.view) paintStrip(rootNode.querySelector(".xrc-agent-strip"), reply.view);
+      if (reply.view) paintStrip(rootNode.querySelector(".xrc-agent-strip"), reply.view, rootNode);
       return reply;
     } finally {
       if (timer != null) root.clearInterval?.(timer);
@@ -1901,7 +1952,7 @@
       button.setAttribute?.("aria-label", label);
       const text = button.querySelector?.(".xrc-agent-label");
       if (text) text.textContent = label;
-      const next = icon(panel.dataset?.xrcAgentRail === "full" ? "zoomOut" : "zoomIn");
+      const next = icon(panel.dataset?.xrcAgentRail === "full" ? "narrow" : "expand");
       const old = button.querySelector?.(".xrc-agent-icon");
       if (old && old.replaceWith) old.replaceWith(next);
     }
@@ -1977,16 +2028,21 @@
 
   function sync(rootNode, host) {
     if (!rootNode || rootNode.dataset.xrcAgentReady !== "1") return;
-    if (host?.snapshot) paintStrip(rootNode.querySelector(".xrc-agent-strip"), describeRuntime(host.snapshot()));
+    const view = host?.snapshot ? describeRuntime(host.snapshot()) : null;
+    const strip = rootNode.querySelector(".xrc-agent-strip");
+    const account = view?.account || currentAccount(host);
+    if (view) paintStrip(strip, { ...view, account: view.account || account }, rootNode);
+    else paintStrip(strip, { account }, rootNode);
+    paintAccountReadout(rootNode, account);
     mirrorChrome(rootNode);
     paintRail(rootNode);
     paintRailToggle(rootNode);
     restoreFrame(panelOf(rootNode));
     noteMainStatus(rootNode, host);
     // Switching X accounts switches the memory card with it.
-    const account = currentAccount(host);
-    if (rootNode.dataset.xrcAgentMemoryAccount !== account) {
-      profilesOf(rootNode, host).then((profiles) => paintMemoryCard(rootNode, profiles, account)).catch(() => {});
+    const memoryAccount = currentAccount(host);
+    if (rootNode.dataset.xrcAgentMemoryAccount !== memoryAccount) {
+      profilesOf(rootNode, host).then((profiles) => paintMemoryCard(rootNode, profiles, memoryAccount)).catch(() => {});
     }
   }
 

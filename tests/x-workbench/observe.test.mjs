@@ -21,12 +21,13 @@ import { observeHome } from '../../lib/x/workbench/observeStore.js'
 const BANNED = /不是.+而是|本页|本篇|下面|接下来/
 
 test('公开站观察账号池全部智能体，理论结论对得到卡片指标', () => {
-  assert.deepEqual(OBSERVED_AGENTS.map((agent) => [agent.name, agent.handle]), [
-    ['矿工阿三', 'tarsixseveneig1'],
-    ['矿长阿富', 'TuaranX'],
-    ['矿工小十三', 'tuaran003'],
-    ['矿工阿柒', 'DrBenjamin81269'],
-    ['灯下掘行者', 'DrBenjamin5102'],
+  assert.deepEqual(OBSERVED_AGENTS.map((agent) => [agent.name, agent.handle, agent.market]), [
+    ['矿工阿三', 'tarsixseveneig1', 'zh'],
+    ['矿长阿富', 'TuaranX', 'zh'],
+    ['矿工小十三', 'tuaran003', 'zh'],
+    ['矿工阿柒', 'DrBenjamin81269', 'zh'],
+    ['灯下掘行者', 'DrBenjamin5102', 'zh'],
+    ['Lantern Vale', 'mHCncHeboklldif', 'en'],
   ])
   const metricKeys = new Set([...ACTION_LABELS.map(([key]) => key), 'views', 'interactions'])
   for (const point of THEORY_POINTS) {
@@ -35,7 +36,7 @@ test('公开站观察账号池全部智能体，理论结论对得到卡片指�
   }
   assert.equal(BANNED.test(agentFootnote({ reportDate: '2026-11-23' })), false)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /2026-11-23/)
-  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /@tarsixseveneig1、@TuaranX、@tuaran003、@DrBenjamin81269、@DrBenjamin5102/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /@tarsixseveneig1、@TuaranX、@tuaran003、@DrBenjamin81269、@DrBenjamin5102、@mHCncHeboklldif/)
   assert.doesNotMatch(agentFootnote({ reportDate: '2026-11-23' }), /推文曝光/)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
   assert.match(agentFootnote({ reportDate: '2026-11-23', lastUploadedAt: Date.UTC(2026, 10, 23, 6, 30) }), /上次更新：2026-11-23 14:30（北京时间）。/)
@@ -206,6 +207,7 @@ test('首页返回账号池全部智能体的日报动作', async () => {
     'tuaran003',
     'DrBenjamin81269',
     'DrBenjamin5102',
+    'mHCncHeboklldif',
   ])
   const reported = home.agents.find((agent) => agent.handle === 'TuaranX')
   assert.equal(reported.actions.posts, 4)

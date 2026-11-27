@@ -6,6 +6,7 @@ import XPage from './XPage'
 import MonitorSection from './MonitorSection'
 import AgentRobotAvatar from './AgentRobotAvatar'
 import { call, compact } from './api'
+import { interactionMarketLabel } from '../../../lib/interaction/marketProfile.js'
 import { ACTION_LABELS, OBSERVED_AGENTS, actionCount, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
 
@@ -43,6 +44,11 @@ export default function WorkbenchClient() {
                   <div className={s.agentIdentity}>
                     <h3 className={s.agentName}>{agent.name || agent.handle}</h3>
                     <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener" className={s.agentHandle}>@{agent.handle}</a>
+                    {agent.market ? (
+                      <span className={`${s.agentMarket} ${agent.market === 'en' ? s.agentMarketEn : ''}`}>
+                        {interactionMarketLabel(agent.market)}
+                      </span>
+                    ) : null}
                   </div>
                   <span className={`${s.statusChip} ${hasReport ? s.statusOk : ''}`}>
                     {!ready ? '读取中' : hasReport ? '今日已汇总' : '未采集'}

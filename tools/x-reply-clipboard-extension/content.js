@@ -5511,7 +5511,10 @@
       const stored = await chrome.storage.local.get(PANEL_PLACEMENT_KEY);
       const raw = stored?.[PANEL_PLACEMENT_KEY];
       state.panelPlacement = normalizePanelPlacement(raw);
-      if (!raw) await chrome.storage.local.set({ [PANEL_PLACEMENT_KEY]: state.panelPlacement });
+      if (state.panelPlacement === "embed") {
+        state.panelPlacement = "float";
+        await chrome.storage.local.set({ [PANEL_PLACEMENT_KEY]: "float" });
+      } else if (!raw) await chrome.storage.local.set({ [PANEL_PLACEMENT_KEY]: state.panelPlacement });
     } catch (error) {
       state.panelPlacement = "float";
     }
@@ -5641,6 +5644,10 @@
     while (true) {
       const next = loopApi.nextTweet(tweets, seen);
       if (!next) return null;
+      if (!tweetMatchesInteractionMarket(next)) {
+        skippedIds.add(next.id);
+        continue;
+      }
       const result = await sendExtensionMessage({
         type: "xrc-reply-history-has", accountHandle: replyHistoryAccount(), targetId: next.id
       });
@@ -5695,7 +5702,11 @@
       }
       const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       activeAiRequestId = requestId;
-      const sent = chrome.runtime.sendMessage({ type, postText, avoidReply, conversation, inviteGrok, mode: state.assistantMode, requestId }, (response) => {
+      const sent = chrome.runtime.sendMessage({
+        type, postText, avoidReply, conversation, inviteGrok,
+        mode: state.assistantMode, requestId,
+        interactionMarket: currentInteractionMarket()
+      }, (response) => {
         if (activeAiRequestId === requestId) activeAiRequestId = "";
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
@@ -6596,12 +6607,31 @@
     window.__xrcCurrentAccountHandle = () => currentAccountHandle() || lastKnownAccountHandle;
   }
 
+  function currentInteractionMarket(handle = currentAccountHandle() || lastKnownAccountHandle) {
+    const pool = globalThis.XrcInteractionAgentPool;
+    return pool?.resolveMarket?.(handle) || "zh";
+  }
+
+  function currentInteractionMarketLabel(handle = currentAccountHandle() || lastKnownAccountHandle) {
+    return globalThis.XrcMarketProfile?.marketLabel?.(currentInteractionMarket(handle)) || "中文社区";
+  }
+
+  function tweetMatchesInteractionMarket(tweet) {
+    if (!globalThis.XrcInteractionAgentPool?.isEnglishMarket?.(currentAccountHandle() || lastKnownAccountHandle)) return true;
+    const text = String(tweet?.text || tweet?.tweetText || "").trim();
+    return globalThis.XrcMarketProfile?.textMatchesEnglishMarket?.(text) === true;
+  }
+
   function rememberAccountHandle(handle = currentAccountHandle()) {
     const selected = String(handle || "").replace(/^@/u, "");
     if (selected) lastKnownAccountHandle = selected;
     if (!/^[A-Za-z0-9_]{1,15}$/u.test(selected) || !ensureExtensionContext()) return selected;
     try {
-      const saved = chrome.storage.local.set({ xrcAccountHandle: selected });
+      const market = currentInteractionMarket(selected);
+      const saved = chrome.storage.local.set({
+        xrcAccountHandle: selected,
+        xrcInteractionMarket: { handle: selected.toLowerCase(), market }
+      });
       if (saved && typeof saved.catch === "function") saved.catch((error) => { noteExtensionContextFailure(error); });
     } catch (error) {
       noteExtensionContextFailure(error);
@@ -8109,6 +8139,19 @@
           }
         }
         const postText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
+        if (postText && !tweetMatchesInteractionMarket({ tweetText: postText, text: postText })) {
+          skippedIds.add(next.id);
+          if (state.assistantMode === "notifications") {
+            try { await persistNotificationProcessed(next.id); }
+            catch (error) { state.errors += 1; }
+          }
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          state.pendingGrokInvite = false;
+          state.status = "英文市场：跳过 CJK 帖文";
+          renderPanel();
+          continue;
+        }
         if (!postText) {
           skippedIds.add(next.id);
           if (state.assistantMode === "notifications") {
@@ -8134,6 +8177,10 @@
           renderPanel();
           try {
             phrase = await sendAiMessage("xrc-ai-generate", postText, "", conversation, state.pendingGrokInvite);
+            if (globalThis.XrcInteractionAgentPool?.isEnglishMarket?.(currentAccountHandle() || lastKnownAccountHandle)
+              && globalThis.XrcMarketProfile?.textHasCjk?.(phrase)) {
+              throw new Error("英文市场：AI 回复含中文");
+            }
             aiGenerationFailures = 0;
             state.pendingReply = phrase;
             state.pendingTweetId = next.id;
@@ -9356,7 +9403,8 @@
   }
 
   function placePanel(panel) {
-    if (state.panelPlacement === "embed" && dockPanel(panel)) return;
+    const collapsed = panel?.dataset?.view === "collapsed";
+    if (collapsed && state.panelPlacement === "embed" && dockPanel(panel)) return;
     floatPanel(panel);
   }
 
@@ -9685,6 +9733,7 @@
               <div class="xrc-mark" aria-hidden="true"><img class="xrc-mark-img" src="${extensionIconUrl(48)}" alt="" width="36" height="36" decoding="async"></div>
               <div class="xrc-brand-copy">
                 <div class="xrc-title">X 大互动智能体</div>
+                <div class="xrc-market-badge" data-xrc-market-badge hidden></div>
               </div>
             </div>
             <div class="xrc-header-actions">
@@ -9834,7 +9883,7 @@
             <section class="xrc-docs-section" data-xrc-config-section="other">
               <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
               <label class="xrc-config-row">
-                <span><strong>嵌入到页面</strong><small>放在右侧搜索框下面，跟着页面滚动</small></span>
+                <span><strong>嵌入到页面</strong><small>仅折叠成小条时可贴右侧栏；展开后的 agent 面板始终在右下角浮动</small></span>
                 <input type="checkbox" data-xrc-embed>
               </label>
             </section>
@@ -11891,8 +11940,32 @@
     const brand = panel.querySelector(".xrc-title");
     if (brand) brand.textContent = "X 大互动智能体";
     const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
+    const pool = globalThis.XrcInteractionAgentPool;
+    const inPool = Boolean(handle && pool?.findAgent?.(handle));
+    const marketLabel = handle ? currentInteractionMarketLabel(handle) : "";
+    const marketSuffix = marketLabel ? ` · ${marketLabel}${inPool ? "（池内）" : ""}` : "";
     for (const account of panel.querySelectorAll("[data-xrc-account]")) {
-      account.textContent = handle ? `账号：@${handle}` : "账号：—";
+      account.textContent = handle ? `账号：@${handle}${marketSuffix}` : "账号：—";
+    }
+    const marketBadge = panel.querySelector("[data-xrc-market-badge]");
+    if (marketBadge) {
+      const market = handle ? currentInteractionMarket(handle) : "zh";
+      if (handle && inPool && market === "en") {
+        marketBadge.hidden = false;
+        marketBadge.dataset.market = "en";
+        marketBadge.textContent = "English market · EN rules";
+        marketBadge.title = "英文市场：关注英文资料、跳过 CJK 帖、AI 英文回复。面板文案仍为中文。";
+      } else if (handle && inPool && market === "zh") {
+        marketBadge.hidden = false;
+        marketBadge.dataset.market = "zh";
+        marketBadge.textContent = "中文社区 · ZH rules";
+        marketBadge.title = "中文社区市场规则";
+      } else {
+        marketBadge.hidden = true;
+        marketBadge.removeAttribute("data-market");
+        marketBadge.textContent = "";
+        marketBadge.title = "";
+      }
     }
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
@@ -11905,10 +11978,10 @@
     } else {
       panelThemeController.refresh();
     }
-    placePanel(panel);
     panel.dataset.xrcHome = "agent";
     installAgentHost();
     globalThis.XrcAgentChat?.mount?.(panel, globalThis.XrcAgentHost);
+    placePanel(panel);
   }
 
   function begin({ resume = false } = {}) {

@@ -1091,6 +1091,16 @@
     return /\p{Script=Han}/u.test(name) || /\p{Script=Han}/u.test(bio);
   }
 
+  function followProfileMatches(row, handle) {
+    const { name, bio } = profileTextParts(row, handle);
+    const pool = globalThis.XrcInteractionAgentPool;
+    const profile = globalThis.XrcMarketProfile;
+    if (pool?.isEnglishMarket?.(currentAccountHandle())) {
+      return profile?.profileMatchesEnglishMarket?.(name, bio) === true;
+    }
+    return profileHasChinese(row, handle);
+  }
+
   function profileNonChinese(row, handle) {
     const { name } = profileTextParts(row, handle);
     return Boolean(name) && !profileHasChinese(row, handle);
@@ -1163,14 +1173,15 @@
       const followsYouKnown = followsStatus !== "unknown";
       const nonSimplifiedProfile = mode === "unfollowNonSc" && profileIsNonSimplified(row, handle);
       const hasChineseProfile = (mode === "followBack" || mode === "targetFollow") && profileHasChinese(row, handle);
+      const matchesFollowProfile = (mode === "followBack" || mode === "targetFollow") && followProfileMatches(row, handle);
       const candidate = mode === "unfollow"
         ? Boolean(handle && followingButton && followsYouKnown && !followsYou)
         : mode === "unfollowNonSc"
           ? Boolean(handle && followingButton && nonSimplifiedProfile)
         : mode === "followBack"
-          ? Boolean(handle && followBackButton && followsYou && hasChineseProfile)
-          : Boolean(handle && followButton && !followBackButton && !followingButton && hasChineseProfile);
-      return { row, handle, followsYou, followsYouKnown, nonSimplifiedProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
+          ? Boolean(handle && followBackButton && followsYou && matchesFollowProfile)
+          : Boolean(handle && followButton && !followBackButton && !followingButton && matchesFollowProfile);
+      return { row, handle, followsYou, followsYouKnown, nonSimplifiedProfile, hasChineseProfile, matchesFollowProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
 

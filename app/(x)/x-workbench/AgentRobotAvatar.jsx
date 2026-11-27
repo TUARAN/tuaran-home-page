@@ -72,6 +72,20 @@ const NIGHT_DIGGER = (
   </svg>
 )
 
+const ROSE_LANTERN = (
+  <svg viewBox="0 0 48 48" aria-hidden="true">
+    <circle cx="24" cy="24" r="24" fill="#fff1f2" />
+    <rect x="22.4" y="5" width="3.2" height="5.5" rx="1.2" fill="#be123c" />
+    <ellipse cx="24" cy="17" rx="6.5" ry="7.5" fill="#fda4af" />
+    <ellipse cx="24" cy="17" rx="3.6" ry="4.2" fill="#fff7ed" opacity="0.9" />
+    <path d="M11 24a13 13 0 0 1 26 0v3H11z" fill="#e11d48" />
+    <rect x="13" y="26" width="22" height="13" rx="6.5" fill="#ffe4e6" />
+    <circle cx="19.5" cy="31" r="2.7" fill="#9f1239" />
+    <circle cx="28.5" cy="31" r="2.7" fill="#9f1239" />
+    <rect x="20" y="35" width="8" height="2.2" rx="1.1" fill="#be123c" />
+  </svg>
+)
+
 const GENERIC = (
   <svg viewBox="0 0 48 48" aria-hidden="true">
     <circle cx="24" cy="24" r="24" fill="#e5e7eb" />
@@ -91,6 +105,7 @@ const ROBOTS = {
   tuaran003: GREEN_THIRTEEN,
   drbenjamin81269: VIOLET_SCANNER,
   drbenjamin5102: NIGHT_DIGGER,
+  mhcncheboklldif: ROSE_LANTERN,
 }
 
 export default function AgentRobotAvatar({ handle, className }) {

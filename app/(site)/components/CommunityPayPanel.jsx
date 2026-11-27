@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { detectPayClientModeInBrowser } from '../../../lib/pay/clientMode.mjs'
+import PayGatewayCheckout from './PayGatewayCheckout'
 
 const STORAGE_PREFIX = 'community:pay:'
 const REMEMBER_MS = 7 * 24 * 60 * 60 * 1000
@@ -164,7 +166,7 @@ export default function CommunityPayPanel({ plan }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ resourceKey, returnTo }),
+        body: JSON.stringify({ resourceKey, returnTo, clientMode: detectPayClientModeInBrowser() }),
       })
       const data = await safeJson(res)
       if (data?.error === 'ALREADY_UNLOCKED') {
@@ -290,43 +292,29 @@ export default function CommunityPayPanel({ plan }) {
       {phase === 'qr' && order ? (
         <>
           <div className="community-xh-pay-qr">
-            {order.qrCode ? (
-              // 网关返回二维码图片地址，本地展示；外链图不走 next/image 优化
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={order.qrCode} alt="支付二维码" width={180} height={180} />
-            ) : (
-              <a href={order.payUrl} target="_blank" rel="noreferrer" className="community-xh-pay-link">
-                打开支付页
-              </a>
-            )}
-          </div>
-          <p className="community-xh-pay-note">
-            微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，无需登录，支付成功本页自动识别。
-          </p>
-          <div className="community-xh-pay-actions">
-            <button
-              type="button"
-              onClick={() => checkStatus(order.orderNo)}
-              disabled={checking}
-              className="community-xh-pay-refresh"
-            >
-              {checking ? '正在查询…' : '我已支付，刷新状态'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
+            <PayGatewayCheckout
+              order={order}
+              amountLabel={order.amountLabel || fenLabel(priceFen)}
+              checking={checking}
+              onRefresh={() => checkStatus(order.orderNo)}
+              onCancel={() => {
                 stopPolling()
                 setPhase('idle')
                 setOrder(null)
                 setRefreshNote('')
               }}
-              className="community-xh-pay-cancel"
-            >
-              取消
-            </button>
+              qrClassName=""
+              h5LinkClassName="community-xh-pay-link"
+              noteClassName="community-xh-pay-note"
+              h5Note="手机端将跳转到微信完成支付，无需登录，支付成功本页自动识别"
+              webNote={`微信扫码支付 ¥${order.amountLabel || fenLabel(priceFen)}，无需登录，支付成功本页自动识别。`}
+            />
           </div>
           {refreshNote ? <p className="community-xh-pay-status">{refreshNote}</p> : null}
-          <p className="community-xh-pay-order">订单号 {order.orderNo}</p>
+          <p className="community-xh-pay-order">
+            订单号 {order.orderNo}
+            {order.clientModeLabel ? ` · ${order.clientModeLabel}` : ''}
+          </p>
         </>
       ) : (
         <>

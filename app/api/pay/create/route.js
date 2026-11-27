@@ -111,6 +111,8 @@ export async function POST(req) {
       title: typeof body?.title === 'string' ? body.title : '',
       clientIp: ip,
       returnTo: normalizeReturnPath(body?.returnTo),
+      clientMode: typeof body?.clientMode === 'string' ? body.clientMode : '',
+      userAgent: req.headers.get('user-agent') || '',
       config: readGatewayConfig(workerEnv()),
     })
     await cleanupRateLimits(db).catch(() => {})

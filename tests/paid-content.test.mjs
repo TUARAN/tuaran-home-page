@@ -6,6 +6,12 @@ import { readFileSync } from 'node:fs'
 import { md5 } from '../lib/pay/md5.mjs'
 import { buildSign, verifySign, fenToYuan } from '../lib/pay/gateways/xunhupay.js'
 import { newOrderNo, isAmountMatch, normalizeResourceKey, canReuseOrder } from '../lib/pay/rules.mjs'
+import {
+  PAY_CLIENT_H5,
+  PAY_CLIENT_WEB,
+  detectPayClientModeFromUa,
+  shapePaymentForClient,
+} from '../lib/pay/clientMode.mjs'
 import { summarizePaidOrders } from '../lib/pay/summary.mjs'
 
 test('md5 与 node:crypto 对齐（含 UTF-8）', () => {
@@ -101,6 +107,45 @@ test('未支付订单只在 30 分钟内复用', () => {
   assert.equal(canReuseOrder({ createdAt: now - 31 * 60_000, now, hasQrCode: 'https://q' }), false)
   assert.equal(canReuseOrder({ createdAt: now - 60_000, now, hasQrCode: '' }), false)
   assert.equal(canReuseOrder({ createdAt: now - 60_000, now, status: 'paid', hasQrCode: 'https://q' }), false)
+  assert.equal(
+    canReuseOrder({
+      createdAt: now - 60_000,
+      now,
+      clientMode: PAY_CLIENT_H5,
+      hasPayUrl: 'https://pay',
+      hasQrCode: '',
+    }),
+    true
+  )
+  assert.equal(
+    canReuseOrder({
+      createdAt: now - 60_000,
+      now,
+      clientMode: PAY_CLIENT_H5,
+      hasPayUrl: '',
+      hasQrCode: 'https://q',
+    }),
+    false
+  )
+})
+
+test('虎皮椒终端：PC 只暴露 url_qrcode，H5 只暴露 url', () => {
+  const raw = { qrCode: 'https://qr.example', payUrl: 'https://jump.example' }
+  assert.deepEqual(shapePaymentForClient(PAY_CLIENT_WEB, raw), {
+    clientMode: PAY_CLIENT_WEB,
+    clientModeLabel: 'Web',
+    qrCode: 'https://qr.example',
+    payUrl: '',
+  })
+  assert.deepEqual(shapePaymentForClient(PAY_CLIENT_H5, raw), {
+    clientMode: PAY_CLIENT_H5,
+    clientModeLabel: 'H5',
+    qrCode: '',
+    payUrl: 'https://jump.example',
+    payImageUrl: 'https://qr.example',
+  })
+  assert.equal(detectPayClientModeFromUa('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'), PAY_CLIENT_H5)
+  assert.equal(detectPayClientModeFromUa('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'), PAY_CLIENT_WEB)
 })
 
 test('分转元不丢精度', () => {
@@ -293,16 +338,42 @@ test('已支付订单不再查网关；查单失败时静默返回不写库', as
   assert.equal(pendingDb.order.status, 'pending')
 })
 
+test('H5 截图扫码：站内代理下载与收银备用按钮', () => {
+  const checkout = readFileSync(new URL('../app/(site)/components/PayGatewayCheckout.jsx', import.meta.url), 'utf8')
+  const qrcodeRoute = readFileSync(new URL('../app/api/pay/qrcode/route.js', import.meta.url), 'utf8')
+  assert.match(checkout, /保存付款图并打开微信/)
+  assert.match(checkout, /savePayImageAndOpenWechat/)
+  assert.match(qrcodeRoute, /Content-Disposition/)
+  assert.match(qrcodeRoute, /getPaidOrderForUser/)
+})
+
+test('支付面板上报 clientMode 并用 PayGatewayCheckout 区分扫码与跳转', () => {
+  for (const [name, file] of [
+    ['PayUnlockPanel', '../app/(site)/components/PayUnlockPanel.jsx'],
+    ['CommunityPayPanel', '../app/(site)/components/CommunityPayPanel.jsx'],
+    ['SignatureEditionCard', '../app/(site)/books/SignatureEditionCard.jsx'],
+  ]) {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8')
+    assert.match(source, /clientMode:\s*detectPayClientModeInBrowser\(\)/, `${name} 应上报终端`)
+    assert.match(source, /PayGatewayCheckout/, `${name} 应使用统一收银组件`)
+    assert.doesNotMatch(source, /order\.qrCode \? \([\s\S]*<img/, `${name} 不得先判断 qrCode 再展示二维码`)
+  }
+})
+
 test('支付刷新按钮有可见反馈：查询中置灰，未查到时给出提示', () => {
+  const checkout = readFileSync(new URL('../app/(site)/components/PayGatewayCheckout.jsx', import.meta.url), 'utf8')
   const community = readFileSync(new URL('../app/(site)/components/CommunityPayPanel.jsx', import.meta.url), 'utf8')
   const unlock = readFileSync(new URL('../app/(site)/components/PayUnlockPanel.jsx', import.meta.url), 'utf8')
-  for (const [name, source] of [['CommunityPayPanel', community], ['PayUnlockPanel', unlock]]) {
-    assert.match(source, /正在查询/, `${name} 刷新中应显示「正在查询」`)
+  assert.match(checkout, /正在查询/, 'PayGatewayCheckout 刷新中应显示「正在查询」')
+  assert.match(checkout, /disabled=\{checking\}/, 'PayGatewayCheckout 查询中按钮应置灰')
+  for (const [name, source] of [
+    ['CommunityPayPanel', community],
+    ['PayUnlockPanel', unlock],
+  ]) {
     assert.match(source, /还未查到支付结果/, `${name} 未查到时应给出提示`)
-    assert.match(source, /disabled=\{checking\}/, `${name} 查询中按钮应置灰`)
+    assert.match(source, /PayGatewayCheckout[\s\S]*checking=\{checking\}/, `${name} 应把 checking 传给收银组件`)
     assert.match(source, /res\.status === 404/, `${name} 应处理订单失效分支`)
     assert.match(source, /res\.status === 401/, `${name} 应处理登录/身份过期分支`)
-    // 自动轮询保持静默，不弹提示
     assert.match(source, /silent: true/, `${name} 自动轮询应静默`)
   }
 })

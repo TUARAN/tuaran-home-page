@@ -63,7 +63,8 @@ curl -X POST https://2aran.com/api/admin/pay/orders \
 - [ ] `GET /api/points/unlock?resourceKey=...` 返回 `priceFen` 与 `unlocked`
 - [ ] 付费文章未登录点购买不会跳登录，直接出二维码；付完当场可读
 - [ ] 圈子方案无需登录即可下单；支付成功页可提交邮箱，后台订单能看到
-- [ ] 二维码能在页面内展示（PC 端用 `url_qrcode`，不再跳外站）
+- [ ] PC 端页面内展示 `url_qrcode` 二维码；手机 H5 主按钮跳转 `url`，备用「保存付款图并打开微信」（`/api/pay/qrcode`），禁止在页内展示 `url_qrcode` 大图
+- [ ] 后台支付订单「终端」列显示 Web 或 H5（依赖迁移 `0140_paid_order_client_mode`）
 - [ ] 支付成功后 3 秒内自动解锁，不用手动刷新
 - [ ] 已购用户换设备/换浏览器仍可读
 - [ ] 篡改 `total_fee` 的回调被拒绝（`AMOUNT_MISMATCH`）

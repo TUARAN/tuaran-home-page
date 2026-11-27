@@ -49,6 +49,9 @@ const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([
 // These endpoints appear in Admin UI documentation, but the browser does not
 // request them. Keep explicit exceptions narrow so new missing APIs fail.
 const NON_RUNTIME_API_REFERENCES = new Set([
+  // The distribution job panel copies a claim prompt containing this public
+  // agent endpoint; the external agent calls it, never the Admin browser.
+  '/api/distribution/agent/jobs',
   '/api/site-status/monitor',
   '/api/subscribe',
 ])

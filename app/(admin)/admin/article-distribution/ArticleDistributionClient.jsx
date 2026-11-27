@@ -20,6 +20,7 @@ import AdminButton from '../../components/ui/AdminButton'
 import AdminPage from '../../components/ui/AdminPage'
 import Section from '../../components/ui/Section'
 import StatusPill from '../../components/ui/StatusPill'
+import DistributionJobsPanel from './DistributionJobsPanel'
 
 const PLATFORM_ICONS = {
   twitter: IconBrandX,
@@ -388,6 +389,9 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
         </>
       )}
     >
+      <div className="mb-5">
+        <DistributionJobsPanel />
+      </div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
         <div className="space-y-5">
           <Section title="1. 选择站内文章" description="只显示已公开的文章与调研；不会读取草稿或私密内容。">

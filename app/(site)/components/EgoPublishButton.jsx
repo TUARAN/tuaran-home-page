@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { buildDistributionTaskPrompt } from '../../../lib/distribution/taskPrompt'
+import { buildDistributionClaimPrompt, buildDistributionTaskPrompt } from '../../../lib/distribution/taskPrompt'
 import { copyPlainText } from '../../../lib/content/contentClipboard'
 import { useSessionAccount } from './SessionProvider'
 
@@ -12,21 +12,46 @@ export default function EgoPublishButton({ title, url, summary = '', tags = [], 
 
   if (loading || !isOwner || !markdown) return null
 
-  async function handleCopy() {
-    const prompt = buildDistributionTaskPrompt({ title, url, summary, tags, markdown })
-    const copied = await copyPlainText(prompt)
-    setState(copied ? 'copied' : 'failed')
-    setTimeout(() => setState('idle'), 2000)
+  // 先建任务台任务，复制领取指令；任务表未就绪或建任务失败时复制离线任务（整篇 Markdown）。
+  async function buildPrompt() {
+    try {
+      const response = await fetch('/api/distribution/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, url, summary, tags, markdown }),
+      })
+      if (response.ok) {
+        const job = await response.json()
+        return { mode: 'job', text: buildDistributionClaimPrompt({ jobId: job.id, token: job.token, title, origin: window.location.origin }) }
+      }
+    } catch {
+      // 网络失败同样退回离线任务。
+    }
+    return { mode: 'offline', text: buildDistributionTaskPrompt({ title, url, summary, tags, markdown }) }
   }
 
-  const label = state === 'copied' ? '已复制' : state === 'failed' ? '复制失败' : 'ego'
+  async function handleCopy() {
+    if (state === 'working') return
+    setState('working')
+    const prompt = await buildPrompt()
+    const copied = await copyPlainText(prompt.text)
+    setState(copied ? (prompt.mode === 'job' ? 'copied' : 'offline') : 'failed')
+    setTimeout(() => setState('idle'), 2500)
+  }
+
+  const label = {
+    working: '建任务…',
+    copied: '已复制',
+    offline: '已复制离线任务',
+    failed: '复制失败',
+  }[state] || 'ego'
 
   return (
     <button
       type="button"
       onClick={handleCopy}
       aria-live="polite"
-      title="复制分发任务：交给装了 2aran-distributor skill 的智能体，用 ego lite 发布到掘金、CSDN"
+      title="建分发任务并复制领取指令：交给装了 2aran-distributor skill 的智能体，用 ego lite 发布到掘金、CSDN，结果回到后台任务台"
       className="article-action-button owner-only-action px-3 py-1 text-xs"
     >
       <EgoIcon />

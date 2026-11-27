@@ -1,9 +1,11 @@
 .page { padding-top: 12px; padding-bottom: 40px; }
-.head { max-width: 1088px; margin: 4px 0 24px; padding-left: 16px; border-left: 4px solid var(--accent); }
-.kicker { margin: 0 0 6px; color: var(--accentInk); font-size: 12px; font-weight: 800; letter-spacing: .14em; }
-.title { margin: 0; color: var(--ink); font-size: clamp(26px, 3.4vw, 32px); font-weight: 800; line-height: 1.2; letter-spacing: -.01em; }
-.intro { max-width: 760px; margin: 10px 0 0; color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.7; }
-.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; max-width: 760px; margin: 8px 0 0; color: var(--sub); font-size: 13px; line-height: 1.7; }
+.head { margin: 4px 0 24px; padding-left: 16px; border-left: 4px solid var(--accent); }
+.headRow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.headRowSub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; margin-top: 10px; }
+.kicker { margin: 0; flex: 0 0 auto; color: var(--accentInk); font-size: 12px; font-weight: 800; letter-spacing: .14em; }
+.title { margin: 0; flex: 1 1 12rem; min-width: min(100%, 12rem); color: var(--ink); font-size: clamp(26px, 3.4vw, 32px); font-weight: 800; line-height: 1.2; letter-spacing: -.01em; }
+.intro { margin: 0; flex: 1 1 28rem; min-width: min(100%, 18rem); color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.55; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 0 auto; color: var(--sub); font-size: 13px; line-height: 1.55; }
 /* 只有日期这类天然不可断的短元素保持整行；整句说明作为普通文本必须可换行，
    否则 H5 上会把页面撑出视口、被全局 overflow-x: clip 硬裁掉右半边。 */
 .meta time { white-space: nowrap; }
@@ -15,6 +17,8 @@
 .pagerNext { text-align: right; }
 @media (max-width: 640px) {
   .head { margin-bottom: 18px; padding-left: 12px; }
+  .headRowSub { margin-top: 8px; }
+  .meta { margin-left: 0; }
   .intro { font-size: 15px; }
   .pager { margin-top: 28px; }
 }

@@ -44,6 +44,7 @@ const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([
   '/admin/site-health',
   '/admin/soft-sticker',
   '/admin/stock-analysis/[slug]',
+  '/admin/users',
 ])
 
 // These endpoints appear in Admin UI documentation, but the browser does not

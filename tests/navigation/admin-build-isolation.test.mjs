@@ -71,9 +71,10 @@ test('admin build verification follows the merged long compass entry point', () 
 })
 
 test('search-param admin pages run on the Edge worker and stay covered by build verification', async () => {
-  const [settingsPage, siteHealthPage] = await Promise.all([
+  const [settingsPage, siteHealthPage, usersPage] = await Promise.all([
     readFile(new URL('../../app/(admin)/admin/settings/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(admin)/admin/site-health/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(admin)/admin/users/page.jsx', import.meta.url), 'utf8'),
   ])
 
   for (const [route, source] of [
@@ -84,6 +85,9 @@ test('search-param admin pages run on the Edge worker and stay covered by build 
     assert.match(adminVerifierSource, new RegExp(`REQUIRED_EDGE_ROUTES[\\s\\S]*['"]${route}['"]`))
     assert.match(adminVerifierSource, new RegExp(`ALLOWED_DYNAMIC_ADMIN_PAGES[\\s\\S]*['"]${route}['"]`))
   }
+
+  assert.match(usersPage, /export const runtime = 'edge'/)
+  assert.match(adminVerifierSource, /ALLOWED_DYNAMIC_ADMIN_PAGES[\s\S]*['"]\/admin\/users['"]/)
 })
 
 test('admin build verification excludes loopback companion APIs from Worker routes', () => {

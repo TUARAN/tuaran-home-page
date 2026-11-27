@@ -430,7 +430,7 @@ function AuthorityDrawerLinks({ pathname, onNavigate }) {
         onClick={onNavigate}
         aria-current={isActive ? 'page' : undefined}
         className={[
-          'site-mobile-drawer-row site-mobile-drawer-feature',
+          'site-mobile-drawer-row site-mobile-drawer-feature site-mobile-authority-hub',
           isActive ? 'is-active' : '',
         ].join(' ')}
         data-analytics-event="entry_click"
@@ -757,9 +757,8 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner, notifications, rssUpdates } = account
+  const { loading, user, isOwner, notifications } = account
   const unread = Number(notifications?.unread) || 0
-  const hasRssUpdates = Number(rssUpdates?.unread) > 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
   const hasActivity = Array.isArray(notifications?.items) && notifications.items.some((item) => !item.readAt)
   const shell = embedded
@@ -837,13 +836,6 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
               <span>{pick(locale, '消息', 'Messages')}</span>
               <MobileDrawerChevron />
             </Link>
-            <Link href="/resources/rss" onClick={onNavigate} className="site-mobile-drawer-row">
-              <span className="flex min-w-0 items-center gap-2">
-                {pick(locale, 'RSS 阅读', 'RSS reader')}
-                {hasRssUpdates ? <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
-              </span>
-              <MobileDrawerChevron />
-            </Link>
             <a href={logoutHref} className="site-mobile-drawer-row site-mobile-drawer-row-muted">
               <span className="flex items-center gap-2">
                 <IconLogout size={17} stroke={1.65} aria-hidden="true" />
@@ -864,6 +856,23 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
     <div className={shell}>
       {accountBlock}
     </div>
+  )
+}
+
+function MobileDrawerRssBlock({ account, onNavigate }) {
+  const { locale } = useLocale()
+  const hasRssUpdates = Number(account?.rssUpdates?.unread) > 0
+  return (
+    <MobileDrawerBlock title={pick(locale, 'RSS', 'RSS')} ariaLabel={pick(locale, 'RSS 阅读', 'RSS reader')}>
+      <Link href="/resources/rss" onClick={onNavigate} className="site-mobile-drawer-row">
+        <span className="flex min-w-0 items-center gap-2.5">
+          <IconRss size={18} stroke={1.65} aria-hidden="true" />
+          <span>{pick(locale, 'RSS 阅读', 'RSS reader')}</span>
+          {hasRssUpdates ? <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
+        </span>
+        <MobileDrawerChevron />
+      </Link>
+    </MobileDrawerBlock>
   )
 }
 
@@ -1095,26 +1104,47 @@ export default function SiteHeader() {
         ].join(' ')}
       >
         <div className="site-mobile-drawer-stack">
-          {pathname === '/' ? (
-            <MobileDrawerBlock ariaLabel={pick(locale, '搜索', 'Search')}>
-              <Link
-                href="/search"
-                className="site-mobile-drawer-row site-mobile-drawer-search"
-                onClick={() => setMobileMenuOpen(false)}
+          <MobileDrawerBlock ariaLabel={pick(locale, '搜索', 'Search')}>
+            <div className="site-mobile-drawer-search-field px-2.5 py-2.5">
+              <SiteSearch mobile />
+            </div>
+          </MobileDrawerBlock>
+          <MobileDrawerBlock ariaLabel={pick(locale, '账户', 'Account')}>
+            <MobileAccountPanel
+              account={account}
+              pathname={pathname}
+              embedded
+              onNavigate={() => setMobileMenuOpen(false)}
+            />
+            {!installed ? (
+              <button
+                type="button"
+                className="site-mobile-drawer-row border-t border-[var(--site-line)]"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  openInstallGuide()
+                }}
               >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 opacity-80">
-                    <circle cx="9" cy="9" r="5.25" stroke="currentColor" strokeWidth="1.65" />
-                    <path d="M13.2 13.2 17 17" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
-                  </svg>
-                  <span className="site-mobile-drawer-muted text-[13.5px] font-medium">
-                    {pick(locale, '搜索页面和内容', 'Search pages and content')}
-                  </span>
+                <span className="flex items-center gap-2.5">
+                  <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
+                  <span>{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
                 </span>
                 <MobileDrawerChevron />
-              </Link>
-            </MobileDrawerBlock>
-          ) : null}
+              </button>
+            ) : null}
+          </MobileDrawerBlock>
+          <MobileDrawerBlock title={pick(locale, '推荐', 'Picks')} ariaLabel={pick(locale, '推荐', 'Picks')}>
+            <div className="site-mobile-picks">
+              {HEADER_RECOMMENDATIONS.map((item) => (
+                <RecommendationLink
+                  key={item.href}
+                  item={item}
+                  variant="drawer"
+                  onNavigate={() => setMobileMenuOpen(false)}
+                />
+              ))}
+            </div>
+          </MobileDrawerBlock>
           <MobileDrawerBlock title={pick(locale, '频道', 'Channels')} ariaLabel={pick(locale, '频道入口', 'Channels')}>
             <nav aria-label={pick(locale, '频道入口', 'Channels')} className="site-mobile-quick-nav">
               {MOBILE_PRIMARY_CHANNELS.map((channel) => (
@@ -1166,45 +1196,7 @@ export default function SiteHeader() {
               <SiteSettingsControls />
             </div>
           </details>
-          <MobileDrawerBlock ariaLabel={pick(locale, '账户与推荐', 'Account & picks')}>
-            <MobileAccountPanel
-              account={account}
-              pathname={pathname}
-              embedded
-              onNavigate={() => setMobileMenuOpen(false)}
-            />
-            {!installed ? (
-              <button
-                type="button"
-                className="site-mobile-drawer-row border-t border-[var(--site-line)]"
-                onClick={() => {
-                  setMobileMenuOpen(false)
-                  openInstallGuide()
-                }}
-              >
-                <span className="flex items-center gap-2.5">
-                  <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
-                  <span>{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
-                </span>
-                <MobileDrawerChevron />
-              </button>
-            ) : null}
-            <div className="border-t border-[var(--site-line)]" aria-label={pick(locale, '推荐', 'Picks')}>
-              <p className="site-mobile-drawer-block-title border-b border-[var(--site-line)] px-3.5 py-2.5">
-                {pick(locale, '推荐', 'Picks')}
-              </p>
-              <div className="site-mobile-picks">
-                {HEADER_RECOMMENDATIONS.map((item) => (
-                  <RecommendationLink
-                    key={item.href}
-                    item={item}
-                    variant="drawer"
-                    onNavigate={() => setMobileMenuOpen(false)}
-                  />
-                ))}
-              </div>
-            </div>
-          </MobileDrawerBlock>
+          <MobileDrawerRssBlock account={account} onNavigate={() => setMobileMenuOpen(false)} />
         </div>
       </div>
     </>

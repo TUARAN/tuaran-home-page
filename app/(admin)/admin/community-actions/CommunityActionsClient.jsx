@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
@@ -34,17 +35,10 @@ const CLOUD_PANEL_IDS = new Set(CLOUD_PANELS.map((item) => item.id))
 
 const EXTENSION_TASKS = Object.freeze([
   {
-    id: 'article-distribution',
-    platform: 'multi',
-    label: '站内文章分发插件',
-    summary: '选择站内文章，通过本机浏览器插件写入六个平台草稿，核对后手动发布。',
-    href: '/admin/article-distribution',
-  },
-  {
     id: 'syncblog-download',
     platform: 'multi',
     label: 'AI 分发大师',
-    summary: '整理观点、文章、电子书和项目介绍，适配多个平台并准备草稿，核对后手动发布。',
+    summary: '冻结维护，只修 bug。站内文章发到外部平台改由「分发智能体」执行；这里保留已装插件的设备与回执。',
     href: '/tools/syncblog-publisher',
   },
   {
@@ -288,6 +282,10 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       <PersonInvitesPanel />
 
       <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
+        <p className="mb-3 mt-0 rounded-lg border border-[#d7e3d3] bg-[#f3f8f1] px-3 py-2 text-[12px] leading-5 text-[#315748] dark:border-[#24412f] dark:bg-[#0f1d16] dark:text-emerald-200">
+          站内文章发到掘金、CSDN 等平台，已改由本机智能体（2aran-distributor skill + ego lite）执行，不再需要装分发插件。
+          <Link href="/admin/article-distribution" className="ml-1 font-medium underline">打开分发智能体</Link>
+        </p>
         <ul className="m-0 grid gap-2 p-0">
           {EXTENSION_TASKS.map((item) => (
             <li key={item.id} id={item.id} className="min-w-0 rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
@@ -300,10 +298,10 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
                 <div className="mt-3 flex flex-wrap gap-2">
                   {item.archived ? (
                     <AdminButton size="sm" variant="primary" href="/admin/community-actions/monitor?platform=ai-distributor">去启用 AI 分发大师监控</AdminButton>
-                  ) : item.id !== 'article-distribution' ? (
+                  ) : (
                     <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
-                  ) : null}
-                  {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>{item.id === 'article-distribution' ? '打开分发页面' : '插件下载页'}</AdminButton> : null}
+                  )}
+                  {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
                 </div>
               )}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
@@ -334,8 +332,8 @@ function OverviewPanel({ onOpenMode }) {
       >
         <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">X 的插件状态、任务排班与动作明细在 x.2aran.com/x-workbench/ops；这里保留 AI 分发大师的设备与批次回执。插件台管理共用密钥。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
-          <li>站内文章分发插件：把站内文章写入多个平台草稿</li>
-          <li>AI 分发大师：整理多种内容并准备跨平台草稿</li>
+          <li>站内文章分发：已改由「分发智能体」执行，入口在 内容 → 分发与触达</li>
+          <li>AI 分发大师：冻结维护，只修 bug</li>
           <li>X 大互动智能体：评论、点赞、关注管理、定时发帖</li>
           <li>小红书 / 掘金大互动智能体：已归档；监控顶栏已收回，请到插件台启用 AI 分发大师</li>
         </ul>

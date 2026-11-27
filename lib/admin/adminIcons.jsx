@@ -127,6 +127,7 @@ const ICONS = {
   trading: IconChartCandle,
   taskCenter: IconListCheck,
   pluginMonitor: IconPuzzle,
+  distributionAgent: IconRobot,
   crypto: IconCurrencyBitcoin,
   community: IconSpeakerphone,
   engagement: IconMessageCircle,

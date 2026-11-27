@@ -5,6 +5,7 @@ import { loadAdminBadges } from '../../../../lib/admin/badgeCounts.mjs'
 import { listSiteUsers } from '../../../../lib/auth/userDirectory'
 import { getD1QuickStatus } from '../../../../lib/admin/dbAdmin'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/research/researchStyleTemplates'
+import { loadOverviewTodayRankings } from '../../../../lib/admin/overviewTodayRankings.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -53,6 +54,7 @@ export async function GET(req) {
       uv: { total: null, today: null },
       db: { status: 'unavailable', tables: null, name: null },
       recent: { users: [], style },
+      today: { topContent: [], topReaders: [] },
     })
   }
 
@@ -115,6 +117,9 @@ export async function GET(req) {
           lastSeenAt: u.lastSeenAt,
         }))
 
+        const todayStart = startOfShanghaiTodayMs()
+        const todayRankings = await loadOverviewTodayRankings(db, todayStart)
+
         return {
           status: 'ok',
           generatedAt: Date.now(),
@@ -134,6 +139,7 @@ export async function GET(req) {
             name: null,
           },
           recent: { users: recentUsers, style },
+          today: todayRankings,
         }
       },
     )

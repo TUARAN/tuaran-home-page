@@ -69,6 +69,103 @@ function formatTime(ts) {
 
 const providerLabels = { github: 'GitHub', google: 'Google', email: '邮箱' }
 
+const readerTypeLabels = { user: '登录用户', guest: '稳定游客', anonymous: '匿名访客' }
+
+function formatRankTime(ts) {
+  if (!ts) return '—'
+  try {
+    return new Date(ts).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return '—'
+  }
+}
+
+function TodayRankEmpty({ title, loading }) {
+  return (
+    <p className="px-4 py-6 text-center text-[11.5px] text-[#929487] dark:text-gray-500 md:px-5">
+      {loading ? '加载中…' : title}
+    </p>
+  )
+}
+
+function TodayContentRankList({ rows, loading }) {
+  if (loading) return <TodayRankEmpty loading />
+  if (!rows?.length) {
+    return <TodayRankEmpty loading={false} title="今天还没有有效阅读" />
+  }
+  return (
+    <ol className="divide-y divide-[#eceee6] dark:divide-[#1b2430]">
+      {rows.map((row, index) => (
+        <li key={row.key} className="flex items-center gap-3 px-4 py-2.5 md:px-5">
+          <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-[11px] ${
+              index < 3
+                ? 'bg-[#25231d] text-white dark:bg-gray-100 dark:text-gray-950'
+                : 'bg-[#efeee8] text-[#7d7f74] dark:bg-[#1c2531] dark:text-gray-500'
+            }`}
+          >
+            {index + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            {row.href ? (
+              <a
+                href={row.href}
+                target="_blank"
+                rel="noreferrer"
+                className="block truncate text-[12px] font-medium text-[#3f4039] hover:underline dark:text-gray-200"
+              >
+                {row.title}
+              </a>
+            ) : (
+              <p className="truncate text-[12px] font-medium text-[#3f4039] dark:text-gray-200">{row.title}</p>
+            )}
+            <p className="mt-0.5 truncate font-mono text-[10px] text-[#b0b2a6] dark:text-gray-600">{row.key}</p>
+          </div>
+          <div className="shrink-0 text-right text-[11px] tabular-nums">
+            <span className="font-semibold text-[#15140f] dark:text-gray-100">{row.pv}</span>
+            <span className="text-[#b0b2a6] dark:text-gray-500"> PV</span>
+            <span className="ml-2 text-[#929487] dark:text-gray-500">{row.uv} UV</span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function TodayReaderRankList({ rows, loading }) {
+  if (loading) return <TodayRankEmpty loading />
+  if (!rows?.length) {
+    return <TodayRankEmpty loading={false} title="今天还没有独立读者" />
+  }
+  return (
+    <ol className="divide-y divide-[#eceee6] dark:divide-[#1b2430]">
+      {rows.map((row, index) => (
+        <li key={row.key || `${row.name}-${index}`} className="flex items-center gap-3 px-4 py-2.5 md:px-5">
+          <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-[11px] ${
+              index < 3
+                ? 'bg-[#25231d] text-white dark:bg-gray-100 dark:text-gray-950'
+                : 'bg-[#efeee8] text-[#7d7f74] dark:bg-[#1c2531] dark:text-gray-500'
+            }`}
+          >
+            {index + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12px] font-medium text-[#3f4039] dark:text-gray-200">{row.name}</p>
+            <p className="mt-0.5 truncate text-[10.5px] text-[#929487] dark:text-gray-500">
+              {readerTypeLabels[row.type] || row.type} · {row.contentCount} 篇 · {formatRankTime(row.lastSeen)}
+            </p>
+          </div>
+          <div className="shrink-0 text-right text-[11px] tabular-nums">
+            <span className="font-semibold text-[#15140f] dark:text-gray-100">{row.pv}</span>
+            <span className="text-[#b0b2a6] dark:text-gray-500"> PV</span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 const toneClasses = {
   success: 'text-emerald-600 dark:text-emerald-400',
   warning: 'text-amber-600 dark:text-amber-400',
@@ -239,6 +336,8 @@ export default function AdminDashboardClient() {
   const db = overview?.db
   const recentUsers = overview?.recent?.users || []
   const activeStyle = overview?.recent?.style || null
+  const todayTopContent = overview?.today?.topContent || []
+  const todayTopReaders = overview?.today?.topReaders || []
   const systemHealthy = db?.status === 'connected' && ['reachable', 'access'].includes(ops?.status)
   const systemLabel = busy ? '正在同步' : systemHealthy ? '运行正常' : '需要留意'
   const systemTone = busy
@@ -282,9 +381,49 @@ export default function AdminDashboardClient() {
         <div className="grid grid-cols-2 border-t border-[#e6e7df] dark:border-[#1b2430] md:grid-cols-5">
           <DashboardMetric index={0} label="注册用户" value={users?.count != null ? users.count : '—'} sub="全部登录账号" icon="users" href="/admin/users" />
           <DashboardMetric index={1} label="今日阅读" value={pv?.today != null ? pv.today : '—'} sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '有效阅读'} icon="analytics" href="/admin/content-weekly#reading" />
-          <DashboardMetric index={2} label="今日读者" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" href="/admin/content-weekly#reading" />
+          <DashboardMetric index={2} label="今日用户" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" href="/admin/content-weekly#reading" />
           <DashboardMetric index={3} label="D1 数据库" value={dbValue(db)} sub={dbSub(db)} icon="database" tone={dbTone(db?.status)} href="/admin/db" />
           <DashboardMetric index={4} label="自动化" value={ops?.label || '—'} sub={ops?.latencyMs != null ? `${ops.latencyMs}ms 响应` : '运行台账'} icon="ops" tone={opsTone(ops?.status)} href="/admin/ops" />
+        </div>
+      </section>
+
+      <section className="admin-section mb-5 overflow-hidden rounded-xl border" aria-labelledby="today-rankings-title">
+        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[#e6e7df] px-4 py-3 dark:border-[#1b2430] md:px-5">
+          <div>
+            <h2 id="today-rankings-title" className="text-[13px] font-semibold text-[#15140f] dark:text-gray-100">
+              今日阅读与用户
+            </h2>
+            <p className="mt-0.5 text-[10.5px] text-[#929487] dark:text-gray-500">
+              北京时间自然日 · 有效阅读口径 · 各显示前 8 名
+            </p>
+          </div>
+          <Link
+            href="/admin/content-weekly"
+            className="text-[11px] text-[#67695d] hover:text-[#15140f] dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            内容周报详情
+          </Link>
+        </header>
+
+        <div className="grid md:grid-cols-2">
+          <div className="min-w-0 border-[#e6e7df] md:border-r dark:border-[#1b2430]">
+            <div className="flex items-baseline justify-between gap-2 border-b border-[#eceee6] px-4 py-2.5 dark:border-[#1b2430] md:px-5">
+              <h3 className="text-[12px] font-semibold text-[#3f4039] dark:text-gray-200">今日阅读</h3>
+              <span className="text-[11px] tabular-nums text-[#67695d] dark:text-gray-400">
+                合计 <strong className="text-[#15140f] dark:text-gray-100">{pv?.today != null ? pv.today : '—'}</strong> PV
+              </span>
+            </div>
+            <TodayContentRankList rows={todayTopContent} loading={loadingOverview && !overview} />
+          </div>
+          <div className="min-w-0 border-t border-[#e6e7df] dark:border-[#1b2430] md:border-t-0">
+            <div className="flex items-baseline justify-between gap-2 border-b border-[#eceee6] px-4 py-2.5 dark:border-[#1b2430] md:px-5">
+              <h3 className="text-[12px] font-semibold text-[#3f4039] dark:text-gray-200">今日用户</h3>
+              <span className="text-[11px] tabular-nums text-[#67695d] dark:text-gray-400">
+                独立 <strong className="text-[#15140f] dark:text-gray-100">{uv?.today != null ? uv.today : '—'}</strong> 人
+              </span>
+            </div>
+            <TodayReaderRankList rows={todayTopReaders} loading={loadingOverview && !overview} />
+          </div>
         </div>
       </section>
 

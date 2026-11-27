@@ -6015,6 +6015,39 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   assert.equal(context.allowsContinuedDialogue(foreignResult, 'friend'), true)
 })
 
+test('interaction agent pool accounts can continue up to ten replies under someone else\'s root post', () => {
+  const article = (handle, id, text, original = false) => {
+    const href = `/${handle}/status/${id}`
+    const node = {
+      parentElement: { closest() { return null } },
+      querySelector(selector) {
+        if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+        if (selector === '[data-testid="tweetText"]') return { innerText: text }
+        return null
+      },
+    }
+    return original ? proveOriginal(node, href) : node
+  }
+  const rounds = []
+  rounds.push(article('stranger', 200, '别人的原帖', true))
+  for (let i = 0; i < 10; i += 1) {
+    const friendId = 201 + i * 2
+    const mineId = friendId + 1
+    rounds.push(article('friend', friendId, `对方第 ${i + 1} 次`))
+    rounds.push(article('tuaranx', mineId, `我的第 ${i + 1} 轮`))
+  }
+  rounds.push(article('friend', 221, '对方又来'))
+  const ninth = context.findConversation(rounds, '221', 'tuaranx', 'friend')
+  assert.equal(ninth.ownReplyCount, 10)
+  assert.equal(context.replyLimitReached(ninth, 'tuaranx'), true)
+  assert.equal(context.allowsContinuedDialogue(ninth, 'tuaranx'), false)
+  const mid = context.findConversation(rounds.slice(0, 12), '205', 'tuaranx', 'friend')
+  assert.equal(mid.ownReplyCount, 2)
+  assert.equal(context.allowsContinuedDialogue(mid, 'tuaranx'), true)
+  assert.equal(context.dialogueReplyCap('tuaranx'), 10)
+  assert.equal(context.dialogueReplyCap('me'), 3)
+})
+
 test('notification dialogue stops after three replies by the signed-in account in one thread', () => {
   const article = (handle, id, text, original = false) => {
     const href = `/${handle}/status/${id}`
@@ -6258,8 +6291,8 @@ test('continued dialogue follows the active account root, not an earlier reply i
   assert.equal(visibleRoot.ownPost.text, '边界感这东西，说早了是清醒，说晚了是欠条。')
   assert.equal(visibleRoot.rootSettled, true)
   assert.equal(visibleRoot.ownThread, false)
-  assert.equal(context.allowsContinuedDialogue(visibleRoot, 'tuaranx'), false)
-  assert.equal(context.allowsContinuedDialogue(visibleRoot, '@TuaranX'), false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, 'tuaranx'), true)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, '@TuaranX'), true)
   assert.equal(context.allowsContinuedDialogue(visibleRoot, 'stranger'), true)
 
   const collapsedRoot = [
@@ -8057,7 +8090,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
-  assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
+  assert.deepEqual(manifest.content_scripts[2].js, ['interactionAgentHandles.js', 'context.js'])
   assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'kolMarketSources.js', 'leaderboard.js', 'interactionAgentPool.js', 'marketProfile.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'workbenchCollector.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'agentPlanner.js', 'agentChat.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms', 'unlimitedStorage'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
@@ -8652,7 +8685,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /评论首页默认用下面的边界测试/)
   assert.match(docsPage, /评论大V · 每个账号/)
   assert.match(docsPage, /id="daily-volume"/)
-  assert.match(docsPage, /短友好多表情；只回别人对你帖子的留言/)
+  assert.match(docsPage, /短友好多表情；普通账号只在自己原帖下继续来回；大互动智能体池内账号在别人原帖下最多 10 轮/)
   assert.match(docsPage, /900 到 1100/)
   assert.match(docsPage, /20 到 30/)
   assert.match(docsPage, /10 到 20/)

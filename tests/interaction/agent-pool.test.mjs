@@ -12,6 +12,7 @@ import {
 } from '../../lib/interaction/agentPool.js'
 
 const require = createRequire(import.meta.url)
+const extensionAgents = require('../../tools/x-reply-clipboard-extension/interactionAgentHandles.js')
 const extensionPool = require('../../tools/x-reply-clipboard-extension/interactionAgentPool.js')
 
 test('shared agent pool lists all handles and scales by editing one file', () => {
@@ -29,9 +30,13 @@ test('shared agent pool lists all handles and scales by editing one file', () =>
   assert.equal(findInteractionAgent('tuaran003')?.name, '矿工小十三')
   assert.equal(findInteractionAgent('drbenjamin81269')?.name, '矿工阿柒')
   assert.equal(findInteractionAgent('DrBenjamin5102')?.name, '灯下掘行者')
-  for (const agent of X_INTERACTION_AGENT_POOL) assert.equal(agent.market, INTERACTION_MARKET_ZH)
-  assert.equal(findInteractionAgent('mHCncHeboklldif')?.market, 'en')
-  assert.equal(findInteractionAgent('mHCncHeboklldif')?.name, 'Lantern Vale')
+})
+
+test('extension notification policy reuses the same interaction agent handles', () => {
+  assert.deepEqual(
+    [...extensionAgents.HANDLES].map((handle) => handle.toLowerCase()).sort(),
+    interactionAgentHandles().map((handle) => handle.toLowerCase()).sort(),
+  )
 })
 
 test('extension agent pool file stays in sync with agentPool.js', () => {
@@ -39,4 +44,7 @@ test('extension agent pool file stays in sync with agentPool.js', () => {
     extensionPool.CATALOG.map((entry) => `${entry.handle.toLowerCase()}:${entry.market}`).sort(),
     interactionAgentCatalog().map((entry) => `${entry.handle.toLowerCase()}:${entry.market}`).sort(),
   )
+  for (const agent of X_INTERACTION_AGENT_POOL) assert.equal(agent.market, INTERACTION_MARKET_ZH)
+  assert.equal(findInteractionAgent('mHCncHeboklldif')?.market, 'en')
+  assert.equal(findInteractionAgent('mHCncHeboklldif')?.name, 'Lantern Vale')
 })

@@ -1,6 +1,10 @@
 (function (root) {
   "use strict";
 
+  if (typeof module === "object" && module.exports) {
+    try { require("./interactionAgentHandles.js"); } catch (error) {}
+  }
+
   function statusId(href) {
     return String(href || "").match(/\/status\/(\d+)/u)?.[1] || "";
   }
@@ -13,7 +17,28 @@
     return String(handle || "").replace(/^@/u, "").trim().toLowerCase();
   }
 
-  const MAX_OWN_REPLIES_PER_DIALOGUE = 3;
+  const DEFAULT_OWN_REPLIES_PER_DIALOGUE = 3;
+  const INTERACTION_AGENT_OWN_REPLIES_PER_DIALOGUE = 10;
+
+  function isInteractionAgent(handle) {
+    const decide = root.XrcInteractionAgents?.isInteractionAgent;
+    if (typeof decide === "function") return decide(handle) === true;
+    return false;
+  }
+
+  function dialogueReplyCap(ownHandle) {
+    return isInteractionAgent(ownHandle)
+      ? INTERACTION_AGENT_OWN_REPLIES_PER_DIALOGUE
+      : DEFAULT_OWN_REPLIES_PER_DIALOGUE;
+  }
+
+  function rootIsEligibleOriginal(root) {
+    return Boolean(root?.originalProof === true
+      && root?.isReply !== true
+      && !root?.inReplyTo
+      && (!root?.conversationId || !root?.id || root.conversationId === root.id)
+      && !(Array.isArray(root?.replyToHandles) && root.replyToHandles.length > 0));
+  }
 
   function nodeText(node) {
     return String(node?.innerText || node?.textContent || "").replace(/\s+/gu, " ").trim();
@@ -194,19 +219,20 @@
     });
   }
 
-  // Continued dialogue requires the active session to own the root post.
-  // An earlier reply of ours, a missing root, or another logged-in account does not.
+  // Default: continued dialogue requires the active session to own the root post.
+  // X 大互动智能体账号池内的账号可在别人原帖下继续来回，上限更高。
   function replyLimitReached(conversation, ownHandle) {
     const own = normalizeHandle(ownHandle);
     const root = conversation?.rootPost;
+    const rootHandle = normalizeHandle(root?.authorHandle);
+    const cap = dialogueReplyCap(ownHandle);
+    const ownThread = Boolean(own && rootHandle && rootHandle === own);
+    const agentForeign = Boolean(own && rootHandle && rootHandle !== own && isInteractionAgent(own));
     return Boolean(own && conversation?.rootSettled === true
-      && root?.originalProof === true
-      && root?.isReply !== true
-      && !root?.inReplyTo
-      && (!root?.conversationId || !root?.id || root.conversationId === root.id)
-      && normalizeHandle(root?.authorHandle) === own
-      && !foreignOriginalAuthor(conversation, own)
-      && Number(conversation?.ownReplyCount) >= MAX_OWN_REPLIES_PER_DIALOGUE);
+      && rootIsEligibleOriginal(root)
+      && (ownThread || agentForeign)
+      && (!ownThread || !foreignOriginalAuthor(conversation, own))
+      && Number(conversation?.ownReplyCount) >= cap);
   }
 
   function allowsContinuedDialogue(conversation, ownHandle) {
@@ -214,13 +240,12 @@
     const own = normalizeHandle(ownHandle);
     const root = conversation.rootPost;
     const rootHandle = normalizeHandle(root?.authorHandle);
-    if (!own || !rootHandle || rootHandle !== own) return false;
-    if (foreignOriginalAuthor(conversation, own)) return false;
-    if (root.originalProof !== true) return false;
-    if (root.isReply === true) return false;
-    if (root.inReplyTo) return false;
-    if (root.conversationId && root.id && root.conversationId !== root.id) return false;
-    if (Array.isArray(root.replyToHandles) && root.replyToHandles.length > 0) return false;
+    if (!own || !rootHandle) return false;
+    const ownThread = rootHandle === own;
+    const agentForeign = !ownThread && isInteractionAgent(own);
+    if (!ownThread && !agentForeign) return false;
+    if (ownThread && foreignOriginalAuthor(conversation, own)) return false;
+    if (!rootIsEligibleOriginal(root)) return false;
     if (replyLimitReached(conversation, ownHandle)) return false;
     return true;
   }
@@ -264,6 +289,8 @@
     conversationTweetNodes,
     conversationObservation,
     findConversation,
+    dialogueReplyCap,
+    isInteractionAgent,
     replyLimitReached,
     allowsContinuedDialogue
   };

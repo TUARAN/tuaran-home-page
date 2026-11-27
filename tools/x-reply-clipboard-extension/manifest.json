@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X 大互动智能体",
-  "version": "5.9.43",
+  "version": "5.9.44",
 
   "description": "在 Chrome 本地运行，按任务状态调度 X 评论、点赞、关注管理和定时发帖。",
   "icons": {
@@ -75,6 +75,7 @@
         "https://twitter.com/*"
       ],
       "js": [
+        "interactionAgentHandles.js",
         "context.js"
       ],
       "run_at": "document_start"

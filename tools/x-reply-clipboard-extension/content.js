@@ -273,7 +273,6 @@
     "xrc-docs-site-forward": "site-forward",
     "xrc-docs-community-share": "community-share",
     "xrc-docs-community-copy": "community-copy",
-    "xrc-docs-prompt-feedback": "prompt-feedback",
     "xrc-docs-frequency": "frequency",
     "xrc-docs-rules": "rules",
     "xrc-docs-maintenance": "maintenance",
@@ -6884,6 +6883,11 @@
     return globalThis.XrcNotificationContext?.replyLimitReached?.(conversation, ownHandle) === true;
   }
 
+  function notificationReplyLimitReason(ownHandle = currentAccountHandle()) {
+    const cap = globalThis.XrcNotificationContext?.dialogueReplyCap?.(ownHandle) || 3;
+    return `这段对话已回复 ${cap} 轮，后续不再回复`;
+  }
+
   async function conversationOrFallback(tweet, replyText) {
     try {
       return await conversationForNotification(tweet);
@@ -8142,16 +8146,22 @@
             const reason = notificationConversation?.lookupError
               ? `会话读取失败：${notificationConversation.lookupError}`
               : notificationReplyLimitReached(notificationConversation, currentAccountHandle())
-                ? "这段对话已回复 3 轮，后续不再回复"
+                ? notificationReplyLimitReason(currentAccountHandle())
               : settled
-                ? "原帖不属于当前账号"
+                ? globalThis.XrcInteractionAgents?.isInteractionAgent?.(currentAccountHandle())
+                  ? "会话已核对，但本轮不满足继续回复条件"
+                  : "原帖不属于当前账号"
                 : "无法确认原帖归属";
             state.status = notificationInspectStatus(`${reason}，${settled ? "已跳过" : "本轮暂缓，下次扫描再核对"}；继续检查下一条`);
             renderPanel();
             await sleepActive(900);
             continue;
           }
-          state.status = notificationInspectStatus("确认是本人原帖，准备回复");
+          const dialogueKind = notificationConversation?.ownThread === false
+            && globalThis.XrcInteractionAgents?.isInteractionAgent?.(currentAccountHandle())
+            ? "确认可在大互动池规则下继续接话"
+            : "确认是本人原帖，准备回复";
+          state.status = notificationInspectStatus(dialogueKind);
           renderPanel();
           await sleepActive(500);
         }

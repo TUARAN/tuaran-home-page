@@ -4,7 +4,7 @@ description: >
   2aran 分发智能体。把 2aran.com 的文章用 ego lite 浏览器发布到掘金、CSDN 等外部平台。
   Use when: 用户粘贴「2aran 分发任务」，或要求把站内文章分发、同步、发布到外部内容平台。
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # 2aran-distributor
@@ -13,7 +13,7 @@ metadata:
 
 ## 开工前
 
-- 任务里写明了 harness 版本。本 skill 的版本是 `1.0.0`；两者不一致时先停下，请站长运行 `npm run distributor:skill:install` 更新 skill。
+- 任务里写明了 harness 版本。本 skill 的版本是 `1.1.0`；两者不一致时先停下，请站长运行 `npm run distributor:skill:install` 更新 skill。
 - 任务列出的平台在下方没有手册时，先问站长：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
 - 按任务里的平台顺序逐个处理：一个平台发布并核对完，再开始下一个。
 
@@ -79,9 +79,21 @@ metadata:
 - 核对：确认页面跳转，并打开「查看文章」链接核对标题和图片。
 - 成功标志：跳到 `mp.csdn.net/mp_blog/creation/success/<文章ID>`；新文章通常先进入审核。
 
+## 任务台模式
+
+- 任务给出「任务地址」和「token」时用任务台模式；任务直接带 Markdown 原文时是离线任务，跳过本节，处理完在对话里回报。
+- 领取：`curl -sS -H "Authorization: Bearer <token>" <任务地址>`。返回 JSON：title、url、summary、tags、platformIds、markdown、harnessVersion、results。按 platformIds 的顺序处理，正文用 markdown 字段。
+- harnessVersion 与本 skill 版本不一致时先停下，请站长更新 skill。
+- results 里已有「published / reviewing / draft」结果的平台不要重复发布，先问站长。
+- 每个平台处理完立刻回报，不要等全部结束。用 heredoc 把 JSON 从标准输入传给 curl，避免引号转义：`curl -sS -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --data-binary @- <任务地址>`，请求体 `{"action":"result","platformId":"juejin","status":"published","articleUrl":"…","notes":"…","playbookDeviation":"…"}`。
+- status 取值：`published`（已发布）、`reviewing`（审核中）、`draft`（草稿）、`failed`（失败）、`skipped`（跳过）。notes 写「问题与处理」，playbookDeviation 写「手册偏差」，没有就写「无」。
+- 全部平台回报后收尾：POST `{"action":"finish"}`。收尾后 token 失效，台账按结果标成完成、部分完成或失败。
+- 接口返回 401 `INVALID_TOKEN` 时 token 已过期或任务已取消：停下，请站长在后台 /admin/article-distribution 重新复制领取指令。
+- token 只放在命令行参数里，不写进文件、提交或回报内容。
+
 ## 回报
 
-全部平台处理完后，按平台逐条回报：
+全部平台处理完后，在对话里按平台逐条回报（任务台模式也要）：
 
 - 平台
 - 结果：已发布 / 审核中 / 草稿 / 失败 / 跳过

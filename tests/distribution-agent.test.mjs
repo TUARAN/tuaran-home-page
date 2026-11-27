@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { DISTRIBUTOR_SKILL_NAME, HARNESS_RULES, HARNESS_VERSION, SITE_ORIGIN } from '../lib/distribution/harness.js'
+import { AGENT_JOB_MODE_RULES, DISTRIBUTOR_SKILL_NAME, HARNESS_RULES, HARNESS_VERSION, SITE_ORIGIN } from '../lib/distribution/harness.js'
 import { DISTRIBUTION_AGENT_PLATFORM_IDS, DISTRIBUTION_PLAYBOOKS } from '../lib/distribution/playbooks.js'
 import { DISTRIBUTION_PLATFORMS, distributionPlatformShortLabel, getDistributionPlatform } from '../lib/distribution/platforms.js'
 import { buildDistributorSkill } from '../lib/distribution/skill.js'
@@ -37,6 +37,8 @@ test('skill 带版本、全部规则和手册', () => {
   }
   assert.ok(skill.includes("document.querySelector('.CodeMirror').CodeMirror.setValue(markdown)"))
   assert.ok(skill.includes('button.btn-b-red'))
+  assert.ok(skill.includes('## 任务台模式'))
+  for (const rule of AGENT_JOB_MODE_RULES) assert.ok(skill.includes(rule), rule)
 })
 
 test('提交的 SKILL.md 与生成结果一致（改了规则或手册要运行 npm run distributor:skill）', async () => {

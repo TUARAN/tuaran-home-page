@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { IconBallpen } from '@tabler/icons-react'
 import { detectPayClientModeInBrowser } from '../../../lib/pay/clientMode.mjs'
-import { redirectH5PayIfNeeded } from '../../../lib/pay/payAfterCreate.browser.mjs'
 import PayGatewayCheckout from '../components/PayGatewayCheckout'
 
 function safeJson(res) {
@@ -151,7 +150,6 @@ export default function SignatureEditionCard({ slug, title }) {
       }
       setOrder(data)
       setPhase('qr')
-      redirectH5PayIfNeeded(data)
     } catch (e) {
       setPhase('error')
       setMessage(String(e?.message || e))

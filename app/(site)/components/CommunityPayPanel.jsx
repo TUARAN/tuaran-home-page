@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { detectPayClientModeInBrowser } from '../../../lib/pay/clientMode.mjs'
-import { redirectH5PayIfNeeded } from '../../../lib/pay/payAfterCreate.browser.mjs'
 import PayGatewayCheckout from './PayGatewayCheckout'
 
 const STORAGE_PREFIX = 'community:pay:'
@@ -191,7 +190,6 @@ export default function CommunityPayPanel({ plan }) {
       setPaidOrderNo(String(data?.orderNo || ''))
       writeStored(resourceKey, { orderNo: data?.orderNo || '', email: '' })
       setPhase('qr')
-      redirectH5PayIfNeeded(data)
     } catch (e) {
       setPhase('error')
       setMessage(String(e?.message || e))

@@ -142,6 +142,7 @@ test('虎皮椒终端：PC 只暴露 url_qrcode，H5 只暴露 url', () => {
     clientModeLabel: 'H5',
     qrCode: '',
     payUrl: 'https://jump.example',
+    payImageUrl: 'https://qr.example',
   })
   assert.equal(detectPayClientModeFromUa('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'), PAY_CLIENT_H5)
   assert.equal(detectPayClientModeFromUa('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'), PAY_CLIENT_WEB)
@@ -335,6 +336,15 @@ test('已支付订单不再查网关；查单失败时静默返回不写库', as
     { checked: false }
   )
   assert.equal(pendingDb.order.status, 'pending')
+})
+
+test('H5 截图扫码：站内代理下载与收银备用按钮', () => {
+  const checkout = readFileSync(new URL('../app/(site)/components/PayGatewayCheckout.jsx', import.meta.url), 'utf8')
+  const qrcodeRoute = readFileSync(new URL('../app/api/pay/qrcode/route.js', import.meta.url), 'utf8')
+  assert.match(checkout, /保存付款图并打开微信/)
+  assert.match(checkout, /savePayImageAndOpenWechat/)
+  assert.match(qrcodeRoute, /Content-Disposition/)
+  assert.match(qrcodeRoute, /getPaidOrderForUser/)
 })
 
 test('支付面板上报 clientMode 并用 PayGatewayCheckout 区分扫码与跳转', () => {

@@ -4,6 +4,12 @@ import { readFileSync } from 'node:fs'
 
 import { drawBranchEvolution, prepareBranchEvolution } from '../lib/home/branchEvolution.mjs'
 
+test('首页区块在桌面只占一栏宽', () => {
+  const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8')
+  assert.match(css, /\.home-branch-evolution[\s\S]*max-width: calc\(\(100% - 2\.5rem\) \/ 3\)/)
+  assert.match(readFileSync(new URL('../app/(site)/components/HomeBranchEvolution.jsx', import.meta.url), 'utf8'), /home-branch-evolution/)
+})
+
 const raw = JSON.parse(readFileSync(new URL('../public/data/git-branch-evolution.json', import.meta.url), 'utf8'))
 
 // 记录所有数值参数的假 canvas 上下文

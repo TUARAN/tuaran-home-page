@@ -32,15 +32,19 @@ test('content shortcuts select interactive works and resources without claiming 
   assert.equal(resources.match('/articles', new URLSearchParams('group=article')), false)
 })
 
-test('content dropdown browses by form and time, and leaves topics to the mainline menu', () => {
+test('content dropdown pairs the core hub with browse by form and time', () => {
   const content = SITE_CHANNELS.find((channel) => channel.key === 'content')
   const visible = sectionsFor('content')
   const itemsIn = (sections, title) => sections.find((section) => section.title === title).items
   assert.equal(visible.some((section) => section.title === '内容主题'), false)
-  assert.equal(content.match('/topics/ai-agents', new URLSearchParams()), false)
+  assert.equal(content.match('/topics/ai-agents', new URLSearchParams()), true)
+  assert.deepEqual(
+    Array.from(itemsIn(visible, '入口'), (item) => item.label),
+    ['全部内容', '主线'],
+  )
   assert.deepEqual(
     Array.from(itemsIn(visible, '按体裁'), (item) => item.label),
-    ['原创', '分析', '实践', '互动', '资源'],
+    ['原创', '分析', '实践', '互动', '资源', '书籍馆藏'],
   )
   assert.deepEqual(
     Array.from(itemsIn(visible, '按时间'), (item) => item.label),
@@ -137,7 +141,8 @@ test('desktop menu renders route state instead of featured styling', async () =>
   const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
   const css = await readFile(new URL('../../app/globals.css', import.meta.url), 'utf8')
   assert.doesNotMatch(header, /item\.featured|site-menu-item-featured/)
-  assert.equal((header.match(/active=\{item\.href === activeHref\}/g) || []).length, 1)
+  assert.match(header, /item\.authorityHub/)
+  assert.match(header, /item\.href === activeHref/)
   assert.match(header, /aria-current=\{active \? 'page' : undefined\}/)
   assert.match(css, /\.site-menu-item-active\s*\{/)
   assert.doesNotMatch(css, /site-menu-item-featured/)

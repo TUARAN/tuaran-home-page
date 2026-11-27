@@ -1,6 +1,9 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
+
+import { isXContentSurface } from '../../../lib/site/xSiteRoutes'
 
 const SAFETY_TIMEOUT_MS = 12000
 const MIN_VISIBLE_MS = 260
@@ -39,6 +42,8 @@ function isInternalNavigation(anchor, event) {
  * 实现只依赖 CSS 动画与 history 钩子，不引入第三方运行时。
  */
 export default function NavigationProgress() {
+  const pathname = usePathname()
+  const [xTone, setXTone] = useState(false)
   const [active, setActive] = useState(false)
   const [runId, setRunId] = useState(0)
   const startedAtRef = useRef(0)
@@ -76,8 +81,13 @@ export default function NavigationProgress() {
   }, [clearHideTimeout])
 
   useEffect(() => {
+    setXTone(isXContentSurface(pathname, window.location.hostname))
+  }, [pathname])
+
+  useEffect(() => {
     function handleClick(event) {
       if (!isInternalNavigation(findAnchor(event.target), event)) return
+      setXTone(isXContentSurface(window.location.pathname, window.location.hostname))
       start()
     }
 
@@ -112,7 +122,11 @@ export default function NavigationProgress() {
   }, [finish, start])
 
   return (
-    <div className="nav-progress" data-active={active ? 'true' : 'false'} aria-hidden="true">
+    <div
+      className={xTone ? 'nav-progress nav-progress--x' : 'nav-progress'}
+      data-active={active ? 'true' : 'false'}
+      aria-hidden="true"
+    >
       <span key={runId} className="nav-progress__bar" />
     </div>
   )

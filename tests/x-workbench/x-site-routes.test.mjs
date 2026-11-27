@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { X_CHROME_FREE_PATHS, X_SHORT_REWRITES, xRouteDecision } from '../../lib/site/xSiteRoutes.js'
+import {
+  X_CHROME_FREE_PATHS,
+  X_SHORT_REWRITES,
+  isXContentSurface,
+  xRouteDecision,
+} from '../../lib/site/xSiteRoutes.js'
 
 const preview = 'cursor-rename-x-workbench-47.tuaran.pages.dev'
 
@@ -41,6 +46,14 @@ test('preview host opens short paths and redirects old content paths', () => {
   assert.deepEqual(xRouteDecision(preview, '/resources/big-interaction-whitepaper'), { action: 'redirect', location: '/theory', status: 308 })
   assert.deepEqual(xRouteDecision(preview, '/resources/x-reply-clipboard-extension/docs'), { action: 'redirect', location: '/docs', status: 308 })
   assert.deepEqual(xRouteDecision(preview, '/resources/x-reply-clipboard-extension'), { action: 'redirect', location: '/extension', status: 308 })
+})
+
+test('x surfaces use X loading tone on the subdomain and short paths', () => {
+  assert.equal(isXContentSurface('/docs', 'x.2aran.com'), true)
+  assert.equal(isXContentSurface('/x-workbench', 'localhost'), true)
+  assert.equal(isXContentSurface('/docs', ''), true)
+  assert.equal(isXContentSurface('/articles', 'x.2aran.com'), true)
+  assert.equal(isXContentSurface('/articles', '2aran.com'), false)
 })
 
 test('every x.2aran.com short page and its rewrite target hides the main site chrome', () => {

@@ -1,6 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import XRouteLoading from '../(x)/x-workbench/XRouteLoading'
+import { isXContentSurface } from '../../lib/site/xSiteRoutes'
 import { Skeleton } from '../components/loading/LoadingPrimitives'
 import ArticleReadingSkeleton from './components/ArticleReadingSkeleton'
 
@@ -103,6 +106,13 @@ function GenericLoading() {
 
 export default function Loading() {
   const pathname = usePathname()
+  const [hostname, setHostname] = useState('')
+
+  useEffect(() => {
+    setHostname(window.location.hostname)
+  }, [])
+
+  if (isXContentSurface(pathname, hostname)) return <XRouteLoading />
 
   if (pathname === '/') return <HomeLoading />
 

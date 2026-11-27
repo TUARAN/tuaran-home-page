@@ -338,12 +338,26 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
                   </p>
                   <div className="grid grid-cols-2 gap-1">
                     {section.items.map((item) => (
-                      <MenuItem key={item.href + item.label} item={item} active={item.href === activeHref} onNavigate={onClose} />
+                      <MenuItem
+                        key={item.href + item.label}
+                        item={item}
+                        active={
+                          item.authorityHub
+                            ? SITE_AUTHORITY_LINKS.some((link) => isAuthorityLinkActive(link, pathname))
+                            : item.href === activeHref
+                        }
+                        onNavigate={onClose}
+                      />
                     ))}
                   </div>
                 </div>
               )
             })}
+            {channel.key === 'content' ? (
+              <div className="mt-1 border-t border-[#332d26] px-1 pt-2">
+                <WeChatContact tone="panel" />
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -356,98 +370,6 @@ function isAuthorityLinkActive(item, pathname) {
   const path = item.href.split('?')[0].replace(/\/+$/, '') || '/'
   const current = pathname.replace(/\/+$/, '') || '/'
   return current === path || current.startsWith(`${path}/`)
-}
-
-function canHoverAuthorityMenu() {
-  return typeof window !== 'undefined'
-    && window.matchMedia('(hover: hover) and (pointer: fine)').matches
-}
-
-function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
-  const { locale } = useLocale()
-  const closeTimerRef = useRef(null)
-  const isActive = SITE_AUTHORITY_LINKS.some((item) => isAuthorityLinkActive(item, pathname))
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    }
-  }, [])
-
-  function clearCloseTimer() {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = null
-    }
-  }
-
-  function openMenu() {
-    clearCloseTimer()
-    if (!isOpen) {
-      trackSiteEvent('menu_open', {
-        surface: 'global_nav',
-        destination_id: 'authority',
-      })
-    }
-    onToggle.open()
-  }
-
-  return (
-    <div
-      className="relative shrink-0"
-      onMouseEnter={() => {
-        if (canHoverAuthorityMenu()) openMenu()
-      }}
-      onMouseLeave={() => {
-        if (!canHoverAuthorityMenu()) return
-        clearCloseTimer()
-        closeTimerRef.current = setTimeout(() => onToggle.close(), 120)
-      }}
-    >
-      <button
-        type="button"
-        className={['site-nav-trigger site-authority-trigger cursor-pointer', (isActive || isOpen) ? 'site-nav-trigger-active' : ''].join(' ')}
-        aria-haspopup="true"
-        aria-expanded={isOpen}
-        aria-controls="site-authority-menu"
-        onClick={(event) => {
-          const fromKeyboard = event.detail === 0
-          if (!fromKeyboard && canHoverAuthorityMenu() && isOpen) return
-          if (isOpen) onToggle.close()
-          else openMenu()
-        }}
-      >
-        <span>{navLabel(SITE_AUTHORITY_SUMMARY, locale)}</span>
-        <ChevronDown />
-      </button>
-      {isOpen ? (
-        <div
-          id="site-authority-menu"
-          role="menu"
-          className="site-nav-dropdown absolute left-0 top-full w-[min(calc(100vw-1rem),320px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
-        >
-          <div className="site-dropdown-panel rounded-2xl border p-2">
-            <p className="mb-1 px-2 text-[12px] font-medium leading-5 text-[#c8c4b8]">
-              {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
-            </p>
-            <div className="grid grid-cols-1 gap-0.5">
-              {SITE_AUTHORITY_LINKS.map((item) => (
-                <MenuItem
-                  key={item.href}
-                  item={item}
-                  active={isAuthorityLinkActive(item, pathname)}
-                  onNavigate={onClose}
-                />
-              ))}
-            </div>
-            <div className="mt-1 border-t border-[#332d26] px-1 pt-2">
-              <WeChatContact tone="panel" />
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  )
 }
 
 function AuthorityDrawerLinks({ pathname, onNavigate }) {
@@ -1014,17 +936,6 @@ export default function SiteHeader() {
 
           <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="site-header-nav flex shrink-0 items-center gap-2">
-              <div className="site-nav-cluster">
-                <AuthorityMenu
-                  isOpen={openChannel === 'authority'}
-                  pathname={pathname}
-                  onToggle={{
-                    open: () => setOpenChannel('authority'),
-                    close: () => setOpenChannel((cur) => (cur === 'authority' ? null : cur)),
-                  }}
-                  onClose={() => setOpenChannel(null)}
-                />
-              </div>
               {NAV_GROUPS.map((group) => (
                 <div key={group.key} className="site-nav-cluster">
                   {group.shortcuts?.map((item) => (

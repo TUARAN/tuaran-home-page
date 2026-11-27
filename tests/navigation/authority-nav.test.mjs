@@ -16,7 +16,7 @@ const authorityBlock = nav.slice(
   nav.indexOf('export const SITE_AUTHORITY_SUMMARY'),
 )
 
-test('authority entry points live in the header menu instead of a homepage band', () => {
+test('authority entry points live in the content nav instead of a homepage band', () => {
   assert.ok(authorityBlock.length > 0)
   for (const href of [
     '/topics/ai-agents',
@@ -27,18 +27,18 @@ test('authority entry points live in the header menu instead of a homepage band'
   ]) {
     assert.match(authorityBlock, new RegExp(`href: '${href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`))
   }
-  assert.match(nav, /label: '主线'/)
-  assert.match(header, /<nav ref=\{navWrapRef\}[\s\S]*<AuthorityMenu/)
+  assert.match(nav, /title: '入口'[\s\S]*label: '主线'[\s\S]*authorityHub: true/)
+  assert.match(nav, /startsWith\('\/topics\/'\)/)
+  assert.doesNotMatch(header, /<AuthorityMenu/)
+  assert.doesNotMatch(header, /id="site-authority-menu"/)
   assert.match(header, /site-header-nav flex shrink-0/)
   assert.match(header, /xl:hidden/)
-  assert.match(header, /id="site-authority-menu"/)
   assert.match(header, /<AuthorityDrawerLinks/)
   assert.match(header, /site-mobile-authority-hub/)
   assert.doesNotMatch(header, /function AuthorityDrawerLinks[\s\S]*SITE_AUTHORITY_LINKS\.map/)
   assert.doesNotMatch(header, /function AuthorityDrawerLinks[\s\S]*flex flex-wrap gap-1/)
-  assert.match(header, /<WeChatContact tone="panel"/)
-  assert.doesNotMatch(header, /site-authority-trigger cursor-pointer bg-transparent/)
-  assert.match(header, /\(isActive \|\| isOpen\) \? 'site-nav-trigger-active'/)
+  assert.match(header, /channel\.key === 'content'[\s\S]*<WeChatContact tone="panel"/)
+  assert.match(header, /item\.authorityHub/)
   assert.match(css, /button\.site-nav-trigger\.site-nav-trigger-active[\s\S]*background-color: var\(--site-ink\)/)
   assert.match(css, /button\.site-nav-trigger\.site-nav-trigger-active[\s\S]*color: var\(--page-bg\)/)
   assert.match(topicHub, /主线目录/)

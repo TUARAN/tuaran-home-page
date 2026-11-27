@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   branchName,
+  isAgentSlotBranch,
+  isAgentSlotPath,
+  isNoiseStatusLine,
   parseWorktreeList,
   satellitePath,
 } from '../scripts/worktree-shared.mjs'
@@ -30,4 +33,17 @@ branch refs/heads/feat/x
   assert.equal(list.length, 2)
   assert.equal(list[0].path, '/repo/main')
   assert.equal(list[1].branch, 'refs/heads/feat/x')
+})
+
+test('isNoiseStatusLine ignores memory snapshots and node_modules', () => {
+  assert.equal(isNoiseStatusLine('?? node_modules'), true)
+  assert.equal(isNoiseStatusLine(' M app/foo.js'), false)
+  assert.equal(isNoiseStatusLine('?? public/data/memory/foo.enc'), true)
+})
+
+test('agent slot paths and branches are protected from prune', () => {
+  assert.equal(isAgentSlotBranch('chore/slot-cursor'), true)
+  assert.equal(isAgentSlotBranch('feat/foo'), false)
+  assert.equal(isAgentSlotPath('/repo/tuaran-home-page-slot-cursor'), true)
+  assert.equal(isAgentSlotPath('/repo/tuaran-home-page-fix-x'), false)
 })

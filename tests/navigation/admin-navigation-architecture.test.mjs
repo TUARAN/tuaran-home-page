@@ -206,3 +206,34 @@ test('automation workspace hub and sidebar expose one task center plus focused p
     ['/admin/ops']
   )
 })
+
+test('access workspace hub and sidebar share the same grouped entries', async () => {
+  const access = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/access')
+  const hub = getWorkspaceHubProps('/admin/access')
+  const source = await readFile(new URL('../../app/(admin)/admin/access/AccessWorkspace.jsx', import.meta.url), 'utf8')
+
+  assert.match(source, /getWorkspaceHubProps\('\/admin\/access'\)/)
+  assert.deepEqual(
+    listWorkspaceChildren(access).map((item) => item.label),
+    ['账号与身份', '授权管理', '燃币与权益', '签到礼物', '支付订单', '菜单可见性']
+  )
+  assert.deepEqual(
+    hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
+    access.sections.map((section) => [section.label, section.items.map((item) => item.label)])
+  )
+})
+
+test('private data workspace hub and sidebar share the same grouped entries', async () => {
+  const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
+  const hub = getWorkspaceHubProps('/admin/private-data')
+  const source = await readFile(
+    new URL('../../app/(admin)/admin/private-data/PrivateDataWorkspace.jsx', import.meta.url),
+    'utf8'
+  )
+
+  assert.match(source, /getWorkspaceHubProps\('\/admin\/private-data'\)/)
+  assert.deepEqual(
+    hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
+    privateData.sections.map((section) => [section.label, section.items.map((item) => item.label)])
+  )
+})

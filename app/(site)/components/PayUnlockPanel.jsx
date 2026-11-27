@@ -22,7 +22,17 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * - 支付成功 → 当场解锁阅读（onUnlocked），同时请对方留邮箱，用于换设备或清缓存后找回。
  *   留邮箱是可选项，不填也能直接读。
  */
-export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内容', onUnlocked }) {
+export default function PayUnlockPanel({
+  resourceKey,
+  priceFen,
+  unitLabel = '内容',
+  lockedTitle = '这部分内容需要单独解锁',
+  lockedHint,
+  paidTitle = '支付成功，内容已解锁',
+  paidHint,
+  finishLabel = '直接阅读',
+  onUnlocked,
+}) {
   const [phase, setPhase] = useState('idle') // idle | creating | qr | paid | error
   const [order, setOrder] = useState(null)
   const [message, setMessage] = useState('')
@@ -185,9 +195,9 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
     <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
       {phase === 'paid' ? (
         <>
-          <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">支付成功，内容已解锁</p>
+          <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">{paidTitle}</p>
           <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            留个邮箱，换设备或清缓存后凭它找回阅读权益；不填也能直接读。
+            {paidHint || '留个邮箱，换设备或清缓存后凭它找回阅读权益；不填也能直接读。'}
           </p>
           <form
             className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-2"
@@ -212,14 +222,14 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
                 disabled={savingEmail}
                 className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-6 py-2 text-sm font-semibold text-white hover:bg-[#6a4f19] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
               >
-                {savingEmail ? '正在保存…' : '保存并阅读'}
+                {savingEmail ? '正在保存…' : '保存邮箱并继续'}
               </button>
               <button
                 type="button"
                 onClick={finish}
                 className="rounded-full px-4 py-2 text-xs text-[#8a7a55] hover:text-[#7a5b1e] dark:text-amber-300/70"
               >
-                直接阅读
+                {finishLabel}
               </button>
             </div>
           </form>
@@ -229,11 +239,9 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
         </>
       ) : (
         <>
-          <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
-            这部分内容需要单独解锁
-          </p>
+          <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">{lockedTitle}</p>
           <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            ¥{fenLabel(priceFen)} 永久解锁此{unitLabel} · 无需登录，付完即可阅读
+            {lockedHint || `¥${fenLabel(priceFen)} 永久解锁此${unitLabel} · 无需登录，付完即可使用`}
           </p>
 
           {phase === 'qr' && order ? (

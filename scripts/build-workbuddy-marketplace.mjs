@@ -96,7 +96,7 @@ function artifactInfo(kind, id, title, metadata, file) {
     readiness: metadata.readiness,
     readinessLabel: metadata.readinessLabel,
     note: metadata.note,
-    sourceUrl: kind === 'Skill' ? `/skill-center/${id}` : `/mcp-center#${id}`,
+    sourceUrl: kind === 'Skill' ? `/skill-center/${id}` : `/skill-center#${id}`,
   }
 }
 

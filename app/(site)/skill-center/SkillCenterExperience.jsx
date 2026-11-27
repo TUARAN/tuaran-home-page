@@ -142,7 +142,16 @@ function SectionHeading({ eyebrow, title, description, onShowAll }) {
   )
 }
 
-export default function SkillCenterExperience({ skills }) {
+export default function SkillCenterExperience({
+  skills,
+  homeHref = '/capabilities',
+  brandLabel = 'Agent 能力集',
+  hubHref = '/skill-center',
+  promoEyebrow = 'Agent Capabilities',
+  promoText = '把成熟方法装进你的智能体，重复使用，持续迭代。',
+  promoLinkHref = '#connect',
+  promoLinkLabel = '安装指南',
+}) {
   const categories = useMemo(() => ['全部', ...new Set(skills.map((skill) => skill.category))], [skills])
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('全部')
@@ -177,16 +186,17 @@ export default function SkillCenterExperience({ skills }) {
   return (
     <main className={styles.page}>
       <div className={styles.promoBar}>
-        <span><IconSparkles size={14} /> Skill Center</span>
-        <p>把成熟方法装进你的智能体，重复使用，持续迭代。</p>
-        <a href="#connect">安装指南 <IconArrowRight size={15} /></a>
+        <span><IconSparkles size={14} /> {promoEyebrow}</span>
+        <p>{promoText}</p>
+        <a href={promoLinkHref}>{promoLinkLabel} <IconArrowRight size={15} /></a>
       </div>
 
-      <nav className={styles.marketNav} aria-label="Skill 中心导航">
-        <Link href="/skill-center" className={styles.brand}><span><IconBolt size={18} /></span> Skill Center</Link>
+      <nav className={styles.marketNav} aria-label="Agent 能力集导航">
+        <Link href={homeHref} className={styles.brand}><span><IconBolt size={18} /></span> {brandLabel}</Link>
         <div className={styles.navLinks}>
           <button type="button" onClick={() => revealCatalog()}>Skills</button>
           <button type="button" onClick={() => revealCatalog()}>分类 <IconChevronDown size={14} /></button>
+          <Link href={hubHref}>应用中心</Link>
           <a href="#connect">如何安装</a>
         </div>
         <label className={styles.topSearch}>

@@ -34,14 +34,14 @@ function PromptCard({ item, index }) {
         </header>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
           <PromptDetailButton id={item.id} title={item.title} description={item.desc} prompt={item.prompt} />
-          <PromptCopyButton prompt={item.prompt} />
+          <PromptCopyButton prompt={item.prompt} promptId={item.id} />
         </div>
       </div>
     </article>
   )
 }
 
-export default function PromptCatalog({ prompts }) {
+export default function PromptCatalog({ prompts, sectionId = 'items', embedded = false }) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState('all')
   const filtered = useMemo(() => {
@@ -54,8 +54,8 @@ export default function PromptCatalog({ prompts }) {
   }, [prompts, query, tab])
 
   return (
-    <section id="items" className="scroll-mt-28">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#8b682c] dark:text-[#e0cc94]">Explore prompts</p><h2 className="mb-1 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">从真实任务开始</h2><p className="mb-0 text-sm text-[var(--site-muted)]">按难度和用途找到模板，预览后复制并替换占位内容。</p></div><span className="inline-flex items-center gap-1.5 text-xs text-[var(--site-faint)]"><IconSparkles size={17} /> 含输入与验收约束</span></div>
+    <section id={sectionId} className={`scroll-mt-28 ${embedded ? 'embedded-agent-catalog' : ''}`}>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#8b682c] dark:text-[#e0cc94]">{embedded ? 'PROMPT' : 'Explore prompts'}</p><h2 className="mb-1 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">{embedded ? '可复制的任务模板' : '从真实任务开始'}</h2><p className="mb-0 text-sm text-[var(--site-muted)]">按难度和用途找到模板，预览后复制并替换占位内容。</p></div><span className="inline-flex items-center gap-1.5 text-xs text-[var(--site-faint)]"><IconSparkles size={17} /> 含输入与验收约束</span></div>
       <AgentCenterControls query={query} onQueryChange={setQuery} placeholder="搜索任务、场景或模板名" tabs={TABS} activeTab={tab} onTabChange={setTab} count={filtered.length} countLabel="个可复制模板" onClear={() => { setQuery(''); setTab('all') }} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.length ? filtered.map((item, index) => <PromptCard key={item.id} item={item} index={index} />) : <AgentCenterEmpty noun="Prompt 模板" />}</div>
       <div className="mt-8 grid gap-3 rounded-2xl bg-[#f2f1ec] p-5 dark:bg-[#1b2530] sm:grid-cols-3 sm:p-6">

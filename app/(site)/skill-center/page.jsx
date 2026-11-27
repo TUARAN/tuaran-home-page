@@ -1,12 +1,15 @@
-import SkillCenterExperience from './SkillCenterExperience'
+import AgentApplicationCenterExperience from './AgentApplicationCenterExperience'
 import { PUBLISHED_SKILLS } from './skills'
+import { MCP_CENTER_SERVICES, MCP_SECURITY_ITEMS } from '../agent-centers/mcpServices'
+import { PROMPT_CENTER_TEMPLATES } from '../agent-centers/promptTemplates'
+import { WORKBUDDY_MARKETPLACE_ARTIFACTS } from '../../../lib/workbuddy/workbuddyMarketplaceArtifacts'
 
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: 'Skill 中心',
-  description: '发现、了解并安装可复用的智能体任务能力与工作流。',
-  keywords: ['涂阿燃', 'tuaran', 'Skill', 'AI Agent', '智能体', '工作流'],
+  title: '智能体应用中心',
+  description: 'Skill、MCP、Prompt 与 WorkBuddy 能力包的统一入口，按分区浏览与配置。',
+  keywords: ['智能体应用中心', 'Skill', 'MCP', 'Prompt', 'WorkBuddy', 'AI Agent'],
   alternates: { canonical: '/skill-center' },
 }
 
@@ -22,5 +25,13 @@ export default function SkillCenterPage() {
     outputCount: skill.outputs?.length || 1,
   }))
 
-  return <SkillCenterExperience skills={skills} />
+  return (
+    <AgentApplicationCenterExperience
+      skills={skills}
+      mcpServices={MCP_CENTER_SERVICES}
+      prompts={PROMPT_CENTER_TEMPLATES}
+      workbuddyArtifacts={WORKBUDDY_MARKETPLACE_ARTIFACTS}
+      securityItems={MCP_SECURITY_ITEMS}
+    />
+  )
 }

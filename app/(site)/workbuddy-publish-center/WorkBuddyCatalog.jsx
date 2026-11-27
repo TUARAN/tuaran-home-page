@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react'
 import { IconArrowUpRight, IconDownload, IconPackage, IconShieldCheck } from '@tabler/icons-react'
 
 import AgentCenterControls, { AgentCenterEmpty } from '../components/AgentCenterControls'
+import AgentAccessGate from '../components/AgentAccessGate'
+import { agentWorkbuddyResourceKey } from '../../../lib/agentCenters/accessKeys.mjs'
 
 const TABS = [
   { id: 'all', label: '全部能力包' },
@@ -32,14 +34,16 @@ function PackageCard({ artifact }) {
         <p className="mb-5 text-sm leading-6 text-[var(--site-muted)]">{artifact.note}</p>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
           <Link href={artifact.sourceUrl} className="inline-flex items-center gap-1 text-xs font-medium text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)] hover:!no-underline">查看详情 <IconArrowUpRight size={15} /></Link>
-          <a href={artifact.downloadUrl} download className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[#171b21] px-3.5 text-xs font-semibold text-white no-underline hover:bg-[#42464b] hover:!no-underline dark:bg-[#d9deca] dark:text-[#151713] dark:hover:bg-white"><IconDownload size={15} /> 下载 ZIP · {formatBytes(artifact.bytes)}</a>
+          <AgentAccessGate resourceKey={agentWorkbuddyResourceKey(artifact.id)} unitLabel="WorkBuddy 能力包" variant="inline">
+            <a href={artifact.downloadUrl} download className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[#171b21] px-3.5 text-xs font-semibold text-white no-underline hover:bg-[#42464b] hover:!no-underline dark:bg-[#d9deca] dark:text-[#151713] dark:hover:bg-white"><IconDownload size={15} /> 下载 ZIP · {formatBytes(artifact.bytes)}</a>
+          </AgentAccessGate>
         </div>
       </div>
     </article>
   )
 }
 
-export default function WorkBuddyCatalog({ artifacts }) {
+export default function WorkBuddyCatalog({ artifacts, sectionId = 'items', embedded = false }) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState('all')
   const filtered = useMemo(() => {
@@ -52,8 +56,8 @@ export default function WorkBuddyCatalog({ artifacts }) {
   }, [artifacts, query, tab])
 
   return (
-    <section id="items" className="scroll-mt-28">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#3e7562] dark:text-[#b7d9c5]">Install packages</p><h2 className="mb-1 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">找到适合 WorkBuddy 的能力包</h2><p className="mb-0 text-sm text-[var(--site-muted)]">按包类型和可用状态筛选，查看来源后下载。</p></div><span className="inline-flex items-center gap-1.5 text-xs text-[var(--site-faint)]"><IconShieldCheck size={17} /> 状态与风险已标注</span></div>
+    <section id={sectionId} className={`scroll-mt-28 ${embedded ? 'embedded-agent-catalog' : ''}`}>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#3e7562] dark:text-[#b7d9c5]">{embedded ? 'WORKBUDDY' : 'Install packages'}</p><h2 className="mb-1 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">{embedded ? 'WorkBuddy 能力包' : '找到适合 WorkBuddy 的能力包'}</h2><p className="mb-0 text-sm text-[var(--site-muted)]">按包类型和可用状态筛选，查看来源后下载。</p></div><span className="inline-flex items-center gap-1.5 text-xs text-[var(--site-faint)]"><IconShieldCheck size={17} /> 状态与风险已标注</span></div>
       <AgentCenterControls query={query} onQueryChange={setQuery} placeholder="搜索能力包、用途或状态" tabs={TABS} activeTab={tab} onTabChange={setTab} count={filtered.length} countLabel="个能力包" onClear={() => { setQuery(''); setTab('all') }} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.length ? filtered.map((artifact) => <PackageCard key={artifact.id} artifact={artifact} />) : <AgentCenterEmpty noun="能力包" />}</div>
       <p className="mb-0 mt-8 rounded-xl bg-[#f2f1ec] px-5 py-4 text-xs leading-6 text-[var(--site-muted)] dark:bg-[#1b2530]">“需复核”或“测试”状态的包仍可下载，但不代表已通过市场审核。安装或提交前，请在详情页核对适用范围、授权和配置要求。</p>

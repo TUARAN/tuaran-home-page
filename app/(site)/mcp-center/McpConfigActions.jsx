@@ -2,12 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+import AgentAccessGate from '../components/AgentAccessGate'
+import { agentMcpResourceKey } from '../../../lib/agentCenters/accessKeys.mjs'
+
 const TAB_OPTIONS = [
   { id: 'json', label: '通用 JSON' },
   { id: 'toml', label: 'Codex TOML' },
 ]
 
-export default function McpConfigActions({ title, config, codexConfig }) {
+export default function McpConfigActions({ title, config, codexConfig, serviceName = '' }) {
+  const resourceKey = serviceName ? agentMcpResourceKey(serviceName) : ''
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('json')
   const [copyState, setCopyState] = useState('idle')
@@ -39,15 +43,23 @@ export default function McpConfigActions({ title, config, codexConfig }) {
     setTimeout(() => setCopyState('idle'), 1600)
   }
 
+  const trigger = (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-[#8b5a1f] bg-[#8b5a1f] px-3 py-1.5 font-mono text-xs text-white transition-colors hover:bg-[#724817] dark:border-[#a1ab76] dark:bg-[#a1ab76] dark:text-[#1a1207] dark:hover:bg-[#9ba475]"
+    >
+      查看客户端配置 →
+    </button>
+  )
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-[#8b5a1f] bg-[#8b5a1f] px-3 py-1.5 font-mono text-xs text-white transition-colors hover:bg-[#724817] dark:border-[#a1ab76] dark:bg-[#a1ab76] dark:text-[#1a1207] dark:hover:bg-[#9ba475]"
-      >
-        查看客户端配置 →
-      </button>
+      {resourceKey ? (
+        <AgentAccessGate resourceKey={resourceKey} unitLabel="MCP 连接配置" variant="inline">
+          {trigger}
+        </AgentAccessGate>
+      ) : trigger}
 
       {open ? (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 backdrop-blur-[2px] sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}>

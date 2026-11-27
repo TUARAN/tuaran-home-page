@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-export default function PromptCopyButton({ prompt }) {
+import AgentAccessGate from '../components/AgentAccessGate'
+import { agentPromptResourceKey } from '../../../lib/agentCenters/accessKeys.mjs'
+
+export default function PromptCopyButton({ prompt, promptId = '' }) {
+  const resourceKey = promptId ? agentPromptResourceKey(promptId) : ''
   const [state, setState] = useState('idle')
 
   async function copyPrompt() {
@@ -15,7 +19,7 @@ export default function PromptCopyButton({ prompt }) {
     setTimeout(() => setState('idle'), 1600)
   }
 
-  return (
+  const button = (
     <button
       type="button"
       onClick={copyPrompt}
@@ -24,9 +28,14 @@ export default function PromptCopyButton({ prompt }) {
       {state === 'copied' ? '✓ 已复制' : state === 'error' ? '× 复制失败' : '⧉ 复制 Prompt'}
     </button>
   )
+
+  return resourceKey ? (
+    <AgentAccessGate resourceKey={resourceKey} unitLabel="Prompt 模板" variant="inline">{button}</AgentAccessGate>
+  ) : button
 }
 
 export function PromptDetailButton({ id, title, description, prompt }) {
+  const resourceKey = id ? agentPromptResourceKey(id) : ''
   const [open, setOpen] = useState(false)
   const [copyState, setCopyState] = useState('idle')
   const closeButtonRef = useRef(null)
@@ -57,9 +66,15 @@ export function PromptDetailButton({ id, title, description, prompt }) {
     setTimeout(() => setCopyState('idle'), 1600)
   }
 
+  const previewTrigger = (
+    <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-xs font-medium text-[#8b5a1f] transition-colors hover:text-[#724817] dark:text-[#a1ab76] dark:hover:text-[#9ba475]">查看完整模板 →</button>
+  )
+
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-xs font-medium text-[#8b5a1f] transition-colors hover:text-[#724817] dark:text-[#a1ab76] dark:hover:text-[#9ba475]">查看完整模板 →</button>
+      {resourceKey ? (
+        <AgentAccessGate resourceKey={resourceKey} unitLabel="Prompt 模板" variant="inline">{previewTrigger}</AgentAccessGate>
+      ) : previewTrigger}
 
       {open ? (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 backdrop-blur-[2px] sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}>

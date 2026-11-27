@@ -1,5 +1,4 @@
 import XPage from '../../../../(x)/x-workbench/XPage'
-import snapshot from '../../../../../lib/interaction/roundtableSummary.json'
 import RoundtableGuestbook from './RoundtableGuestbook'
 import RoundtableHall from './RoundtableHall'
 import styles from './roundtable.module.css'
@@ -8,15 +7,14 @@ export const dynamic = 'force-static'
 const path = '/roundtable'
 const canonicalUrl = 'https://x.2aran.com/roundtable'
 const title = '大互动圆桌'
-const intro = '从矿工阿三的 X 认证粉丝列表出发，认识可以一起交流的伙伴。'
-const description = '从矿工阿三的 X 认证粉丝列表出发，围绕大互动理论认识交流伙伴。'
+const intro = '切换运营账号，从该账号的 X 认证粉丝名录入座。互动越多的伙伴越靠前桌次；默认矿工阿三（tarsixseveneig1）。'
+const description = '按账号浏览认证粉丝圆桌，席位按大互动日历累计互动量排序；认识可以一起交流的伙伴。'
 const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, url: canonicalUrl, description, inLanguage: 'zh-CN', isPartOf: { '@type': 'WebSite', name: 'X大互动', url: 'https://x.2aran.com/' } }
 export const metadata = { alternates: { canonical: path }, openGraph: { type: 'website', title, description, url: canonicalUrl, locale: 'zh_CN' }, title: { absolute: `${title}｜X大互动` }, description }
 
 export default function RoundtablePage() {
-  const updated = new Date(snapshot.updatedAt || snapshot.capturedAt).toISOString().replace('T', ' ').slice(0, 16)
   return (
-    <XPage active="/roundtable" title={title} intro={intro} meta={<><span>{snapshot.count.toLocaleString('en-US')} 位伙伴</span><span>采集更新 {updated} UTC</span></>}>
+    <XPage active="/roundtable" title={title} intro={intro} meta={<span>席位按大互动日历双向公开互动累计量排序；其他账号需先完成名录采集。</span>}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <RoundtableHall />
       <RoundtableGuestbook />

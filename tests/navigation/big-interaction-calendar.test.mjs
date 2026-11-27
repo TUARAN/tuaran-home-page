@@ -65,6 +65,7 @@ test('invalid query falls back to today when no day catalog is provided', () => 
   assert.equal(resolveSelectedDate('2026-11-04', '2026-11-05'), '2026-11-04')
   assert.equal(emptyStateCopy('2026-11-07', ['2026-11-05']), '这一天还没有收录互动前十。2026-11-05 已有样例，可改选这一天。')
   assert.equal(emptyStateCopy('2026-11-05', ['2026-11-05']), '这一天还没有收录互动前十。')
+  assert.match(emptyStateCopy('2026-11-07', ['2026-11-05'], { subjectLabel: '@TuaranX' }), /@TuaranX 互动前十/)
 })
 
 test('calendar default day is yesterday in Shanghai, even when today or a newer file exists', () => {
@@ -171,9 +172,12 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(view, /互动次数/)
   assert.match(view, /构成简述/)
   assert.match(view, /主页链接/)
-  assert.match(view, /emptyStateCopy\(selected, topDates\)/)
+  assert.match(view, /emptyStateCopy\(selected, topDates/)
+  assert.match(view, /accountBar/)
+  assert.match(view, /DAILY_TOP_SUBJECT|DEFAULT_ACCOUNT/)
+  assert.match(view, /searchParams\.set\('account'/)
   assert.doesNotMatch(view, /recordedList|已收录/)
-  assert.match(view, /智能体账号/)
+  assert.match(view, /任务次数/)
   assert.match(view, /activityDates/)
   assert.match(page, /loadOwnActivityDaysForPool/)
   assert.match(page, /interactionAgentHandles/)
@@ -186,6 +190,25 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(page, /runtime = 'edge'/)
   assert.match(page, /dynamic = 'force-dynamic'/)
   assert.doesNotMatch(page, /dailyTop\/load/)
+})
+
+test('merge keeps different subjects on the same date', () => {
+  const base = gitDailyTopDays()[0]
+  const top = base.top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown }))
+  const other = validateDailyTopDay({
+    ...base,
+    date: '2026-11-12',
+    subject: 'TuaranX',
+    excludedHandles: ['TuaranX'],
+    window: expectedWindow('2026-11-12'),
+    opponents: 2,
+    events: 3,
+    top: top.slice(0, 3),
+  }, '2026-11-12.json')
+  const merged = mergeDailyTopDays([base], [other])
+  assert.equal(merged.length, 2)
+  assert.equal(merged.find((day) => day.subject === 'tarsixseveneig1')?.date, '2026-11-05')
+  assert.equal(merged.find((day) => day.subject === 'TuaranX')?.date, '2026-11-12')
 })
 
 test('calendar day list lets a live record replace the same git date', async () => {

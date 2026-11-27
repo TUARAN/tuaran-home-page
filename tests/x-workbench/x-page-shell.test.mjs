@@ -80,3 +80,11 @@ test('首页账号卡用机器人头像，五个账号各有专属造型', async
   assert.match(avatar, /GENERIC/)
   assert.match(avatar, /viewBox="0 0 48 48"/)
 })
+
+test('黄皮书收录 v5 Harness 结构图且不标为测试版', async () => {
+  const source = await page('(site)/resources/x-reply-clipboard-extension/docs/page.jsx')
+  assert.match(source, /system-architecture-v5-harness\.png/)
+  assert.match(source, /系统结构图 · v5 智能体 Harness/)
+  assert.doesNotMatch(source, /5\.0 起 · 本地测试/)
+  assert.match(source, /summary="Harness v3：原则、账号人格、记忆、上下文与协同（v5\.4 起，结构见图 1）"/)
+})

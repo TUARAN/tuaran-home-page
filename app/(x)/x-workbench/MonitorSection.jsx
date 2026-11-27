@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ACTION_LABELS } from '../../../lib/x/workbench/observeCore'
+import { ACTION_LABELS, OBSERVED_AGENTS } from '../../../lib/x/workbench/observeCore'
 import { summarizeReports } from '../../../lib/x/workbench/monitorPublic'
 import { ago, call } from './api'
 import s from './workbench.module.css'
+
+const DEFAULT_MONITOR_ACCOUNT = OBSERVED_AGENTS[0]?.handle || ''
 
 const PHASES = {
   running: ['运行中', 'ok'],
@@ -39,22 +41,30 @@ function EventLine({ label, event }) {
 
 export default function MonitorSection() {
   const [date, setDate] = useState(todayInShanghai)
+  const [account, setAccount] = useState(DEFAULT_MONITOR_ACCOUNT)
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(true)
   const requestRef = useRef(0)
   const dateRef = useRef(date)
+  const accountRef = useRef(account)
   dateRef.current = date
+  accountRef.current = account
 
-  const load = useCallback(async ({ nextDate, quiet = false } = {}) => {
+  const load = useCallback(async ({ nextDate, nextAccount, quiet = false } = {}) => {
     const id = ++requestRef.current
     if (!quiet) setLoading(true)
-    const res = await call(`/monitor?date=${encodeURIComponent(nextDate || dateRef.current)}`)
+    const queryDate = nextDate || dateRef.current
+    const queryAccount = nextAccount || accountRef.current
+    const res = await call(`/monitor?date=${encodeURIComponent(queryDate)}&account=${encodeURIComponent(queryAccount)}`)
     if (id !== requestRef.current) return
     if (res.ok) {
       setData(res.data)
       setError('')
+      if (res.data?.accountHandle && res.data.accountHandle.toLowerCase() !== accountRef.current.toLowerCase()) {
+        setAccount(res.data.accountHandle)
+      }
     } else {
       setError(res.data?.error === 'MIGRATION_REQUIRED' ? '监控数据表还没就绪' : '监控暂时读不到')
     }
@@ -74,6 +84,16 @@ export default function MonitorSection() {
     setDate(next)
     load({ nextDate: next })
   }
+
+  const changeAccount = (next) => {
+    const handle = String(next || '').trim()
+    if (!handle || handle.toLowerCase() === account.toLowerCase()) return
+    setAccount(handle)
+    load({ nextAccount: handle })
+  }
+
+  const activeAgent = OBSERVED_AGENTS.find((agent) => agent.handle.toLowerCase() === account.toLowerCase())
+  const calendarAccountLabel = activeAgent ? `${activeAgent.name} · @${activeAgent.handle}` : `@${account}`
 
   const devices = data?.devices || []
   const tasks = data?.tasks || []
@@ -106,7 +126,7 @@ export default function MonitorSection() {
             ['在线实例', loading && !data ? '—' : online, '5 分钟内有心跳'],
             ['运行中', loading && !data ? '—' : running, '任务正在执行'],
             ['可更新', loading && !data ? '—' : updateable, `站点 v${data?.latestExtensionVersion || '—'}`],
-            ['当日确认成功', loading && !data ? '—' : successes, date === today ? '今天回执去重' : `${date} 成功数`],
+            ['当日确认成功', loading && !data ? '—' : successes, date === today ? `@${account} 今日回执` : `@${account} · ${date}`],
           ].map(([label, value, detail]) => (
             <div key={label} className={s.monitorMetric}>
               <dt>{label}</dt>
@@ -150,11 +170,28 @@ export default function MonitorSection() {
           aria-controls="x-monitor-calendar"
           onClick={() => setCalendarOpen((open) => !open)}
         >
-          <span>日历 · {date === today ? '今天' : date}</span>
+          <span>日历 · {calendarAccountLabel} · {date === today ? '今天' : date}</span>
           <span className={s.calendarHint}>{calendarOpen ? '收起' : '展开近 14 天与单日明细'}</span>
         </button>
         {calendarOpen ? (
           <div id="x-monitor-calendar" className={s.calendarBody}>
+            <div className={s.calendarAccounts} role="tablist" aria-label="日历账号">
+              {OBSERVED_AGENTS.map((agent) => {
+                const on = agent.handle.toLowerCase() === account.toLowerCase()
+                return (
+                  <button
+                    key={agent.handle}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    className={`${s.pill} ${on ? s.pillOn : ''}`}
+                    onClick={() => changeAccount(agent.handle)}
+                  >
+                    {agent.name}
+                  </button>
+                )
+              })}
+            </div>
             <div className={s.calendarNav}>
               <button type="button" className={s.calendarStep} onClick={() => changeDate(adjacentDate(date, -1))} disabled={date <= minDate} aria-label="前一天">←</button>
               <input
@@ -171,7 +208,7 @@ export default function MonitorSection() {
             </div>
 
             <div className={s.trendScroll}>
-              <div className={s.trendRow} role="group" aria-label="近 14 天确认回执">
+              <div className={s.trendRow} role="group" aria-label={`${calendarAccountLabel} 近 14 天确认回执`}>
                 {trend.map((day) => {
                   const total = day.success + day.failed + day.skipped + day.limited
                   const detail = RESULTS.map(([key, label]) => `${label} ${day[key]}`).join('，')
@@ -198,7 +235,7 @@ export default function MonitorSection() {
             </div>
 
             <div className={s.daySummary}>
-              <h3 className={s.subHead}>{date === today ? '今日动作' : `${date} 动作`}</h3>
+              <h3 className={s.subHead}>{date === today ? `@${account} 今日动作` : `@${account} · ${date} 动作`}</h3>
               <dl className={s.actionGrid}>
                 {ACTION_LABELS.map(([key, label]) => (
                   <div key={key}>
@@ -207,7 +244,7 @@ export default function MonitorSection() {
                   </div>
                 ))}
               </dl>
-              <p className={s.hint}>{reports.length ? `来自 ${reports.length} 个账号当日自动同步日报。` : '这一天还没有同步日报，任务结果见下。'}</p>
+              <p className={s.hint}>{reports.length ? `@${account} 当日自动同步日报。` : `@${account} 这一天还没有同步日报，任务结果见下。`}</p>
 
               {activeTasks.length ? (
                 <div className={s.tableWrap}>

@@ -38,6 +38,9 @@ test('公开站观察账号池全部智能体，理论结论对得到卡片指�
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /@tarsixseveneig1、@TuaranX、@tuaran003、@DrBenjamin81269、@DrBenjamin5102/)
   assert.doesNotMatch(agentFootnote({ reportDate: '2026-11-23' }), /推文曝光/)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23', lastUploadedAt: Date.UTC(2026, 10, 23, 6, 30) }), /上次更新：2026-11-23 14:30（北京时间）。/)
+  assert.match(agentFootnote({ pendingUpdate: true }), /上次更新：读取中。/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23', lastUploadedAt: null }), /上次更新：当日尚无日报上传。/)
 })
 
 test('分类与插件日报面板同一套八类；关注含回关，缺列保持未采集', () => {
@@ -177,8 +180,16 @@ test('首页返回账号池全部智能体的日报动作', async () => {
         bind() { return this },
         async all() {
           const text = String(sql)
+          if (text.includes('MAX(uploaded_at)')) throw new Error('use first() for latest upload query')
           if (text.includes('x_extension_daily_reports')) {
             return { results: [{ handle: 'TuaranX', comments: 3, likes: 1, follows: 2, unfollows: 0, followBacks: 1, posts: 4, timelineComments: null, notificationComments: null, kolComments: null }] }
+          }
+          throw new Error(`unexpected sql ${text}`)
+        },
+        async first() {
+          const text = String(sql)
+          if (text.includes('MAX(uploaded_at)')) {
+            return { uploaded_at: Date.UTC(2026, 10, 23, 2, 15) }
           }
           throw new Error(`unexpected sql ${text}`)
         },
@@ -203,4 +214,6 @@ test('首页返回账号池全部智能体的日报动作', async () => {
   assert.equal(home.agents[2].actions.comments, null)
   assert.match(home.footnote, /2026-11-23/)
   assert.doesNotMatch(home.footnote, /8:00/)
+  assert.equal(home.lastUploadedAt, Date.UTC(2026, 10, 23, 2, 15))
+  assert.match(home.footnote, /上次更新：2026-11-23 10:15（北京时间）。/)
 })

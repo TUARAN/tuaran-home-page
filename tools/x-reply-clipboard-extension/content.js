@@ -6592,6 +6592,10 @@
     return lastKnownAccountHandle;
   }
 
+  if (typeof window !== "undefined") {
+    window.__xrcCurrentAccountHandle = () => currentAccountHandle() || lastKnownAccountHandle;
+  }
+
   function rememberAccountHandle(handle = currentAccountHandle()) {
     const selected = String(handle || "").replace(/^@/u, "");
     if (selected) lastKnownAccountHandle = selected;

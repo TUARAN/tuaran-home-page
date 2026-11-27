@@ -34,10 +34,24 @@
     return handles.every((handle) => value.includes(`@${handle}`));
   }
 
+  function selfSubjectKey(payload) {
+    const subject = String(payload?.subject || "tarsixseveneig1").replace(/^@/u, "").trim().toLowerCase();
+    return subject || "tarsixseveneig1";
+  }
+
+  function readAccountHandle() {
+    const reader = root.__xrcCurrentAccountHandle;
+    if (typeof reader === "function") {
+      return String(reader() || "").replace(/^@/u, "").trim();
+    }
+    return "";
+  }
+
   function composeThankYou(day) {
+    const selfKey = selfSubjectKey(day);
     const handles = (Array.isArray(day?.top) ? day.top : [])
       .map((row) => (typeof row?.handle === "string" ? row.handle : ""))
-      .filter((handle) => HANDLE_RE.test(handle) && handle.toLowerCase() !== "tarsixseveneig1")
+      .filter((handle) => HANDLE_RE.test(handle) && handle.toLowerCase() !== selfKey)
       .slice(0, 10);
     if (!handles.length) return { text: "", source: "invalid" };
     const provided = String(day?.thankYouText || "").trim();
@@ -54,7 +68,8 @@
     for (let index = 0; index < payload.top.length; index += 1) {
       const row = payload.top[index];
       const handle = typeof row?.handle === "string" ? row.handle : "";
-      if (!HANDLE_RE.test(handle) || handle.toLowerCase() === "tarsixseveneig1") return { ok: false, error: DATA_ERROR };
+      const selfKey = selfSubjectKey(payload);
+      if (!HANDLE_RE.test(handle) || handle.toLowerCase() === selfKey) return { ok: false, error: DATA_ERROR };
       const key = handle.toLowerCase();
       if (seen.has(key)) return { ok: false, error: DATA_ERROR };
       seen.add(key);
@@ -72,9 +87,11 @@
     };
   }
 
-  function dailyTopRequestUrl(date) {
+  function dailyTopRequestUrl(date, account) {
     const url = new URL(DAILY_TOP_ENDPOINT);
     if (date) url.searchParams.set("date", date);
+    const handle = String(account || "").replace(/^@/u, "").trim();
+    if (handle) url.searchParams.set("account", handle);
     return url.href;
   }
 
@@ -105,12 +122,20 @@
     return root.fetch(url, init);
   }
 
-  async function fetchDailyTop(date, fetchImpl = defaultFetch) {
+  async function fetchDailyTop(date, options = {}, fetchImpl = defaultFetch) {
     const picked = String(date || "").trim();
+    let account = "";
+    let fetcher = fetchImpl;
+    if (typeof options === "function") {
+      fetcher = options;
+    } else if (options && typeof options === "object") {
+      account = String(options.account || readAccountHandle() || "").replace(/^@/u, "").trim();
+      if (typeof options.fetch === "function") fetcher = options.fetch;
+    }
     if (picked && !isIsoDate(picked)) return { ok: false, error: "日期需要是 YYYY-MM-DD", retryable: false };
     let response;
     try {
-      response = await fetchImpl(dailyTopRequestUrl(picked), { method: "GET", headers: { Accept: "application/json" } });
+      response = await fetcher(dailyTopRequestUrl(picked, account), { method: "GET", headers: { Accept: "application/json" } });
     } catch (error) {
       return { ok: false, error: OFFLINE_ERROR, retryable: true, offline: true };
     }

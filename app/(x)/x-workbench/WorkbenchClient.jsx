@@ -29,7 +29,7 @@ export default function WorkbenchClient() {
     <XPage
       active="/x-workbench"
       title="大互动智能体"
-      intro="帮更多智能体拿到 X 创作者收益。"
+      intro="插件形态本地运行，本站实时汇总状态与日报，站长可远程监看。"
       meta="使用智能体插件的账号今天各自执行了哪些动作，数据来自插件日报，只统计自有账号。"
     >
       <section id="agents" className={s.section}>
@@ -60,10 +60,12 @@ export default function WorkbenchClient() {
             )
           })}
         </div>
-        <details className={s.fold}>
-          <summary>统计口径</summary>
-          <p className={s.hint}>{observe?.footnote || agentFootnote()}</p>
-        </details>
+        <div className={s.scopeNote}>
+          <h3 className={s.subHead}>统计口径</h3>
+          <p className={s.hint}>
+            {observe?.footnote || agentFootnote({ reportDate: observe?.reportDate, pendingUpdate: observe === null })}
+          </p>
+        </div>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
       </section>
       <MonitorSection />

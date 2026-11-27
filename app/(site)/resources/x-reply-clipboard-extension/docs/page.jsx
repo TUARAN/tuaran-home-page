@@ -113,7 +113,7 @@ const VERSION_ERAS = [
     id: 'era-v5',
     version: 'v5',
     title: '对话主界面',
-    span: '5.0 起 · 本地测试',
+    span: '5.0 起',
     oneLiner: '主界面改成对话框，排班台成为高级入口；执行底座仍是 v4 的单页签排班。',
     points: [
       '对话里的大互动智能体读真实运行状态回答，今天做了多少、哪里报警、下一项是谁，读不到就说读不到。',
@@ -130,6 +130,7 @@ const TOC = [
     { id: 'quick-start', label: '第一章 快速开始' },
     { id: 'flow', label: '第二章 运行与任务窗口' },
     { id: 'system-architecture', label: '系统结构', depth: 1 },
+    { id: 'system-architecture-v5', label: 'Harness 结构', depth: 2 },
     { id: 'task-window-plan', label: '面板与排班', depth: 1 },
     { id: 'states', label: '第三章 状态和按钮' },
   ] },
@@ -297,20 +298,32 @@ export default function XReplyClipboardDocsPage() {
               <li>能运行的任务按队列轮到就跑一次，然后回到队尾。还没到时间的先跳过。普通等待可通过「立即开启」排到队首；共享关注冷却、风控与每日额度继续生效。</li>
             </ol>
             <p>当前说明核对至本地源码 v{SOURCE_VERSION}（2026-11-20）。站内下载包是 v{DOWNLOAD_VERSION}，实际交付以下载文件为准；标为「本地测试」的功能还没有打包，下载包里没有。多配置后台长时间持续运行仍需验证。</p>
-            <p className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 text-[13px] leading-6">本地测试 v5：打开面板先看到对话框。可以直接问「今天评论了多少」「最近有报警吗」「下一项是什么」，大互动智能体读插件记录后回答；需要暂停全部或开始全部时，对话只给确认按钮，点了才执行。排班台改为左侧图标栏里的「排班」，模型、提示词、频率、名单从图标栏进入设置。上面五步在 v5 里照样适用，入口位置不同。</p>
+            <p className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 text-[13px] leading-6">v5 起打开面板先看到对话框。可以直接问「今天评论了多少」「最近有报警吗」「下一项是什么」，大互动智能体读插件记录后回答；需要暂停全部或开始全部时，对话只给确认按钮，点了才执行。排班台改为左侧图标栏里的「排班」，模型、提示词、频率、名单从图标栏进入设置。上面五步在 v5 里照样适用，入口位置不同。</p>
           </Section>
 
           <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面">
-            <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
-              <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">系统结构图 · v4 单页签底座</h3>
-              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 19 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按固定顺序尝试 DeepSeek、B.AI、NAS 或本地桥接 MobileOffice。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
-              <figure className="m-0">
-                <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开当前系统结构图原图">
-                  <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 大互动智能体的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
-                </a>
-                <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据 v4 源码梳理的组件与数据流。本地 v5 在这层底座上加了对话主界面；v5.1 把调度判断抽成任务引擎 v6，对话经 Harness v2 只读排班、今日数据、报警和调度记录，图中的数据流不变。箭头表示调用或回传路径，不表示所有动作都经过模型，也不表示站内下载包已包含本地开发功能。窄屏可横向滚动，点击可查看原图。</figcaption>
-              </figure>
-              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注 4 项、发帖 6 项、社群 2 项、清理 2 项，共 19 项。社群包含社群分发和社群问安。关注里包含回关、关注候选、清理未回关和清理非简中。它们按队列占用执行页签，不会同时在这一页签执行。</p>
+            <div id="system-architecture" className="scroll-mt-24 space-y-5 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
+              <div id="system-architecture-v5" className="scroll-mt-24 space-y-3">
+                <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">系统结构图 · v5 智能体 Harness</h3>
+                <p className="m-0 text-[13px] leading-6">v5 在 v4 单页签底座上把面板主界面收成对话框。内容页经 <code className="text-[12px]">xrc-agent-harness</code> 把站长的话交给扩展后台；后台用 Harness v3 组上下文（八条原则、角色、按账号的人格与记忆、滚动摘要），在步数与时间预算内调用只读工具读排班、今日数据、报警与调度记录，再规划回答或提出「暂停全部」「开始全部」「记住」。写操作只出确认卡片，确认后走与排班台相同的命令路由。规划模型回退 DeepSeek → B.AI → MobileOffice → NAS，与评论、发帖执行任务时的模型链路分开，两套提示词互不读取。</p>
+                <figure className="m-0">
+                  <a href="/images/x-reply-clipboard-extension/system-architecture-v5-harness.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开 v5 智能体 Harness 结构图原图">
+                    <Image src="/images/x-reply-clipboard-extension/system-architecture-v5-harness.png" alt="v5 对话 Harness：面板、后台规划、只读工具、确认写操作，以及独立的任务执行与回执链路" width={5968} height={1960} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
+                  </a>
+                  <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据本地源码 v{SOURCE_VERSION} 梳理的 v5 智能体层与 v4 执行底座。上方为 Harness v3 规划循环；下方虚线框为 v4 单页签与任务引擎 v6。箭头表示调用或回传，不表示每个动作都经过规划模型。窄屏可横向滚动，点击可查看原图；可编辑源文件为同目录 <code className="text-[11px]">system-architecture-v5-harness.svg</code>。</figcaption>
+                </figure>
+              </div>
+              <div className="space-y-3 border-t border-[var(--site-line)] pt-4">
+                <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">系统结构图 · v4 单页签底座</h3>
+                <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 19 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；任务侧 AI 按固定顺序尝试 DeepSeek、B.AI、NAS 或本地桥接 MobileOffice。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
+                <figure className="m-0">
+                  <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开 v4 单页签底座结构图原图">
+                    <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 大互动智能体的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
+                  </a>
+                  <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 2 · v4 执行与回执底座；v5.1 起调度判断抽成任务引擎 v6。对话 Harness 只读本层状态，不改变图中的回执与远程指令路径。</figcaption>
+                </figure>
+                <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注 4 项、发帖 6 项、社群 2 项、清理 2 项，共 19 项。社群包含社群分发和社群问安。关注里包含回关、关注候选、清理未回关和清理非简中。它们按队列占用执行页签，不会同时在这一页签执行。</p>
+              </div>
             </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">v4 怎么跑</h3>
             <p className="text-[var(--site-ink)]">后台按队列安排十九项任务。能运行的就上，跑完一次回到队尾。没有可运行任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
@@ -671,7 +684,7 @@ export default function XReplyClipboardDocsPage() {
             </ul>
           </Section>
 
-          <Section id="agent-rules" index="七" title="智能体规则" summary="Harness v3：原则、账号人格、记忆、上下文与协同（本地 v5.7，未打包）">
+          <Section id="agent-rules" index="七" title="智能体规则" summary="Harness v3：原则、账号人格、记忆、上下文与协同（v5.4 起，结构见图 1）">
             <p>对话里的大互动智能体负责规划和解释：读取排班、今日数据、报警和调度记录，说清插件在做什么，必要时建议暂停或开始。写评论、发帖用的是另一条模型链路和另一套提示词，两者互不读取。</p>
 
             <div id="agent-principles" className="scroll-mt-24 space-y-3">
@@ -860,7 +873,7 @@ export default function XReplyClipboardDocsPage() {
                 ))}
               </ol>
               <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">
-                一句话：v0 能发 → v1 看得清 → v2 会写话 → v3 多任务并行占多页签 → v4 收成单页签按到期轮班 → v5 用对话查看和启停（本地测试）。
+                一句话：v0 能发 → v1 看得清 → v2 会写话 → v3 多任务并行占多页签 → v4 收成单页签按到期轮班 → v5 用对话查看和启停。
               </p>
             </div>
             <div id="v3-to-v4" className="scroll-mt-24 space-y-3 rounded-2xl border border-[color-mix(in_srgb,var(--site-green)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_6%,var(--site-panel))] p-4 md:p-5">

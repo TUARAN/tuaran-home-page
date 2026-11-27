@@ -126,14 +126,17 @@ test('X 监控与排班搬到 X 站后台，后台只剩 AI 分发大师监控',
   assert.match(picker, /x-workbench\/ops/)
 })
 
-test('首页在智能体卡片之后渲染插件现场，日历默认收起', async () => {
+test('首页在智能体卡片之后渲染插件现场，日历默认展开并按账号切换', async () => {
   const [home, section] = await Promise.all([
     source('app/(x)/x-workbench/WorkbenchClient.jsx'),
     source('app/(x)/x-workbench/MonitorSection.jsx'),
   ])
   assert.match(home, /<MonitorSection \/>/)
   assert.ok(home.indexOf('<MonitorSection />') > home.indexOf('id="agents"'))
-  assert.match(section, /useState\(false\)/) // calendarOpen 默认收起
+  assert.match(section, /useState\(true\)/) // calendarOpen 默认展开
+  assert.match(section, /OBSERVED_AGENTS/)
+  assert.match(section, /account=\$\{encodeURIComponent\(queryAccount\)\}/)
+  assert.match(section, /changeAccount/)
   assert.match(section, /aria-expanded=\{calendarOpen\}/)
   assert.doesNotMatch(section, /data\?\.owner/) // 站长指令只在 /x-workbench/ops
   assert.doesNotMatch(section, /s\[`/)

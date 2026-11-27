@@ -39,7 +39,7 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
     readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8'),
   ])
 
-  assert.match(frame, /智能体 · 插件 · 读本/)
+  assert.match(frame, /帮助一批智能体拿到创作者收益/)
   assert.doesNotMatch(`${client}\n${frame}`, /爆点、改写|搜账号/)
   assert.match(frame, /WORKBENCH_MENU_GROUPS/)
   assert.match(frame, /group\.label/)
@@ -51,7 +51,7 @@ test('公开首页展示账号池全部智能体，登录后台只留账号与�
   assert.doesNotMatch(frame, /name="q"/)
   assert.match(client, /id="agents"/)
   assert.doesNotMatch(client, /id="hot"/)
-  assert.match(client, /帮更多智能体拿到 X 创作者收益/)
+  assert.match(client, /插件形态本地运行，本站实时汇总状态与日报，站长可远程监看/)
   assert.match(client, /agentGrid/)
   assert.match(client, /OBSERVED_AGENTS/)
   assert.doesNotMatch(client, /@TuaranX/)

@@ -18,6 +18,7 @@ import {
 import { gitDailyTopDays } from '../../lib/interaction/dailyTop/gitCatalog.js'
 import {
   expectedWindow,
+  isIsoDate,
   legacyPublicationWindow,
   legacyRecordingWindow,
   profileUrlFor,
@@ -147,13 +148,20 @@ test('GET returns the calendar default day, a requested day, and 404 for a missi
 
   const missing = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-09'), {}, NOW)
   assert.equal(missing.status, 404)
-  assert.deepEqual(await missing.json(), { error: 'NOT_FOUND', date: '2026-11-09' })
+  assert.deepEqual(await missing.json(), { error: 'NOT_FOUND', date: '2026-11-09', subject: 'tarsixseveneig1' })
 
   for (const date of ['2026-02-31', 'not-a-date']) {
     const response = await handleDailyTopGet(new Request(`https://2aran.com/api/interaction/daily-top?date=${date}`), {}, NOW)
     assert.equal(response.status, 404)
-    assert.deepEqual(await response.json(), { error: 'NOT_FOUND' })
+    const body = await response.json()
+    assert.equal(body.error, 'NOT_FOUND')
+    assert.equal(body.subject, 'tarsixseveneig1')
+    if (isIsoDate(date)) assert.equal(body.date, date)
   }
+
+  const otherAccount = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-11&account=TuaranX'), {}, NOW)
+  assert.equal(otherAccount.status, 404)
+  assert.deepEqual(await otherAccount.json(), { error: 'NOT_FOUND', date: '2026-11-11', subject: 'TuaranX' })
 })
 
 test('public GET CORS allows the site and extension origins', async () => {
@@ -239,7 +247,7 @@ test('an authenticated POST is readable immediately by GET and the calendar sour
     body: JSON.stringify({ day: fresh }),
   }), envWith(bucket))
   assert.equal(bearerPost.status, 200)
-  assert.equal(bucket.objects.has(dailyTopObjectKey('2026-11-13')), true)
+  assert.equal(bucket.objects.has(dailyTopObjectKey('2026-11-13', 'tarsixseveneig1')), true)
 
   const env = envWith(bucket)
   const correctedGet = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-10'), env, NOW)

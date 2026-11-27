@@ -30,7 +30,7 @@
 .tab:hover { color: var(--ink); background: var(--wash); }
 .tabOn { color: var(--accentInk); font-weight: 800; }
 .tabOn::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
-.tab:focus-visible, .btn:focus-visible, .input:focus-visible, .pill:focus-visible, .searchBtn:focus-visible, .hdrPrimary:focus-visible, .hdrGhost:focus-visible, .avatarBtn:focus-visible, .menuItem:focus-visible, .agentHandle:focus-visible, .fold summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.tab:focus-visible, .btn:focus-visible, .input:focus-visible, .pill:focus-visible, .searchBtn:focus-visible, .hdrPrimary:focus-visible, .hdrGhost:focus-visible, .avatarBtn:focus-visible, .menuItem:focus-visible, .agentHandle:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .spacer { flex: 1; }
 .search { display: flex; align-items: center; background: var(--blueSoft); border: 1px solid transparent; border-radius: 999px; padding: 3px 3px 3px 16px; gap: 6px; min-width: 240px; }
 .search:focus-within { background: #fff; border-color: var(--ink); }
@@ -153,9 +153,9 @@
 .rankMain { flex: 1 1 0; min-width: 0; }
 .boardBar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 8px; max-width: 100%; box-sizing: border-box; }
 .boardBar i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
-.fold { font-size: 13px; color: var(--sub); margin: 16px 0 0; }
-.fold summary { cursor: pointer; display: flex; align-items: center; min-height: 44px; }
-.fold .hint { margin: 2px 0 0; font-size: 12px; }
+.scopeNote { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.scopeNote .subHead { font-size: 14px; margin-bottom: 8px; }
+.scopeNote .hint { margin: 0; font-size: 12px; line-height: 1.65; color: var(--sub); }
 
 /* 智能体账号卡：头像 + 身份行，下方一条 X 风数据行，无底色格子 */
 .agentGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -218,7 +218,7 @@
 .opsLinks a { color: var(--accentInk); text-decoration: none; }
 .opsLinks a:hover { text-decoration: underline; }
 
-/* 首页「插件现场」：公开状态看板 + 可折叠日历。 */
+/* 首页「插件现场」：公开状态看板 + 按账号展开的日历。 */
 .monitorBoard { display: grid; gap: 16px; }
 .monitorMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; background: #fff; border: 1px solid var(--cardLine); border-radius: 16px; overflow: hidden; }
 .monitorMetric { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
@@ -249,6 +249,7 @@
 .calendarToggle:hover { background: var(--wash); }
 .calendarHint { color: var(--sub); font-size: 12px; font-weight: 500; }
 .calendarBody { border-top: 1px solid var(--line); padding: 14px 16px 18px; }
+.calendarAccounts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .calendarNav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .calendarStep, .calendarToday { border: 1px solid var(--line2); background: #fff; border-radius: 10px; min-width: 38px; min-height: 38px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; }
 .calendarStep:disabled, .calendarToday:disabled { opacity: .4; cursor: default; }
@@ -380,7 +381,6 @@
   .rank { flex-wrap: wrap; }
   .rank > span { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
   .meta { gap: 6px 12px; }
-  .fold summary { min-height: 44px; }
 }
 
 /* 窄屏手机：行动区只留一个账号头像，主按钮保持可见但收窄内边距 */

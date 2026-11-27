@@ -44,7 +44,7 @@ export default function XSiteFrame({ active, children }) {
     <div className={`${s.app} ${s.xFrame}`}>
       <header className={s.bar}>
         <div className={s.barInner}>
-          <Link className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>智能体 · 插件 · 读本</span></span></Link>
+          <Link className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>帮助一批智能体拿到创作者收益</span></span></Link>
           <nav className={s.tabs} aria-label="功能">
             {WORKBENCH_MENU_GROUPS.map((group) => (
               <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>

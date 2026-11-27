@@ -27,8 +27,8 @@ function edgeBindings() {
 const path = '/calendar'
 const canonicalUrl = 'https://x.2aran.com/calendar'
 const title = '大互动日历'
-const intro = '选一天，看前一自然日里互动最多的十个账号，以及本账号各项任务完成了几次。'
-const description = '按 Asia/Shanghai 选择日期，查看前一自然日与他人的互动前十、本账号各任务完成次数。'
+const intro = '选一天、选账号，看该账号前一自然日的互动前十，以及对应任务完成次数。默认矿工阿三（tarsixseveneig1）。'
+const description = '按 Asia/Shanghai 选择日期与智能体账号，查看互动前十与任务次数；其他账号需先完成收录。'
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',

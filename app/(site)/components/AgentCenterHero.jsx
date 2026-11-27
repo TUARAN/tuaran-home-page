@@ -4,10 +4,10 @@ import { IconArrowDownRight, IconArrowUpRight, IconSparkles } from '@tabler/icon
 import SharePageButton from './SharePageButton'
 
 const CENTER_LINKS = [
-  ['/skill-center', 'Skill'],
-  ['/mcp-center', 'MCP'],
-  ['/prompt-center', 'Prompt'],
-  ['/workbuddy-publish-center', 'WorkBuddy'],
+  ['/capabilities', 'Skill'],
+  ['/skill-center#mcp', 'MCP'],
+  ['/skill-center#prompt', 'Prompt'],
+  ['/skill-center#workbuddy', 'WorkBuddy'],
 ]
 
 export default function AgentCenterHero({ current, eyebrow, title, description, shareText, count, countLabel = '个条目', actionLabel = '浏览全部', steps = [] }) {
@@ -17,7 +17,7 @@ export default function AgentCenterHero({ current, eyebrow, title, description, 
       <div className="pointer-events-none absolute -bottom-40 right-20 h-80 w-80 rounded-full bg-[#7e9faa]/20 blur-3xl" />
       <div className="pointer-events-none absolute right-10 top-12 hidden h-48 w-48 rotate-12 rounded-[40px] border border-white/10 lg:block" />
       <nav className="relative z-10 flex items-center justify-between gap-4 border-b border-white/10 px-5 py-3 sm:px-8" aria-label="Agent 能力中心">
-        <Link href="/capabilities" className="shrink-0 text-xs font-bold text-white no-underline hover:text-[#e5c99d] hover:!no-underline">AGENT CAPABILITIES</Link>
+        <Link href="/skill-center" className="shrink-0 text-xs font-bold text-white no-underline hover:text-[#e5c99d] hover:!no-underline">AGENT HUB</Link>
         <div className="flex gap-1 overflow-x-auto">
           {CENTER_LINKS.map(([href, label]) => <Link key={href} href={href} aria-current={current === href ? 'page' : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-xs no-underline transition hover:!no-underline ${current === href ? 'bg-white text-[#171b21]' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>{label}</Link>)}
         </div>
@@ -25,7 +25,7 @@ export default function AgentCenterHero({ current, eyebrow, title, description, 
       <div className="relative z-10 flex flex-col gap-10 px-6 py-8 sm:px-9 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-12">
         <div className="max-w-3xl">
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-white/65">
-            <Link href="/capabilities" className="text-white/75 no-underline hover:text-white hover:!no-underline">Agent 能力集</Link>
+            <Link href="/skill-center" className="text-white/75 no-underline hover:text-white hover:!no-underline">智能体应用中心</Link>
             <span>/</span>
             <span>{eyebrow}</span>
           </div>
@@ -34,7 +34,7 @@ export default function AgentCenterHero({ current, eyebrow, title, description, 
           <p className="mb-0 max-w-2xl text-[15px] leading-7 text-white/75 sm:text-base">{description}</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a href="#items" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#e5c99d] px-5 text-sm font-bold text-[#24211c] no-underline transition hover:bg-white hover:!no-underline">{actionLabel}<IconArrowDownRight size={17} /></a>
-            <Link href="/capabilities" className="inline-flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-white/75 no-underline hover:text-white hover:!no-underline">全部能力 <IconArrowUpRight size={16} /></Link>
+            <Link href="/capabilities" className="inline-flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-white/75 no-underline hover:text-white hover:!no-underline">Skill 能力集 <IconArrowUpRight size={16} /></Link>
           </div>
         </div>
         <div className="flex items-end justify-between gap-5 border-t border-white/15 pt-5 lg:min-w-36 lg:flex-col lg:items-start lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">

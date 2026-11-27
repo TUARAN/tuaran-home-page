@@ -1,5 +1,5 @@
 /**
- * Skill 中心数据源 —— 主页 /skill-center 和详情页 /skill-center/[skillId] 共享
+ * Skill 数据源 —— 目录页 /capabilities、应用中心 /skill-center 与详情页 /skill-center/[skillId] 共享
  */
 import { RENWEI_WRITING_SKILL } from './renweiWritingSkill'
 import { DREAM_SKIN_REINSTALL_SKILL } from './dreamSkinReinstallSkill'

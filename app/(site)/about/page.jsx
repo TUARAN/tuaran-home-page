@@ -192,7 +192,7 @@ const buildingAreas = [
     description: '开发可直接使用的工具，也把智能体工作流做成可安装的 Skill 和可连接的 MCP 服务。',
     links: [
       { label: '工具箱', href: '/tools' },
-      { label: 'Skill 中心', href: '/skill-center' },
+      { label: '智能体应用中心', href: '/skill-center' },
       { label: 'MCP 中心', href: '/mcp-center' },
     ],
   },

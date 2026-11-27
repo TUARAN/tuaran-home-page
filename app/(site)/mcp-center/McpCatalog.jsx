@@ -46,14 +46,14 @@ function ServiceCard({ service }) {
         {service.guide ? <p className="mb-0 mt-3 text-xs leading-5 text-[var(--site-muted)]">本地路径和环境变量需要按当前设备修改。</p> : null}
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
           <span className="inline-flex items-center gap-1.5 text-xs text-[var(--site-faint)]"><IconPlugConnected size={15} /> 配置后可调用</span>
-          <McpConfigActions title={service.title} config={service.config} codexConfig={service.codexConfig} />
+          <McpConfigActions title={service.title} config={service.config} codexConfig={service.codexConfig} serviceName={service.name} />
         </div>
       </div>
     </article>
   )
 }
 
-export default function McpCatalog({ services }) {
+export default function McpCatalog({ services, sectionId = 'items', embedded = false }) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState('all')
   const filtered = useMemo(() => {
@@ -66,9 +66,9 @@ export default function McpCatalog({ services }) {
   }, [query, services, tab])
 
   return (
-    <section id="items" className="scroll-mt-28">
+    <section id={sectionId} className={`scroll-mt-28 ${embedded ? 'embedded-agent-catalog' : ''}`}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#527188] dark:text-[#a8c2d2]">Explore services</p><h2 className="mb-1 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">选择要连接的服务</h2><p className="mb-0 text-sm text-[var(--site-muted)]">先确认运行位置和权限边界，再复制客户端配置。</p></div>
+        <div><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#527188] dark:text-[#a8c2d2]">{embedded ? 'MCP' : 'Explore services'}</p><h2 className="mb-1 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">{embedded ? '可连接的 MCP 服务' : '选择要连接的服务'}</h2><p className="mb-0 text-sm text-[var(--site-muted)]">先确认运行位置和权限边界，再复制客户端配置。</p></div>
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--site-faint)]"><IconShieldCheck size={17} /> 权限已标注</span>
       </div>
       <AgentCenterControls query={query} onQueryChange={setQuery} placeholder="搜索服务、工具或用途" tabs={TABS} activeTab={tab} onTabChange={setTab} count={filtered.length} countLabel="个可连接服务" onClear={() => { setQuery(''); setTab('all') }} />

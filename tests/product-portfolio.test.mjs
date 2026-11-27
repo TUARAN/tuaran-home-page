@@ -73,48 +73,41 @@ test('tools directory uses compact catalog cards while the portfolio keeps galle
   assert.match(directorySource, /aria-selected=\{active\}/)
 })
 
-test('capabilities reuse the compact directory and keep the four former centers reachable', async () => {
-  const [source, hero] = await Promise.all([
+test('capabilities use the Skill Center experience', async () => {
+  const [source, hubSource] = await Promise.all([
     readFile(new URL('app/(site)/capabilities/page.jsx', root), 'utf8'),
-    readFile(new URL('app/(site)/components/AgentCenterHero.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/skill-center/page.jsx', root), 'utf8'),
   ])
-  assert.match(source, /layout: 'catalog'/)
-  assert.match(source, /categoryTabs: true/)
-  for (const path of ['/skill-center', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
-    assert.ok(source.includes(`href: '${path}'`))
-  }
-  assert.match(hero, /href="\/capabilities"/)
-  assert.match(hero, /aria-label="Agent 能力中心"/)
-  assert.match(hero, /aria-current=\{current === href \? 'page'/)
+  assert.match(source, /SkillCenterExperience/)
+  assert.match(source, /homeHref="\/capabilities"/)
+  assert.match(hubSource, /AgentApplicationCenterExperience/)
+  assert.match(hubSource, /title: '智能体应用中心'/)
   assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/capabilities' && entry.sitemap))
 })
 
-test('capability pages use a public-facing product layout with direct actions', async () => {
-  const names = [
-    'skill-center', 'mcp-center', 'prompt-center', 'workbuddy-publish-center',
-  ]
-  const pages = await Promise.all(names.map((name) => readFile(new URL(`app/(site)/${name}/page.jsx`, root), 'utf8')))
+test('legacy center routes redirect into the agent application hub', async () => {
+  const [mcpPage, promptPage, workbuddyPage, hubExperience] = await Promise.all([
+    readFile(new URL('app/(site)/mcp-center/page.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/prompt-center/page.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/workbuddy-publish-center/page.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/skill-center/AgentApplicationCenterExperience.jsx', root), 'utf8'),
+  ])
+  assert.match(mcpPage, /RedirectToAgentHub/)
+  assert.match(promptPage, /fallbackHash="#prompt"/)
+  assert.match(workbuddyPage, /fallbackHash="#workbuddy"/)
+  assert.match(hubExperience, /id="mcp"/)
+  assert.match(hubExperience, /id="prompt"/)
+  assert.match(hubExperience, /id="workbuddy"/)
+})
+
+test('embedded agent catalogs keep actionable controls', async () => {
   const experiences = await Promise.all([
-    'skill-center/SkillCenterExperience.jsx',
     'mcp-center/McpCatalog.jsx',
     'prompt-center/PromptCatalog.jsx',
     'workbuddy-publish-center/WorkBuddyCatalog.jsx',
   ].map((path) => readFile(new URL(`app/(site)/${path}`, root), 'utf8')))
 
-  for (const page of pages) {
-    assert.doesNotMatch(page, /divide-y divide-\[#d8d7cf\]/)
-  }
-  assert.match(experiences[0], /id="skill-catalog"/)
-  for (const page of pages.slice(1)) assert.match(page, /<AgentCenterHero/)
-  for (const experience of experiences.slice(1)) {
-    assert.match(experience, /id="items"/)
-    assert.match(experience, /rounded-2xl/)
-    assert.match(experience, /AgentCenterControls/)
-    assert.match(experience, /AgentCenterEmpty/)
-  }
-  assert.match(experiences[0], /查看详情|打开/)
-  assert.match(experiences[1], /McpConfigActions/)
-  assert.match(experiences[2], /PromptCopyButton/)
-  assert.match(experiences[3], /下载 ZIP/)
-  assert.doesNotMatch(pages[3], /readiness:\s*'\d+%'|标准上架流程|需要准备的材料/)
+  assert.match(experiences[0], /McpConfigActions/)
+  assert.match(experiences[1], /PromptCopyButton/)
+  assert.match(experiences[2], /下载 ZIP/)
 })

@@ -693,7 +693,7 @@ export default function PayConsole() {
 
           <Section
             title="新增现金价"
-            description="只有写入 gated_resources 的 key 才有现金价。调研文章 key 形如 research:people:slug。"
+            description="只有写入 gated_resources 的 key 才有现金价。调研文章 key 形如 research:people:slug；智能体中心为 agent:skill:<id>、agent:mcp:<name>、agent:prompt:<id>、agent:workbuddy:<id>。"
           >
             <div className="flex flex-wrap items-end gap-3">
               <label className="flex-1 basis-64">

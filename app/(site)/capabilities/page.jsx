@@ -4,9 +4,9 @@ import { PUBLISHED_SKILLS } from '../skill-center/skills'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: 'Agent 能力集',
+  title: 'Skill 目录',
   description: '发现、了解并安装可复用的智能体 Skill 与工作流。',
-  keywords: ['Agent 能力集', 'Skill', 'AI Agent', '智能体', '工作流'],
+  keywords: ['Skill 目录', 'Skill', 'AI Agent', '智能体', '工作流'],
   alternates: { canonical: '/capabilities' },
 }
 
@@ -22,16 +22,5 @@ export default function CapabilitiesPage() {
     outputCount: skill.outputs?.length || 1,
   }))
 
-  return (
-    <SkillCenterExperience
-      skills={skills}
-      homeHref="/capabilities"
-      brandLabel="Agent 能力集"
-      hubHref="/skill-center"
-      promoEyebrow="Agent Capabilities"
-      promoText="浏览可安装的 Skill；MCP、Prompt 与 WorkBuddy 见智能体应用中心。"
-      promoLinkHref="/skill-center#mcp"
-      promoLinkLabel="智能体应用中心"
-    />
-  )
+  return <SkillCenterExperience skills={skills} hubHref="/skill-center" />
 }

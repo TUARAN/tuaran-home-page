@@ -79,9 +79,9 @@ test('capabilities use the Skill Center experience', async () => {
     readFile(new URL('app/(site)/skill-center/page.jsx', root), 'utf8'),
   ])
   assert.match(source, /SkillCenterExperience/)
-  assert.match(source, /homeHref="\/capabilities"/)
+  assert.match(source, /hubHref="\/skill-center"/)
   assert.match(hubSource, /AgentApplicationCenterExperience/)
-  assert.match(hubSource, /title: '智能体应用中心'/)
+  assert.match(hubSource, /title: '智能应用中心'/)
   assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/capabilities' && entry.sitemap))
 })
 

@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-/** 旧能力分区页保留路由，客户端带上 hash 跳到智能体应用中心对应锚点。 */
+/** 旧能力分区页保留路由，客户端带上 hash 跳到智能应用中心对应锚点。 */
 export default function RedirectToAgentHub({ fallbackHash = '' }) {
   const router = useRouter()
   useEffect(() => {

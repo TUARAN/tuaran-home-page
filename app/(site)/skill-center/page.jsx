@@ -7,9 +7,9 @@ import { WORKBUDDY_MARKETPLACE_ARTIFACTS } from '../../../lib/workbuddy/workbudd
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '智能体应用中心',
+  title: '智能应用中心',
   description: 'Skill、MCP、Prompt 与 WorkBuddy 能力包的统一入口，按分区浏览与配置。',
-  keywords: ['智能体应用中心', 'Skill', 'MCP', 'Prompt', 'WorkBuddy', 'AI Agent'],
+  keywords: ['智能应用中心', 'Skill', 'MCP', 'Prompt', 'WorkBuddy', 'AI Agent'],
   alternates: { canonical: '/skill-center' },
 }
 

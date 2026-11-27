@@ -49,12 +49,12 @@ export default async function SkillDetailPage({ params }) {
     <main className="mx-auto w-full max-w-4xl px-4 py-10">
       <header className="mb-6 border-b border-[#dee0db] pb-6 dark:border-[#202938]">
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
-          <Link href="/capabilities" className="underline-offset-4 hover:underline">
-            Agent 能力集
+          <Link href="/skill-center" className="underline-offset-4 hover:underline">
+            智能应用中心
           </Link>
           <span>/</span>
-          <Link href="/skill-center" className="underline-offset-4 hover:underline">
-            Skill 中心
+          <Link href="/capabilities" className="underline-offset-4 hover:underline">
+            Skill 目录
           </Link>
           <span>/</span>
           <span>{skill.title}</span>

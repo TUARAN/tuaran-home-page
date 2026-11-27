@@ -28,7 +28,7 @@
 .agentStack .moreAgents{color:#8d8983;font-size:13px;font-weight:800}
 
 /* Skillry-style category directory */
-.directoryView{display:grid;min-height:calc(100vh - 116px);grid-template-columns:300px minmax(0,1fr);border-bottom:1px solid var(--line)}
+.directoryView{display:grid;min-height:min(100vh,960px);grid-template-columns:300px minmax(0,1fr);border-bottom:1px solid var(--line)}
 .filterSidebar{border-right:1px solid var(--line);padding:34px 24px}
 .filterTitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .filterTitle strong{font-size:16px}

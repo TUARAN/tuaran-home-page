@@ -96,10 +96,10 @@ test('x automation retrospective selects content interactives channel', () => {
   assert.equal(getActiveNavHref(sectionsFor('content'), '/x-automation-retrospective'), '/rich-pages')
 })
 
-test('legacy capability detail pages select the unified capability entry', () => {
+test('legacy capability detail pages select the unified app center entry', () => {
   const sections = sectionsFor('systems')
-  for (const path of ['/skill-center', '/skill-center/example', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
-    assert.equal(getActiveNavHref(sections, path), '/capabilities')
+  for (const path of ['/skill-center', '/skill-center/example', '/capabilities', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
+    assert.equal(getActiveNavHref(sections, path), '/skill-center')
   }
 })
 

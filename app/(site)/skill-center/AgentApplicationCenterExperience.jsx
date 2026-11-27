@@ -4,8 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useMemo } from 'react'
 import {
-  IconArrowDown, IconArrowRight, IconArrowUpRight, IconBolt, IconBox,
-  IconBraces, IconChartDots3, IconCloud, IconCpu, IconDownload, IconPackage,
+  IconArrowDown, IconArrowRight, IconArrowUpRight, IconBox,
+  IconBraces, IconChartDots3, IconCloud, IconDownload, IconPackage,
   IconSparkles, IconTerminal2, IconWriting,
 } from '@tabler/icons-react'
 
@@ -123,32 +123,10 @@ export default function AgentApplicationCenterExperience({ skills, mcpServices, 
 
   return (
     <main className={styles.page}>
-      <div className={styles.promoBar}>
-        <span><IconSparkles size={14} /> Agent Hub</span>
-        <p>Skill、MCP、Prompt 与 WorkBuddy 能力包集中在一处，按类型取用。</p>
-        <a href="#skills">浏览分区 <IconArrowRight size={15} /></a>
-      </div>
-
-      <nav className={styles.marketNav} aria-label="智能体应用中心导航">
-        <Link href="/skill-center" className={styles.brand}><span><IconBolt size={18} /></span> 智能体应用中心</Link>
-        <div className={styles.navLinks}>
-          <a href="#skills">Skills</a>
-          <a href="#mcp">MCP</a>
-          <a href="#prompt">Prompt</a>
-          <a href="#workbuddy">WorkBuddy</a>
-          <Link href="/capabilities">Agent 能力集</Link>
-        </div>
-        <div className={styles.topSearch} aria-hidden="true">
-          <IconCpu size={18} />
-          <span style={{ color: '#65635e', fontSize: 13 }}>按分区向下浏览，或使用顶部锚点跳转</span>
-        </div>
-        <Link href="/capabilities" className={styles.installButton}>浏览 Skills</Link>
-      </nav>
-
       <section className={styles.hero}>
         <div className={styles.heroGlow} />
         <p className={styles.heroEyebrow}><span /> AGENT APPLICATION HUB <span /></p>
-        <h1>智能体应用<br className={styles.mobileBreak} />中心</h1>
+        <h1>智能应用<br className={styles.mobileBreak} />中心</h1>
         <TileMarquee logoNumbers={HERO_LOGO_ROWS[0]} />
         <div className={styles.tileRailSecond}><TileMarquee logoNumbers={HERO_LOGO_ROWS[1]} reverse /></div>
         <div className={styles.heroActions}>
@@ -166,7 +144,7 @@ export default function AgentApplicationCenterExperience({ skills, mcpServices, 
           <div>
             <p>FOUR PILLARS</p>
             <h2>按能力类型进入</h2>
-            <span>完整 Skill 目录在 Agent 能力集；下载、配置与复制可走现金或燃币，定价在后台「支付订单 → 内容定价」按 resource key 配置。</span>
+            <span>完整 Skill 列表在 Skill 目录；下载、配置与复制可走现金或燃币，定价在后台「支付订单 → 内容定价」按 resource key 配置。</span>
           </div>
         </div>
         <div className={styles.categoryGrid}>
@@ -193,9 +171,9 @@ export default function AgentApplicationCenterExperience({ skills, mcpServices, 
           <div>
             <p>SKILLS</p>
             <h2>Skill 精选</h2>
-            <span>可安装的工作流与任务方法。完整目录、筛选与安装说明见 Agent 能力集。</span>
+            <span>可安装的工作流与任务方法。完整目录、筛选与安装说明见 Skill 目录。</span>
           </div>
-          <Link href="/capabilities">打开 Agent 能力集 <IconArrowRight size={16} /></Link>
+          <Link href="/capabilities">打开 Skill 目录 <IconArrowRight size={16} /></Link>
         </div>
         <div className={styles.featuredGrid}>
           {featuredSkills.map((skill, index) => <PreviewSkillCard key={skill.id} skill={skill} index={index} />)}

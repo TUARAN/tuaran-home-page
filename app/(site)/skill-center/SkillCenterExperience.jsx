@@ -4,8 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
 import {
-  IconArrowDown, IconArrowRight, IconArrowUpRight, IconBolt, IconBox, IconBraces,
-  IconChartDots3, IconCheck, IconChevronDown, IconClipboardText, IconDownload,
+  IconArrowDown, IconArrowRight, IconArrowUpRight, IconBox, IconBraces,
+  IconChartDots3, IconCheck, IconClipboardText, IconDownload,
   IconFileText, IconFilter, IconLayoutGrid, IconPalette, IconSearch, IconSparkles,
   IconWand, IconWriting, IconX,
 } from '@tabler/icons-react'
@@ -142,16 +142,7 @@ function SectionHeading({ eyebrow, title, description, onShowAll }) {
   )
 }
 
-export default function SkillCenterExperience({
-  skills,
-  homeHref = '/capabilities',
-  brandLabel = 'Agent 能力集',
-  hubHref = '/skill-center',
-  promoEyebrow = 'Agent Capabilities',
-  promoText = '把成熟方法装进你的智能体，重复使用，持续迭代。',
-  promoLinkHref = '#connect',
-  promoLinkLabel = '安装指南',
-}) {
+export default function SkillCenterExperience({ skills, hubHref = null }) {
   const categories = useMemo(() => ['全部', ...new Set(skills.map((skill) => skill.category))], [skills])
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('全部')
@@ -185,28 +176,6 @@ export default function SkillCenterExperience({
 
   return (
     <main className={styles.page}>
-      <div className={styles.promoBar}>
-        <span><IconSparkles size={14} /> {promoEyebrow}</span>
-        <p>{promoText}</p>
-        <a href={promoLinkHref}>{promoLinkLabel} <IconArrowRight size={15} /></a>
-      </div>
-
-      <nav className={styles.marketNav} aria-label="Agent 能力集导航">
-        <Link href={homeHref} className={styles.brand}><span><IconBolt size={18} /></span> {brandLabel}</Link>
-        <div className={styles.navLinks}>
-          <button type="button" onClick={() => revealCatalog()}>Skills</button>
-          <button type="button" onClick={() => revealCatalog()}>分类 <IconChevronDown size={14} /></button>
-          <Link href={hubHref}>应用中心</Link>
-          <a href="#connect">如何安装</a>
-        </div>
-        <label className={styles.topSearch}>
-          <span className="sr-only">搜索 Skill</span>
-          <input value={query} onChange={(event) => { setQuery(event.target.value); setCatalogView(true) }} placeholder="想让智能体完成什么？" />
-          {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={17} /></button> : <IconSearch size={18} />}
-        </label>
-        <a href="#connect" className={styles.installButton}>安装 Skill</a>
-      </nav>
-
       {catalogView ? (
         <section className={styles.directoryView}>
           <aside className={styles.filterSidebar}>
@@ -234,6 +203,12 @@ export default function SkillCenterExperience({
           <div className={styles.directoryResults}>
             <div className={styles.directoryHeading}>
               <p><strong>{filtered.length}</strong> 个 Skills</p>
+              <label className={styles.catalogSearch}>
+                <span className="sr-only">搜索 Skill</span>
+                <IconSearch size={18} />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索名称、用途或分类" />
+                {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={16} /></button> : null}
+              </label>
               {(activeFilters.length || query) ? <button type="button" onClick={() => { setActiveFilters([]); setQuery(''); setCategory('全部') }}>清除筛选</button> : null}
             </div>
             {filtered.length ? (
@@ -256,6 +231,7 @@ export default function SkillCenterExperience({
         <div className={styles.heroActions}>
           <button type="button" onClick={() => revealCatalog()}>浏览 Skills <IconArrowDown size={17} /></button>
           <a href="#connect"><IconSparkles size={17} /> 给智能体装上能力</a>
+          {hubHref ? <Link href={hubHref}>智能应用中心 <IconArrowUpRight size={17} /></Link> : null}
         </div>
         <div className={styles.worksWith}>
           <p>支持的 AGENT</p>

@@ -1,10 +1,10 @@
 ---
 name: 2aran-distributor
 description: >
-  2aran 分发智能体。把 2aran.com 的文章用 ego lite 浏览器发布到掘金、CSDN 等外部平台。
+  2aran 分发智能体。把 2aran.com 的文章用 ego lite 浏览器发布到掘金、CSDN、X、小红书、知乎、今日头条等外部平台。
   Use when: 用户粘贴「2aran 分发任务」，或要求把站内文章分发、同步、发布到外部内容平台。
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # 2aran-distributor
@@ -13,7 +13,7 @@ metadata:
 
 ## 开工前
 
-- 任务里写明了 harness 版本。本 skill 的版本是 `1.2.0`；两者不一致时先停下，请站长运行 `npm run distributor:skill:install` 更新 skill。
+- 任务里写明了 harness 版本。本 skill 的版本是 `1.3.0`；两者不一致时先停下，请站长运行 `npm run distributor:skill:install` 更新 skill。
 - 任务列出的平台在下方没有手册时，先问站长：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
 - 按任务里的平台顺序逐个处理：一个平台发布并核对完，再开始下一个。
 
@@ -37,6 +37,8 @@ metadata:
 - 平台编辑页有独立「标题」输入框时：标题只填该输入框，正文不得再保留与标题相同的首条 `#` 标题（建任务时已去掉；若仍出现，发布前先删掉）。
 - 正文里指代站点的「本站」改成「我的个人站」，其他内容不改写。
 - 掘金：站内图床（2aran.com）与预览「转存失败」/裂图必须走「下载 → 编辑器上传 → 替换 Markdown 链接」；含 `<figure>`/`<svg>` 的 HTML 需截图或导出 PNG 后上传替换，不能只粘贴原始 HTML。详见掘金手册「图床替换」。
+- 富文本编辑器（X、小红书、知乎、今日头条）不认 Markdown：打开任务 `url` 的站内原文，用 evaluate 取 `article.prose-tuaran`（或 `main article`）的 HTML，删掉目录、导航、按钮和与标题重复的 h1，把图片和链接改成绝对地址，再用 `page.keyboard.paste({ text, html })` 粘贴进正文；各平台还要做的转换见手册。
+- 标题超过平台字数上限时，取原标题冒号前的部分；仍超出就从原标题里删减，不新编措辞，并记进回报。
 - 文章类型：正文开头注明转译或转载外部原文时，按「翻译」或「转载」发布并填写那个原文链接；否则选「原创」。
 - 摘要按平台字数限制从任务里的摘要压缩，不编造正文没有的信息。
 - 标签从任务里的站内标签就近匹配平台可选标签。
@@ -82,6 +84,65 @@ metadata:
   5. 最后点弹窗底部的红色按钮 `button.btn-b-red`。顶部工具栏的 `.btn-publish` 是另一个按钮，不要点。
 - 核对：确认页面跳转，并打开「查看文章」链接核对标题和图片。
 - 成功标志：跳到 `mp.csdn.net/mp_blog/creation/success/<文章ID>`；新文章通常先进入审核。
+
+### X（`twitter`，2026-11-27 实测）
+
+- 入口：https://x.com/compose/articles
+- 登录判断：跳到 x.com/i/flow/login 或出现「Sign in」按钮，就是未登录。
+- 步骤：
+  1. 在 Articles 列表点新建（Write），进入编辑器。标题填顶部标题输入框。
+  2. 正文按「富文本编辑器」规则粘贴 HTML，但 X 只认两级标题且不支持表格：粘贴前把 h2→h1（Heading）、h3/h4→h2（Subheading），每个表格改成列表（每行一条，首列加粗，其余写成「列名：值」用「；」分隔），图片先换成 `[[IMGn]]` 占位段落。
+  3. 粘贴的图片不会上传。逐张处理：先下载图片到本地，选中对应 `[[IMGn]]` 占位段落，点「Insert → Media」，用 `page.setInputFiles('input[data-testid="fileInput"]', 路径)` 上传；有图注时写进弹窗里的 `[role="dialog"] textarea`。
+  4. 封面（可选）用 `input[data-testid="fileInput"][multiple]` 上传正文第一张图，裁剪弹窗点「Apply」。
+  5. 菜单或弹窗的遮罩会挡住点击：选择器必须只匹配一个元素，被挡时先用 evaluate 算坐标再 `page.mouse.click`。
+  6. 点「Publish」，在确认弹窗里再点 `[role="dialog"]` 内的「Publish」。之后弹出的 Boost（付费推广）直接关掉，不付费。
+- 核对：打开个人主页最新帖子，核对文章标题、章节标题、列表和图片。
+- 成功标志：生成 `https://x.com/<账号>/status/<ID>` 的文章帖，发布即公开，无审核。
+
+### 小红书（`xiaohongshu`，2026-11-27 实测）
+
+- 入口：https://creator.xiaohongshu.com/publish/publish?from=menu&target=article
+- 登录判断：跳到 creator.xiaohongshu.com/login 登录页，就是未登录。
+- 步骤：
+  1. 点「写长文」标签，再点「新的创作」。先关掉「图片可以编辑啦」之类的功能引导弹窗（点弹窗右上角 X）。
+  2. 标题填 `textarea[placeholder="输入标题"]`（≤64 字）。
+  3. 正文是 tiptap（`.tiptap.ProseMirror`），只保留 h1、h2、段落、列表和引用，加粗、链接、表格都会丢：粘贴前把 h2→h1、h3/h4→h2，表格改成列表（同 X），图片换成 `[[IMGn]]` 占位。正文区可能被 `xhs-publish-btn` 挡住点击，用 evaluate 对 `.tiptap.ProseMirror` 调 `focus()` 后再粘贴。
+  4. 图片：选中占位段落，先 `page.waitForFileChooser()` 再点工具栏图片按钮，`setFiles` 上传下载好的图片，然后删掉占位文字。
+  5. 点「一键排版」选模板（默认「逻辑结构」即可），点「下一步」生成图片卡片并进入笔记表单。弹出定位权限时关掉再继续。
+  6. 笔记标题 `input[placeholder="填写标题会有更多赞哦"]` 最多 20 字：超出时按「标题过长」规则截短。笔记正文（≤1000 字）填任务摘要。
+  7. 话题：在笔记正文末尾输入 `#话题词`，等联想列表出现后按回车，最多 3 个，从站内标签就近匹配。
+  8. 「原创声明」属于权利声明，按安全规则先问站长；不要关联活动（误关联时点「取消关联」）。
+  9. 点可见的「发布」按钮（用 evaluate 算坐标点击，避免点到 `xhs-publish-btn` 上的其他区域）。
+- 核对：打开笔记管理 https://creator.xiaohongshu.com/new/note-manager，新笔记出现在列表里；笔记 ID 在 `note-card` 的 `data-impression` 的 noteId 里。
+- 成功标志：发布后地址带 `published=true`，笔记管理显示「审核中」；审核通过后地址为 `https://www.xiaohongshu.com/explore/<笔记ID>`。
+
+### 知乎（`zhihu`，2026-11-27 实测）
+
+- 入口：https://zhuanlan.zhihu.com/write
+- 登录判断：跳到 www.zhihu.com/signin 登录页，就是未登录。
+- 步骤：
+  1. 标题填 `textarea[placeholder="请输入标题（最多 100 个字）"]`。
+  2. 正文是 Draft.js（`.public-DraftEditor-content`）：聚焦后直接粘贴站内原文 HTML，不用转换；标题层级、表格、列表、链接都能保留，图片会自动转存到 pic-private.zhihu.com。等图片全部转存后再继续。
+  3. 封面：`page.setInputFiles('input.UploadPicture-input', 路径)` 上传正文第一张图。
+  4. 话题：先点「添加话题」，再鼠标点击「搜索话题...」输入框（不点击就输入不进去），输入关键词后点击输入框下方匹配的结果，最多 3 个。
+  5. 「创作声明」保持「无声明」，要改成原创等声明时按安全规则先问站长；「投稿至问题」和专栏保持默认。
+  6. 点「发布」，按钮显示「发布中…」，约 15 秒后跳转。
+- 核对：打开发布后的文章页，核对章节标题、表格数量和图片。
+- 成功标志：地址从 `/p/<ID>/edit` 变成 `https://zhuanlan.zhihu.com/p/<ID>`，发布即公开。
+
+### 头条（`toutiao`，2026-11-27 实测）
+
+- 入口：https://mp.toutiao.com/profile_v4/graphic/publish
+- 登录判断：跳到 mp.toutiao.com/auth/page/login 登录页，就是未登录。
+- 步骤：
+  1. 先关掉右侧「头条创作助手」抽屉（它会挡住标题框）。顶部提示的旧草稿与本任务无关时不要点开。
+  2. 标题 `textarea[placeholder="请输入文章标题（2～30个字）"]` 最多 30 字：超出时按「标题过长」规则截短。
+  3. 正文是 ProseMirror（`.ProseMirror`）：聚焦后粘贴站内原文 HTML。表格和图片能保留（图片自动转存），但所有标题都会变成 h1、多数链接会丢，这是平台限制，记进手册偏差即可。
+  4. 封面默认取正文图片，确认有图即可。「投放广告」是必选项，保持默认。
+  5. 默认勾选的「头条首发」要取消（文章已在其他平台发布）；「同时发布微头条」不在任务范围内，也要取消。「作品声明」留空，要加声明时按安全规则先问站长。
+  6. 点「预览并发布」，在预览页点「确认发布」。
+- 核对：跳到 https://mp.toutiao.com/profile_v4/graphic/articles，新文章在列表里显示「审核中」，且没有「首发」标记；文章 ID（pgc_id）在预览链接里。
+- 成功标志：文章列表显示「审核中」；审核通过后会出现在 `https://www.toutiao.com/item/<ID>`。
 
 ## 任务台模式
 

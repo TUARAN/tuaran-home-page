@@ -1,6 +1,8 @@
 // 把站内文章页 HTML 转成分发用 Markdown（浏览器端，依赖 DOMParser）。
 // 表格输出 GFM 管道表格，代码块保留 language-xx 语言标记，图片和链接转成绝对地址。
 
+import { prepareDistributionMarkdown } from '../../../../lib/distribution/markdownPrep.js'
+
 const SOURCE_SELECTORS = [
   'article.prose-tuaran',
   'article.article-post-body',
@@ -118,7 +120,11 @@ export function articleFromHtml(html, sourceUrl, fallbackTitle = '') {
   clone.querySelectorAll(EXCLUDE_SELECTOR).forEach((node) => node.remove())
 
   const title = cleanText(fallbackTitle || doc.querySelector('h1')?.textContent || doc.title).slice(0, 200)
-  const markdown = tidyMarkdown(markdownFromNode(clone, sourceUrl))
+  const pageHeading = clone.querySelector('h1')
+  if (pageHeading && !prepareDistributionMarkdown(`# ${cleanText(pageHeading.textContent)}\n`, { title })) {
+    pageHeading.remove()
+  }
+  const markdown = prepareDistributionMarkdown(tidyMarkdown(markdownFromNode(clone, sourceUrl)), { title })
   const summary = cleanText(
     doc.querySelector('meta[name="description"]')?.getAttribute('content')
       || clone.querySelector('p')?.textContent

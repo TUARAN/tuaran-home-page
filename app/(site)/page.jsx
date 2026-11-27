@@ -824,10 +824,16 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
         </div>
         <div className="home-masonry-item"><HomeOpenClawCards /></div>
         <div className="home-masonry-item">
+          <HomeDownloadCards />
+        </div>
+        <div className="home-masonry-item">
           <HomeDiarySeries preview={diaryPreview} />
         </div>
         <div className="home-masonry-item">
           <HomeYearSummaryCard />
+        </div>
+        <div className="home-masonry-item">
+          <HomeBranchEvolution />
         </div>
         <HomeGithubTrending />
 
@@ -866,10 +872,6 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
           </section>
         </aside>
       </HomeMasonry>
-
-      <HomeBranchEvolution />
-
-      <HomeDownloadCards />
 
       <div className="home-footer flex justify-center pb-20 text-xs md:hidden">
         <OnlinePresenceStatus />

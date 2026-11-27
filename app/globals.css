@@ -3019,22 +3019,17 @@
     margin-bottom: 1.5rem;
   }
 
-  /* 首页 Git 分支动画：桌面只占一栏宽（约 1/3），与瀑布流卡片同尺度；H5 仍满宽 */
-  .home-branch-evolution {
+  /* 分支演进进瀑布流一栏：宽度由 .home-masonry-item 列宽约束，不再单独占满屏宽一行 */
+  .home-masonry-item .home-branch-evolution {
     width: 100%;
-    max-width: 100%;
+    max-width: none;
   }
 
-  @media (min-width: 768px) {
-    .home-branch-evolution {
-      max-width: calc((100% - 1rem) / 2);
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .home-branch-evolution {
-      max-width: calc((100% - 2.5rem) / 3);
-    }
+  .home-masonry-item > .home-branch-evolution.home-download-section,
+  .home-masonry-item > .home-download-section {
+    margin-bottom: 0;
+    width: 100%;
+    max-width: none;
   }
 
   .home-download-grid {
@@ -3100,6 +3095,11 @@
     .home-download-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+  }
+
+  /* 瀑布流一栏内不再展开 2/3 列小格，避免整屏宽区块假象 */
+  .home-masonry-item .home-download-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   @media (max-width: 767px) {

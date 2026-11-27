@@ -37,6 +37,35 @@ const TH_CLASS =
 
 const TD_CLASS = 'align-top px-3 py-2.5 text-sm text-[#15140f] dark:text-gray-100'
 
+const COL = {
+  label: 'w-[9%]',
+  account: 'w-[13%]',
+  password: 'w-[8%]',
+  recovery: 'w-[12%]',
+  emailPassword: 'w-[8%]',
+  twoFa: 'w-[10%]',
+  security: 'w-[11%]',
+  birthday: 'w-[7%]',
+  notes: 'w-[14%]',
+  actions: 'w-[9%]',
+}
+
+/** 表格单元格内长文案：固定行数省略，完整内容走 title 悬停。 */
+function VaultCellText({ value, mono = false, lines = 2, className = '' }) {
+  if (value == null || value === '' || value === '—') {
+    return <span className="text-xs text-[#77796e] dark:text-gray-500">—</span>
+  }
+  const clampClass = lines === 1 ? 'truncate whitespace-nowrap' : lines === 3 ? 'line-clamp-3' : 'line-clamp-2'
+  return (
+    <div
+      className={`min-w-0 ${clampClass} break-words text-xs leading-snug ${mono ? 'font-mono' : ''} ${className}`}
+      title={String(value)}
+    >
+      {value}
+    </div>
+  )
+}
+
 export default function InformationConsole() {
   const [encryptedItems, setEncryptedItems] = useState([])
   const [records, setRecords] = useState([])
@@ -254,19 +283,19 @@ export default function InformationConsole() {
             </p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
-              <table className="w-full min-w-[1120px] border-collapse text-left">
+              <table className="w-full min-w-[1120px] table-fixed border-collapse text-left">
                 <thead className="sticky top-0 z-10 bg-[#f5f6f2] dark:bg-[#0f141d]">
                   <tr className="border-b border-[#d5d7cd] dark:border-[#252e39]">
-                    <th className={TH_CLASS}>名称</th>
-                    <th className={TH_CLASS}>登录标识</th>
-                    <th className={TH_CLASS}>密码</th>
-                    <th className={TH_CLASS}>辅助邮箱</th>
-                    <th className={TH_CLASS}>邮箱密码</th>
-                    <th className={TH_CLASS}>2FA</th>
-                    <th className={TH_CLASS}>密保</th>
-                    <th className={TH_CLASS}>生日</th>
-                    <th className={`${TH_CLASS} min-w-[200px]`}>其他备注</th>
-                    <th className={TH_CLASS}>操作</th>
+                    <th className={`${TH_CLASS} ${COL.label}`}>名称</th>
+                    <th className={`${TH_CLASS} ${COL.account}`}>登录标识</th>
+                    <th className={`${TH_CLASS} ${COL.password}`}>密码</th>
+                    <th className={`${TH_CLASS} ${COL.recovery}`}>辅助邮箱</th>
+                    <th className={`${TH_CLASS} ${COL.emailPassword}`}>邮箱密码</th>
+                    <th className={`${TH_CLASS} ${COL.twoFa}`}>2FA</th>
+                    <th className={`${TH_CLASS} ${COL.security}`}>密保</th>
+                    <th className={`${TH_CLASS} ${COL.birthday}`}>生日</th>
+                    <th className={`${TH_CLASS} ${COL.notes}`}>其他备注</th>
+                    <th className={`${TH_CLASS} ${COL.actions}`}>操作</th>
                   </tr>
                 </thead>
                 {grouped.map((group) => (
@@ -284,31 +313,39 @@ export default function InformationConsole() {
                       const extraText = parsed.extra.join('\n')
                       return (
                         <tr key={record.id} className="bg-white/80 dark:bg-[#10161f]">
-                          <td className={TD_CLASS}>
-                            <div className="font-medium">{plain.label || '—'}</div>
+                          <td className={`${TD_CLASS} ${COL.label}`}>
+                            <VaultCellText value={plain.label || '—'} lines={2} className="font-medium text-sm" />
                             {archived ? (
-                              <p className="text-xs text-[#77796e] dark:text-gray-500">
+                              <p className="mt-0.5 truncate text-xs text-[#77796e] dark:text-gray-500" title={`已归档 · ${new Date(record.archivedAt).toLocaleString('zh-CN')}`}>
                                 已归档 · {new Date(record.archivedAt).toLocaleString('zh-CN')}
                               </p>
                             ) : null}
                           </td>
-                          <td className={`${TD_CLASS} max-w-[12rem] break-all font-mono text-xs`}>{plain.account}</td>
-                          <td className={`${TD_CLASS} font-mono text-xs`}>{maskSecret(plain.password, revealSecrets)}</td>
-                          <td className={`${TD_CLASS} max-w-[11rem] break-all text-xs`}>{parsed.recoveryEmail || '—'}</td>
-                          <td className={`${TD_CLASS} font-mono text-xs`}>{maskSecret(parsed.emailPassword, revealSecrets)}</td>
-                          <td className={`${TD_CLASS} max-w-[10rem] break-all font-mono text-xs`}>{maskSecret(parsed.twoFa, revealSecrets)}</td>
-                          <td className={`${TD_CLASS} max-w-[9rem] break-words text-xs`}>{securitySummary(plain.securityAnswers, revealSecrets)}</td>
-                          <td className={TD_CLASS}>{plain.birthday || '—'}</td>
-                          <td className={TD_CLASS}>
-                            {extraText ? (
-                              <div className="max-h-28 max-w-sm overflow-auto whitespace-pre-wrap break-words text-xs text-[#53554d] dark:text-gray-300">
-                                {extraText}
-                              </div>
-                            ) : (
-                              '—'
-                            )}
+                          <td className={`${TD_CLASS} ${COL.account}`}>
+                            <VaultCellText value={plain.account} mono lines={2} />
                           </td>
-                          <td className={TD_CLASS}>
+                          <td className={`${TD_CLASS} ${COL.password}`}>
+                            <VaultCellText value={maskSecret(plain.password, revealSecrets)} mono lines={1} />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.recovery}`}>
+                            <VaultCellText value={parsed.recoveryEmail} lines={2} />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.emailPassword}`}>
+                            <VaultCellText value={maskSecret(parsed.emailPassword, revealSecrets)} mono lines={1} />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.twoFa}`}>
+                            <VaultCellText value={maskSecret(parsed.twoFa, revealSecrets)} mono lines={revealSecrets ? 3 : 1} />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.security}`}>
+                            <VaultCellText value={securitySummary(plain.securityAnswers, revealSecrets)} lines={revealSecrets ? 3 : 1} />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.birthday}`}>
+                            <VaultCellText value={plain.birthday} lines={1} />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.notes}`}>
+                            <VaultCellText value={extraText} lines={3} className="text-[#53554d] dark:text-gray-300" />
+                          </td>
+                          <td className={`${TD_CLASS} ${COL.actions}`}>
                             <div className="flex flex-col gap-1">
                               <button type="button" onClick={() => copy(plain.account, '账号')} className="rounded border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制账号</button>
                               <button type="button" onClick={() => copy(plain.password, '密码')} className="rounded border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制密码</button>

@@ -4,9 +4,15 @@ import { readFileSync } from 'node:fs'
 
 import { drawBranchEvolution, prepareBranchEvolution } from '../lib/home/branchEvolution.mjs'
 
-test('首页区块在桌面只占一栏宽', () => {
+test('首页分支演进与客户端下载挂在瀑布流一栏内', () => {
   const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8')
-  assert.match(css, /\.home-branch-evolution[\s\S]*max-width: calc\(\(100% - 2\.5rem\) \/ 3\)/)
+  const page = readFileSync(new URL('../app/(site)/page.jsx', import.meta.url), 'utf8')
+  assert.match(css, /\.home-masonry-item\s+\.home-branch-evolution/)
+  assert.match(css, /\.home-masonry-item\s+\.home-download-grid/)
+  assert.doesNotMatch(page, /<\/HomeMasonry>\s*\n\s*<HomeBranchEvolution/)
+  assert.doesNotMatch(page, /<\/HomeMasonry>\s*\n\s*<HomeDownloadCards/)
+  assert.match(page, /home-masonry-item[\s\S]*<HomeBranchEvolution/)
+  assert.match(page, /home-masonry-item[\s\S]*<HomeDownloadCards/)
   assert.match(readFileSync(new URL('../app/(site)/components/HomeBranchEvolution.jsx', import.meta.url), 'utf8'), /home-branch-evolution/)
 })
 

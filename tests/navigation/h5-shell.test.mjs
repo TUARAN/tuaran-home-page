@@ -54,17 +54,17 @@ function mobileDrawerStack(source) {
   return source.slice(start, end)
 }
 
-test('H5 drawer orders search, account, picks, channels, core topics, settings, and RSS', () => {
+test('H5 drawer orders search, account (with settings and RSS), picks, channels, and core topics', () => {
   const drawer = mobileDrawerStack(headerSource)
   const markers = [
     'site-mobile-drawer-search-field',
     '<SiteSearch mobile',
     '<MobileAccountPanel',
+    '<MobileDrawerDisplaySettings',
+    '<MobileDrawerRssRow',
     'HEADER_RECOMMENDATIONS.map',
     "pick(locale, '频道', 'Channels')",
     '<AuthorityDrawerLinks',
-    '<SiteSettingsControls',
-    '<MobileDrawerRssBlock',
   ]
   let last = -1
   for (const marker of markers) {
@@ -72,6 +72,10 @@ test('H5 drawer orders search, account, picks, channels, core topics, settings, 
     assert.ok(idx > last, `expected ${marker} later in the drawer`)
     last = idx
   }
+  const authorityIdx = drawer.indexOf('<AuthorityDrawerLinks')
+  assert.ok(drawer.indexOf('<MobileDrawerDisplaySettings') < authorityIdx, 'settings should live in the account block before 主线')
+  assert.ok(drawer.indexOf('<MobileDrawerRssRow') < authorityIdx, 'RSS should live in the account block before 主线')
+  assert.doesNotMatch(drawer.slice(authorityIdx), /<MobileDrawerDisplaySettings|<MobileDrawerRssRow/)
   const accountPanel = headerSource.match(/function MobileAccountPanel[\s\S]*?^}/m)?.[0] ?? ''
   assert.doesNotMatch(accountPanel, /href="\/resources\/rss"/)
 })

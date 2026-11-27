@@ -859,20 +859,39 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
   )
 }
 
-function MobileDrawerRssBlock({ account, onNavigate }) {
+function MobileDrawerDisplaySettings() {
+  const { locale } = useLocale()
+  return (
+    <details
+      className="site-mobile-drawer-settings border-t border-[var(--site-line)]"
+      aria-label={pick(locale, '显示设置', 'Display settings')}
+    >
+      <summary className="site-mobile-drawer-row site-mobile-drawer-summary cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-2.5">
+          <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
+          <span>{pick(locale, '显示设置', 'Display settings')}</span>
+        </span>
+        <MobileDrawerChevron className="site-mobile-drawer-settings-chevron" />
+      </summary>
+      <div className="border-t border-[var(--site-line)] px-3.5 pb-3.5 pt-3">
+        <SiteSettingsControls />
+      </div>
+    </details>
+  )
+}
+
+function MobileDrawerRssRow({ account, onNavigate }) {
   const { locale } = useLocale()
   const hasRssUpdates = Number(account?.rssUpdates?.unread) > 0
   return (
-    <MobileDrawerBlock title={pick(locale, 'RSS', 'RSS')} ariaLabel={pick(locale, 'RSS 阅读', 'RSS reader')}>
-      <Link href="/resources/rss" onClick={onNavigate} className="site-mobile-drawer-row">
-        <span className="flex min-w-0 items-center gap-2.5">
-          <IconRss size={18} stroke={1.65} aria-hidden="true" />
-          <span>{pick(locale, 'RSS 阅读', 'RSS reader')}</span>
-          {hasRssUpdates ? <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
-        </span>
-        <MobileDrawerChevron />
-      </Link>
-    </MobileDrawerBlock>
+    <Link href="/resources/rss" onClick={onNavigate} className="site-mobile-drawer-row border-t border-[var(--site-line)]">
+      <span className="flex min-w-0 items-center gap-2.5">
+        <IconRss size={18} stroke={1.65} aria-hidden="true" />
+        <span>{pick(locale, 'RSS 阅读', 'RSS reader')}</span>
+        {hasRssUpdates ? <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
+      </span>
+      <MobileDrawerChevron />
+    </Link>
   )
 }
 
@@ -1132,6 +1151,8 @@ export default function SiteHeader() {
                 <MobileDrawerChevron />
               </button>
             ) : null}
+            <MobileDrawerDisplaySettings />
+            <MobileDrawerRssRow account={account} onNavigate={() => setMobileMenuOpen(false)} />
           </MobileDrawerBlock>
           <MobileDrawerBlock title={pick(locale, '推荐', 'Picks')} ariaLabel={pick(locale, '推荐', 'Picks')}>
             <div className="site-mobile-picks">
@@ -1184,19 +1205,6 @@ export default function SiteHeader() {
             </div>
           </MobileDrawerBlock>
           <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-          <details className="site-mobile-card site-mobile-drawer-block site-mobile-drawer-settings overflow-hidden rounded-2xl border" aria-label={pick(locale, '显示设置', 'Display settings')}>
-            <summary className="site-mobile-drawer-row site-mobile-drawer-summary cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-              <span className="flex items-center gap-2.5">
-                <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
-                <span>{pick(locale, '显示设置', 'Display settings')}</span>
-              </span>
-              <MobileDrawerChevron className="site-mobile-drawer-settings-chevron" />
-            </summary>
-            <div className="border-t border-[var(--site-line)] px-3.5 pb-3.5 pt-3">
-              <SiteSettingsControls />
-            </div>
-          </details>
-          <MobileDrawerRssBlock account={account} onNavigate={() => setMobileMenuOpen(false)} />
         </div>
       </div>
     </>

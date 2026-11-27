@@ -31,7 +31,7 @@ function hasText(value) {
   return value && value.trim() && value.trim() !== '无'
 }
 
-// 智能体任务台：本页或文章页「ego」按钮建的任务，以及智能体逐平台回报的结果。
+// 智能体任务台：本页「分发智能体」建的任务，以及智能体逐平台回报的结果。
 export default function DistributionJobsPanel() {
   const [jobs, setJobs] = useState([])
   const [state, setState] = useState({ loading: true, error: '', notice: '' })
@@ -80,7 +80,7 @@ export default function DistributionJobsPanel() {
   return (
     <Section
       title="智能体任务台"
-      description="本页或文章页「ego」按钮建的任务都在这里。智能体用 ego lite 发布后逐平台回报。"
+      description="在本页建的任务都在这里。智能体用 ego lite 发布后逐平台回报。"
       actions={(
         <AdminButton type="button" size="sm" onClick={load} disabled={state.loading}>
           <IconRefresh size={15} /> 刷新

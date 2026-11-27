@@ -17,11 +17,10 @@ import ArticleComments from '../../../../components/ArticleComments'
 import ContentPvBeacon from '../../../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import ArticleEngagementPanel, { ArticleSupportCard } from '../../../../components/ArticleEngagementPanel'
+import ArticleDistributeButton from '../../../../components/ArticleDistributeButton'
 import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
 import ContentProofCard from '../../../../components/ContentProofCard'
 import CopyMarkdownButton from './CopyMarkdownButton'
-import DistributeMarkdownButton from './DistributeMarkdownButton'
-import EgoPublishButton from '../../../../components/EgoPublishButton'
 import RevertToDraftButton from '../../../../components/RevertToDraftButton'
 import { parseResearchSourcePath } from '../../../../../../lib/research/researchGitHubQueue'
 import DownloadPptButton from './DownloadPptButton'
@@ -322,25 +321,15 @@ export default async function ResearchDetailPage({ params }) {
             readerActions={!isAShareCompanyList ? <CopyMarkdownButton markdown={markdownDoc} /> : null}
           >
             {!isAShareCompanyList ? <>
-              <EgoPublishButton
-                  title={entry.title}
-                  url={url}
-                  summary={entry.summary || entry.tldr || ''}
-                  tags={entry.tags || []}
-                  markdown={markdownDoc}
+              <ArticleDistributeButton
+                category={entry.category}
+                slug={entry.slug}
+                title={entry.title}
+                url={url}
+                summary={entry.summary || entry.tldr || ''}
+                tags={entry.tags || []}
+                markdown={markdownDoc}
               />
-              <DistributeMarkdownButton
-                  title={entry.title}
-                  summary={entry.tldr || entry.summary || ''}
-                  markdown={markdownDoc}
-                  images={entry.images || []}
-                  url={url}
-                  category={entry.category}
-                  slug={entry.slug}
-                  tags={entry.tags || []}
-                  kindLabel={entry.contentTypeLabel || '文章'}
-                  allowArticle
-            />
               <DownloadPptButton
                   title={entry.title}
                   subtitle={entry.tldr || entry.summary || ''}

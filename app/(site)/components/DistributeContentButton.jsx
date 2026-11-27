@@ -1,17 +1,7 @@
 'use client'
 
+import { adminArticleDistributionHref, resolveDistributionContentKey } from '../../../lib/distribution/contentKey'
 import { useSessionAccount } from './SessionProvider'
-
-function resolveContentKey(category, slug) {
-  const normalizedCategory = String(category || '').trim()
-  const normalizedSlug = String(slug || '').trim()
-  if (!normalizedSlug) return ''
-  if (normalizedCategory === 'article') return `article:${normalizedSlug}`
-  if (['companies', 'topics', 'people'].includes(normalizedCategory)) {
-    return `research:${normalizedCategory}:${normalizedSlug}`
-  }
-  return ''
-}
 
 function DistributeIcon() {
   return (
@@ -34,13 +24,13 @@ function DistributeIcon() {
 
 export default function DistributeContentButton({ category, slug }) {
   const { loading, isOwner } = useSessionAccount()
-  const contentKey = resolveContentKey(category, slug)
+  const contentKey = resolveDistributionContentKey(category, slug)
 
   if (loading || !isOwner || !contentKey) return null
 
   return (
     <a
-      href={`/admin/article-distribution?contentKey=${encodeURIComponent(contentKey)}`}
+      href={adminArticleDistributionHref(contentKey)}
       className="article-action-button owner-only-action px-3 py-1 text-xs"
       title="前往后台分发智能体页，为当前文章建分发任务"
     >

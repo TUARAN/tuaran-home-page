@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { readContentCatalog } from '../../../../lib/content/contentCatalogRuntime'
 import { getArchivedArticle } from '../../../../lib/article/articleArchive'
 import ArticleDetailHeader from '../../components/ArticleDetailHeader'
+import ArticleDistributeButton from '../../components/ArticleDistributeButton'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import ContentProofCard from '../../components/ContentProofCard'
 import ArticleComments from '../../components/ArticleComments'
@@ -11,8 +12,6 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ArticleEngagementPanel, { ArticleSupportCard } from '../../components/ArticleEngagementPanel'
 import ArticleToc, { ArticleReadingLayout } from '../../components/ArticleToc'
-import DistributeContentButton from '../../components/DistributeContentButton'
-import EgoPublishButton from '../../components/EgoPublishButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { getPublishedArticlePostBySlug } from '../../../../lib/article/articlePosts'
 import { buildArticleOgUrl } from '../../../../lib/article/articleOg'
@@ -346,24 +345,14 @@ export default async function ArticleDetailPage({ params }) {
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
             readerActions={<CopyMarkdownButton markdown={articleMarkdown} />}
           >
-            <EgoPublishButton
+            <ArticleDistributeButton
+              category="article"
+              slug={article.slug}
               title={article.title}
               url={articleUrl}
               summary={article.summary || ''}
               tags={article.tags || []}
               markdown={articleMarkdown}
-            />
-            <DistributeContentButton
-              title={article.title}
-              summary={article.summary}
-              markdown={articleMarkdown}
-              images={article.cover ? [article.cover] : []}
-              url={articleUrl}
-              category="article"
-              slug={article.slug}
-              tags={article.tags || []}
-              kindLabel="文章"
-              allowArticle
             />
           </ArticleHeaderActions>
         )}

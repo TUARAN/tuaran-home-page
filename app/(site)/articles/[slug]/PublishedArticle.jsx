@@ -4,17 +4,16 @@ import ArticlePostBody, { getArticlePostToc } from '../../components/ArticlePost
 import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleEngagementPanel, { ArticleSupportCard } from '../../components/ArticleEngagementPanel'
 import ArticleToc, { ArticleReadingLayout } from '../../components/ArticleToc'
+import ArticleDistributeButton from '../../components/ArticleDistributeButton'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import ContentProofCard from '../../components/ContentProofCard'
 import ArticleComments from '../../components/ArticleComments'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
-import DistributeContentButton from '../../components/DistributeContentButton'
-import EgoPublishButton from '../../components/EgoPublishButton'
 import RevertToDraftButton from '../../components/RevertToDraftButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { isMarkdownDocument } from '../../../../lib/article/articleDocument.mjs'
-import { renderMarkdown, extractToc } from '../../../../lib/research/markdown'
+import { extractToc } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/content/contentTaxonomy'
 import { topicDisclaimerKind } from '../../../../lib/content/topicDisclaimers'
 import TopicDisclaimer from '../../components/TopicDisclaimer'
@@ -50,11 +49,6 @@ export default function PublishedArticle({ article, siteUrl }) {
     article.contentText || '',
     `原文：${url}`,
   ].filter(Boolean).join('\n\n')
-  const xArticleHtml = renderMarkdown(markdown, {
-    images: article.coverUrl ? [{ src: article.coverUrl, alt: `${article.title} 封面` }] : [],
-    seed: `article:${article.slug}`,
-    title: article.title,
-  })
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -109,25 +103,14 @@ export default function PublishedArticle({ article, siteUrl }) {
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
             readerActions={<CopyMarkdownButton markdown={markdown} />}
           >
-            <EgoPublishButton
+            <ArticleDistributeButton
+              category="article"
+              slug={article.slug}
               title={article.title}
               url={url}
               summary={article.summary || article.contentText.slice(0, 160)}
               tags={article.tags || []}
               markdown={markdown}
-            />
-            <DistributeContentButton
-              title={article.title}
-              summary={article.summary || article.contentText.slice(0, 160)}
-              markdown={markdown}
-              html={xArticleHtml}
-              images={article.coverUrl ? [article.coverUrl] : []}
-              url={url}
-              category="article"
-              slug={article.slug}
-              tags={article.tags}
-              kindLabel="文章"
-              allowArticle
             />
             <RevertToDraftButton articleId={article.id} />
           </ArticleHeaderActions>

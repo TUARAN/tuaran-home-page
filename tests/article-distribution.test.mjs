@@ -44,6 +44,19 @@ test('后台任务台接口支持站长建任务，读取文章页接口只接�
   assert.match(articleRoute, /\^\\\/articles\\\//)
 })
 
+test('公开文章页站长工具只有一个合并后的文章分发按钮', async () => {
+  const [articlePage, researchPage, published] = await Promise.all([
+    read('../app/(site)/articles/[slug]/page.jsx'),
+    read('../app/(site)/articles/research/[category]/[slug]/page.jsx'),
+    read('../app/(site)/articles/[slug]/PublishedArticle.jsx'),
+  ])
+  for (const source of [articlePage, researchPage, published]) {
+    assert.match(source, /ArticleDistributeButton/)
+    assert.doesNotMatch(source, /EgoPublishButton/)
+    assert.doesNotMatch(source, /DistributeContentButton|DistributeMarkdownButton/)
+  }
+})
+
 test('文章转 Markdown 输出 GFM 表格并保留代码语言', async () => {
   const source = await read('../app/(admin)/admin/article-distribution/articleMarkdown.js')
   assert.match(source, /Array\(width\)\.fill\('---'\)/)

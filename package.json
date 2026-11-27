@@ -15,6 +15,7 @@
     "worktree:link-deps": "node scripts/worktree-add-shared.mjs link",
     "data:git-branch-evolution": "node scripts/git-branch-evolution.mjs",
     "worktree:doctor": "node scripts/worktree-add-shared.mjs doctor",
+    "worktree:prune": "node scripts/worktree-add-shared.mjs prune",
     "test:worktree": "node --test tests/worktree-shared.test.mjs",
     "test:home-branch-evolution": "node --test tests/home-branch-evolution.test.mjs",
     "security:check": "node scripts/check-sensitive-files.mjs",

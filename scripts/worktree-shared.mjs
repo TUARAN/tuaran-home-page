@@ -4,6 +4,205 @@ import path from 'node:path'
 
 export const BRANCH_PREFIXES = ['feat', 'fix', 'research', 'content', 'chore']
 export const MAX_WORKTREES = 5
+export const DEFAULT_STALE_IDLE_DAYS = 7
+
+/** Status noise that does not block task worktree prune (snapshots, broken node_modules link). */
+export function isNoiseStatusLine(line) {
+  const rest = line.slice(3).trim()
+  if (!rest) return false
+  const file = rest.includes(' -> ') ? rest.split(' -> ')[0].trim() : rest
+  if (file === 'node_modules' || file.startsWith('node_modules/')) return true
+  if (file.startsWith('public/data/memory/')) return true
+  return false
+}
+
+export function worktreeStatusLines(repoRoot) {
+  const porcelain = gitExec(repoRoot, ['status', '--porcelain'])
+  if (!porcelain) return []
+  return porcelain.split('\n').filter(Boolean)
+}
+
+export function isWorktreeCleanEnough(repoRoot) {
+  const lines = worktreeStatusLines(repoRoot)
+  if (!lines.length) return true
+  return lines.every(isNoiseStatusLine)
+}
+
+export function branchShortName(ref) {
+  return ref ? ref.replace(/^refs\/heads\//, '') : null
+}
+
+export function isAgentSlotBranch(branchName) {
+  return typeof branchName === 'string' && /^chore\/slot-/.test(branchName)
+}
+
+export function isAgentSlotPath(worktreePath) {
+  const base = path.basename(worktreePath)
+  return base.includes('-slot-')
+}
+
+export function branchUpstreamGone(repoRoot, branchName) {
+  try {
+    const vv = gitExec(repoRoot, ['branch', '-vv', '--list', branchName])
+    return /: gone\]/.test(vv)
+  } catch {
+    return false
+  }
+}
+
+export function isBranchMergedInto(repoRoot, branchName, upstream = 'origin/main') {
+  try {
+    gitExec(repoRoot, ['merge-base', '--is-ancestor', branchName, upstream])
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function branchIdleDays(repoRoot, branchName) {
+  try {
+    const ts = Number(gitExec(repoRoot, ['log', '-1', '--format=%ct', branchName]))
+    if (!Number.isFinite(ts) || ts <= 0) return 0
+    return (Date.now() / 1000 - ts) / 86_400
+  } catch {
+    return 0
+  }
+}
+
+function ghAvailable(repoRoot) {
+  try {
+    execFileSync('gh', ['--version'], { cwd: repoRoot, stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function hasOpenPullRequest(repoRoot, branchName) {
+  if (!ghAvailable(repoRoot)) return null
+  try {
+    const out = execFileSync(
+      'gh',
+      ['pr', 'list', '--head', branchName, '--state', 'open', '--json', 'number', '--limit', '1'],
+      { cwd: repoRoot, encoding: 'utf8' },
+    )
+    return JSON.parse(out || '[]').length > 0
+  } catch {
+    return null
+  }
+}
+
+export function evaluateWorktreePrune(entry, repoRoot, options = {}) {
+  const {
+    staleIdleDays = DEFAULT_STALE_IDLE_DAYS,
+    includeStale = false,
+    upstream = 'origin/main',
+  } = options
+
+  const branchName = branchShortName(entry.branch)
+  const result = {
+    path: entry.path,
+    branch: branchName,
+    action: 'keep',
+    reason: null,
+    forceRemove: false,
+  }
+
+  if (isMainWorktree(entry.path)) {
+    result.reason = 'main worktree'
+    return result
+  }
+  if (!branchName) {
+    result.reason = 'detached HEAD'
+    return result
+  }
+  if (isAgentSlotBranch(branchName) || isAgentSlotPath(entry.path)) {
+    result.reason = 'agent slot'
+    return result
+  }
+  if (!isWorktreeCleanEnough(entry.path)) {
+    result.reason = 'uncommitted changes'
+    return result
+  }
+
+  const noiseLines = worktreeStatusLines(entry.path)
+  result.forceRemove = noiseLines.length > 0 && noiseLines.every(isNoiseStatusLine)
+
+  const merged = isBranchMergedInto(entry.path, branchName, upstream)
+  const remoteGone = branchUpstreamGone(entry.path, branchName)
+  if (merged || remoteGone) {
+    result.action = 'remove'
+    result.reason = merged ? 'merged into origin/main' : 'upstream branch gone'
+    return result
+  }
+
+  if (includeStale) {
+    const idleDays = branchIdleDays(entry.path, branchName)
+    const openPr = hasOpenPullRequest(entry.path, branchName)
+    if (openPr === true) {
+      result.reason = 'open pull request'
+      return result
+    }
+    if (openPr === null && idleDays >= staleIdleDays) {
+      result.reason = 'idle but PR state unknown (install gh)'
+      return result
+    }
+    if (idleDays >= staleIdleDays) {
+      result.action = 'remove'
+      result.reason = `idle ${Math.floor(idleDays)}d (>= ${staleIdleDays}d), no open PR`
+      result.deleteLocalBranch = false
+      return result
+    }
+    result.reason = `active task (${Math.floor(idleDays)}d since last commit)`
+    return result
+  }
+
+  result.reason = 'task in progress'
+  return result
+}
+
+export function pruneWorktrees(cwd, options = {}) {
+  const { apply = false, includeStale = false, staleIdleDays = DEFAULT_STALE_IDLE_DAYS } = options
+  const mainRoot = findMainWorktree(cwd)
+
+  try {
+    gitExec(mainRoot, ['fetch', 'origin', 'main', '--prune'])
+  } catch {
+    // offline or no remote — still evaluate with local refs
+  }
+
+  const planned = []
+  const skipped = []
+  const removed = []
+
+  for (const entry of listWorktrees(cwd)) {
+    const verdict = evaluateWorktreePrune(entry, mainRoot, { staleIdleDays, includeStale })
+    if (verdict.action === 'remove') {
+      planned.push(verdict)
+      if (!apply) continue
+      const removeArgs = ['worktree', 'remove', entry.path]
+      if (verdict.forceRemove) removeArgs.push('--force')
+      try {
+        gitExec(mainRoot, removeArgs)
+        removed.push(verdict)
+        const dropBranch = verdict.deleteLocalBranch !== false
+        if (dropBranch) {
+          try {
+            gitExec(mainRoot, ['branch', '-D', verdict.branch])
+          } catch {
+            // branch may already be gone
+          }
+        }
+      } catch (error) {
+        skipped.push({ ...verdict, reason: `remove failed: ${error.message}` })
+      }
+    } else {
+      skipped.push(verdict)
+    }
+  }
+
+  return { mainRoot, planned, skipped, removed, apply }
+}
 
 export function branchName(type, taskSlug) {
   return `${type}/${taskSlug}`

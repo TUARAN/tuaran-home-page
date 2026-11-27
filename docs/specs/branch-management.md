@@ -86,7 +86,14 @@ git worktree list
 git worktree remove <路径>
 ```
 
-worktree 里有未提交文件时 git 会拒绝。先用 `git -C <路径> status` 看清楚：自动生成的快照可以加 `--force` 丢弃，手写内容先提交或备份。
+**自动收尾（推荐）**：`npm run worktree:prune` 为 dry-run；`npm run worktree:prune -- --apply` 会拆掉满足下列条件的**任务型**卫星（`chore/slot-*` 槽位永不自动拆）：
+
+1. 工作区干净，或仅有 `public/data/memory/` 快照、`node_modules` 噪声；
+2. 分支已合入 `origin/main`，或远端跟踪分支已是 `gone`。
+
+`npm run worktree:add` 在检查 5 个上限前会先执行一轮上述自动拆除（仅已合并且干净）。长期搁置、未合并、干净、无 open PR 的卫星可用 `npm run worktree:prune -- --apply --stale`（默认 idle ≥ 7 天，可用 `--stale-days N` 调整）。
+
+worktree 里有未提交手写改动时不会自动拆。先用 `git -C <路径> status` 看清楚：只有自动快照或断链 `node_modules` 时，脚本会用 `worktree remove --force`。
 
 ## 合并后追溯
 

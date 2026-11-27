@@ -64,7 +64,27 @@ export default function TrafficPage() {
         </div>
       </header>
 
-      <section aria-labelledby="start-metrics-title" className="mb-10">
+      <section aria-labelledby="traffic-panel-title" className="mb-12">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#777] dark:text-gray-400">
+          <h2 id="traffic-panel-title" className="font-normal">数据面板由 Umami 提供</h2>
+          <a
+            href={UMAMI_SHARE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-[#bbb] underline-offset-4 transition-colors hover:text-[#222] dark:decoration-gray-600 dark:hover:text-gray-100"
+          >
+            面板无法加载？独立打开
+          </a>
+        </div>
+        <iframe
+          src={UMAMI_SHARE_URL}
+          title="TUARAN 网站访问统计"
+          loading="lazy"
+          className="block h-[80vh] min-h-[640px] w-full rounded-xl border border-[#e5dfe9] dark:border-gray-800"
+        />
+      </section>
+
+      <section aria-labelledby="start-metrics-title" className="border-t border-[#eee] pt-10 dark:border-gray-800">
         <div className="mb-4 max-w-3xl">
           <h2 id="start-metrics-title" className="text-lg font-semibold text-[#28232d] dark:text-gray-100">新访客起点指标</h2>
           <p className="mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
@@ -91,26 +111,6 @@ export default function TrafficPage() {
             ))}
           </dl>
         </details>
-      </section>
-
-      <section aria-labelledby="traffic-panel-title">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#777] dark:text-gray-400">
-          <h2 id="traffic-panel-title" className="font-normal">数据面板由 Umami 提供</h2>
-          <a
-            href={UMAMI_SHARE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline decoration-[#bbb] underline-offset-4 transition-colors hover:text-[#222] dark:decoration-gray-600 dark:hover:text-gray-100"
-          >
-            面板无法加载？独立打开
-          </a>
-        </div>
-        <iframe
-          src={UMAMI_SHARE_URL}
-          title="TUARAN 网站访问统计"
-          loading="lazy"
-          className="block h-[80vh] min-h-[640px] w-full border-0"
-        />
       </section>
     </PageContainer>
   )

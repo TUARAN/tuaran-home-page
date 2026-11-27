@@ -16,9 +16,8 @@
   padding: 14px;
   background: linear-gradient(168deg, #f3f8f0 0%, #fafcf8 100%);
 }
-.pickerBlockHead { margin: 0 0 10px; }
 .pickerLabel {
-  margin: 0;
+  margin: 0 0 8px;
   color: #2b784b;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
@@ -26,21 +25,8 @@
   letter-spacing: .14em;
   text-transform: uppercase;
 }
+.pickerBlockHead { margin: 0 0 10px; }
 .pickerMeta { margin: 4px 0 0; color: #5d7364; font-size: 12px; font-weight: 600; line-height: 1.5; }
-.accountBar { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
-.accountBtn, .accountOn {
-  border: 1px solid #b7d0bb;
-  border-radius: 999px;
-  min-height: 32px;
-  padding: 0 11px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.accountBtn { background: #fff; color: #234a32; }
-.accountBtn:hover { background: #e7f3e6; }
-.accountOn { background: #1d6840; border-color: #1d6840; color: #fff; }
-.accountBtn:focus-visible, .accountOn:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 2px; }
 .monthBar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

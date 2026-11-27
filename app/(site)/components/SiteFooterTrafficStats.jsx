@@ -53,63 +53,45 @@ export default function SiteFooterTrafficStats({ className = '' }) {
           hint: pick(locale, '近 7 天访客', 'Visitors in the last 7 days'),
         },
       ]
-    : null
-
-  const row = items || [
-    { key: 'placeholder-1', value: '—', label: pick(locale, '总浏览', 'Total views'), hint: '' },
-    { key: 'placeholder-2', value: '—', label: pick(locale, '7 日 PV', '7d PV'), hint: '' },
-    { key: 'placeholder-3', value: '—', label: pick(locale, '7 日 UV', '7d UV'), hint: '' },
-  ]
+    : [
+        { key: 'placeholder-1', value: '—', label: pick(locale, '总浏览', 'Total views'), hint: '' },
+        { key: 'placeholder-2', value: '—', label: pick(locale, '7 日 PV', '7d PV'), hint: '' },
+        { key: 'placeholder-3', value: '—', label: pick(locale, '7 日 UV', '7d UV'), hint: '' },
+      ]
 
   return (
-    <Link
-      href="/traffic"
+    <p
       className={[
-        'group mt-6 block w-full max-w-sm no-underline hover:no-underline',
+        'site-footer-traffic-stats mt-5 max-w-md text-[13px] leading-relaxed text-[var(--site-muted)]',
+        !stats ? 'opacity-80' : '',
         className,
       ].join(' ')}
-      title={pick(locale, '查看完整访问统计', 'Open traffic dashboard')}
+      aria-label={pick(locale, '本站访问数据', 'Site visit stats')}
+      aria-busy={!stats}
     >
-      <div
-        className={[
-          'site-footer-traffic-stats rounded-2xl border border-[color-mix(in_srgb,var(--site-line)_85%,var(--site-ink))]',
-          'bg-[color-mix(in_srgb,var(--site-panel)_94%,#fff)]',
-          'p-3.5 shadow-[0_8px_24px_color-mix(in_srgb,var(--site-ink)_6%,transparent)]',
-          'transition-[box-shadow,transform,border-color] duration-200',
-          'group-hover:border-[color-mix(in_srgb,var(--site-ink)_18%,var(--site-line))]',
-          'group-hover:shadow-[0_10px_28px_color-mix(in_srgb,var(--site-ink)_9%,transparent)]',
-          !items ? 'opacity-75' : '',
-        ].join(' ')}
-        aria-label={pick(locale, '本站访问数据', 'Site visit stats')}
-        aria-busy={!items}
+      <Link
+        href="/traffic"
+        className="font-semibold text-[var(--site-ink)] underline decoration-[var(--site-line)] underline-offset-[3px] transition-colors hover:text-[var(--site-ink)] hover:decoration-[var(--site-muted)]"
+        title={pick(locale, '查看完整访问统计', 'Open traffic dashboard')}
       >
-        <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-[color-mix(in_srgb,var(--site-line)_70%,transparent)] pb-2.5">
-          <span className="text-[13px] font-semibold tracking-wide text-[var(--site-ink)]">
-            {pick(locale, '访问统计', 'Traffic')}
+        {pick(locale, '访问统计', 'Traffic')}
+      </Link>
+      <span className="text-[var(--site-faint)]" aria-hidden="true">
+        {' · '}
+      </span>
+      {items.map((item, index) => (
+        <span key={item.key}>
+          {index > 0 ? (
+            <span className="text-[var(--site-faint)]" aria-hidden="true">
+              {' · '}
+            </span>
+          ) : null}
+          <span title={item.hint || undefined}>
+            <span className="font-medium tabular-nums text-[var(--site-ink)]">{item.value}</span>
+            <span className="ml-1 text-[var(--site-faint)]">{item.label}</span>
           </span>
-          <span className="text-[11px] font-medium text-[var(--site-faint)] transition-colors group-hover:text-[var(--site-muted)]">
-            {pick(locale, '打开面板', 'Open dashboard')}
-            <span aria-hidden="true"> →</span>
-          </span>
-        </div>
-        <ul className="m-0 grid list-none grid-cols-3 gap-0 p-0">
-          {row.map((item, index) => (
-            <li
-              key={item.key}
-              className={[
-                'flex min-w-0 flex-col items-center gap-1 px-2 py-0.5 text-center',
-                index > 0 ? 'border-l border-[color-mix(in_srgb,var(--site-line)_75%,transparent)]' : '',
-              ].join(' ')}
-              title={item.hint || undefined}
-            >
-              <strong className="text-[17px] font-semibold tabular-nums leading-tight tracking-tight text-[var(--site-ink)]">
-                {item.value}
-              </strong>
-              <small className="text-[11px] font-medium leading-snug text-[var(--site-muted)]">{item.label}</small>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Link>
+        </span>
+      ))}
+    </p>
   )
 }

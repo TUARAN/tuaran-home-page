@@ -173,7 +173,7 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(view, /构成简述/)
   assert.match(view, /主页链接/)
   assert.match(view, /emptyStateCopy\(selected, topDates/)
-  assert.match(view, /accountBar/)
+  assert.match(view, /InteractionAccountSelect/)
   assert.match(view, /DAILY_TOP_SUBJECT|DEFAULT_ACCOUNT/)
   assert.match(view, /searchParams\.set\('account'/)
   assert.doesNotMatch(view, /recordedList|已收录/)

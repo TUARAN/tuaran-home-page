@@ -18,49 +18,23 @@
 /* 顶栏 */
 .bar { position: sticky; top: 0; z-index: 5; background: rgba(255, 255, 255, .88); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
 .barInner { max-width: 1328px; margin: 0 auto; padding: 6px 24px; min-height: 60px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px; }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; max-width: min(100%, 360px); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; max-width: min(100%, 280px); }
 .logo { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; }
-.brandCopy { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.brandCopy { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .brandName { font-weight: 800; font-size: 18px; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; }
 .brandSlogan {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  padding: 4px 12px 4px 10px;
-  border-radius: 999px;
-  border: 1px solid #c9e8f5;
-  background: linear-gradient(118deg, #e8f6ff 0%, #eefcf3 48%, #fff6e8 100%);
-  box-shadow:
-    inset 0 1px 0 #ffffffd9,
-    0 6px 18px #1d9bf014,
-    0 1px 0 #1d9bf00f;
-}
-.brandSloganShine {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, var(--accent) 0%, #14a855 100%);
-  box-shadow: 0 0 0 3px #1d9bf022, 0 0 12px #14a85555;
-}
-.brandSloganText {
+  margin: 0;
+  max-width: 15.5em;
   font-size: 12px;
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: .03em;
-  color: #273340;
-  white-space: nowrap;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: .01em;
+  color: var(--sub);
 }
 .brandSloganEm {
-  font-weight: 800;
-  font-style: normal;
-  background: linear-gradient(100deg, #0d7a3d 0%, #0a8f6a 45%, #0f7fc1 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  letter-spacing: .01em;
+  margin-left: 2px;
+  font-weight: 700;
+  color: var(--accentInk);
 }
 .tabs { display: flex; flex-wrap: wrap; gap: 0 20px; align-items: center; min-width: 0; flex: 1 1 320px; }
 .menuGroup { display: flex; flex-wrap: wrap; align-items: center; }
@@ -347,8 +321,7 @@
   .brand { order: 1; gap: 8px; }
   .logo { width: 30px; height: 30px; font-size: 16px; }
   .brandName { font-size: 16px; }
-  .brandSlogan { padding: 3px 10px 3px 8px; gap: 6px; }
-  .brandSloganText { font-size: 11px; }
+  .brandSlogan { font-size: 11px; max-width: 14.5em; }
   .barActions { order: 2; gap: 6px; }
   .tabs { order: 3; flex: 0 0 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-padding-inline: 12px; gap: 0;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%); }
@@ -428,9 +401,7 @@
 @media (max-width: 380px) {
   .hdrPrimary { padding: 0 13px; }
   .brand { max-width: calc(100% - 108px); }
-  .brandSlogan { padding: 2px 8px 2px 7px; }
-  .brandSloganShine { width: 6px; height: 6px; box-shadow: 0 0 0 2px #1d9bf018, 0 0 8px #14a85544; }
-  .brandSloganText { font-size: 10px; letter-spacing: .01em; }
+  .brandSlogan { font-size: 10px; line-height: 1.4; }
   .slogan { font-size: 19px; }
   .metricRow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; }
   .metricCell dd { font-size: 15px; }

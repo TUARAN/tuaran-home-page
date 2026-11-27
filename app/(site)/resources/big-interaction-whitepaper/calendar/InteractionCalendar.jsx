@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { findInteractionAgent, X_INTERACTION_AGENT_POOL } from '../../../../../lib/interaction/agentPool.js'
+import { findInteractionAgent } from '../../../../../lib/interaction/agentPool.js'
+import InteractionAccountSelect from '../InteractionAccountSelect'
 import {
   canonicalDailyTopSubject,
   dailyTopSubjectKey,
@@ -98,14 +99,13 @@ export default function InteractionCalendar({ days, activities = [], initialToda
     <div className={styles.layout}>
       <aside className={styles.picker} aria-label="筛选条件">
         <div className={styles.pickerAccount}>
-          <header className={styles.pickerBlockHead}>
-            <p className={styles.pickerLabel}>智能体账号</p>
-            <p className={styles.pickerMeta}>
-              @{account}
-              {activeAgent?.name ? ` · ${activeAgent.name}` : ''}
-            </p>
-          </header>
-          <AccountBar account={account} onChoose={chooseAccount} />
+          <p className={styles.pickerLabel}>智能体账号</p>
+          <InteractionAccountSelect
+            account={account}
+            onChoose={chooseAccount}
+            ariaLabel="互动前十与任务次数所用账号"
+            label="当前账号"
+          />
         </div>
         <section className={styles.pickerCalendar} aria-label="选择日期">
           <header className={styles.pickerBlockHead}>
@@ -232,27 +232,5 @@ export default function InteractionCalendar({ days, activities = [], initialToda
       </section>
     </div>
     </>
-  )
-}
-
-function AccountBar({ account, onChoose }) {
-  return (
-    <div className={styles.accountBar} role="tablist" aria-label="互动前十账号">
-      {X_INTERACTION_AGENT_POOL.map((agent) => {
-        const on = dailyTopSubjectKey(agent.handle) === dailyTopSubjectKey(account)
-        return (
-          <button
-            key={agent.handle}
-            type="button"
-            role="tab"
-            aria-selected={on}
-            className={on ? styles.accountOn : styles.accountBtn}
-            onClick={() => onChoose(agent.handle)}
-          >
-            {agent.name}
-          </button>
-        )
-      })}
-    </div>
   )
 }

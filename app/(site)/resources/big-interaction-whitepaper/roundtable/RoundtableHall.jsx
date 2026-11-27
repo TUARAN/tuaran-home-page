@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { findInteractionAgent, X_INTERACTION_AGENT_POOL } from '../../../../../lib/interaction/agentPool.js'
+import { findInteractionAgent } from '../../../../../lib/interaction/agentPool.js'
+import InteractionAccountSelect from '../InteractionAccountSelect'
 import {
   canonicalDailyTopSubject,
   dailyTopSubjectKey,
@@ -138,7 +139,14 @@ export default function RoundtableHall() {
 
   return (
     <>
-      <AccountBar account={account} onChoose={chooseAccount} />
+      <div className={styles.accountPanel}>
+        <InteractionAccountSelect
+          account={account}
+          onChoose={chooseAccount}
+          ariaLabel="圆桌认证粉丝名录账号"
+          label="圆桌账号"
+        />
+      </div>
       {loading && <p className={styles.noResults} role="status">伙伴们正在入座，请稍候……</p>}
       {!loading && error && (
         <div className={styles.controls} role="alert">
@@ -206,27 +214,5 @@ export default function RoundtableHall() {
         </>
       )}
     </>
-  )
-}
-
-function AccountBar({ account, onChoose }) {
-  return (
-    <div className={styles.accountBar} role="tablist" aria-label="圆桌账号">
-      {X_INTERACTION_AGENT_POOL.map((agent) => {
-        const on = dailyTopSubjectKey(agent.handle) === dailyTopSubjectKey(account)
-        return (
-          <button
-            key={agent.handle}
-            type="button"
-            role="tab"
-            aria-selected={on}
-            className={on ? styles.accountOn : styles.accountBtn}
-            onClick={() => onChoose(agent.handle)}
-          >
-            {agent.name}
-          </button>
-        )
-      })}
-    </div>
   )
 }

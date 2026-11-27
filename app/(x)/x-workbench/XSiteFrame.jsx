@@ -48,12 +48,10 @@ export default function XSiteFrame({ active, children }) {
             <span className={s.logo}>X</span>
             <span className={s.brandCopy}>
               <span className={s.brandName}>X大互动</span>
-              <span className={s.brandSlogan} role="doc-subtitle">
-                <span className={s.brandSloganShine} aria-hidden="true" />
-                <span className={s.brandSloganText}>
-                  帮助一批智能体<strong className={s.brandSloganEm}>拿到创作者收益</strong>
-                </span>
-              </span>
+              <p className={s.brandSlogan} role="doc-subtitle">
+                帮助一批智能体
+                <span className={s.brandSloganEm}>拿到创作者收益</span>
+              </p>
             </span>
           </Link>
           <nav className={s.tabs} aria-label="功能">

@@ -1,0 +1,25 @@
+.field { display: grid; gap: 6px; width: 100%; }
+.label {
+  color: #5d7364;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.select {
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 36px 0 12px;
+  border: 1px solid #b7d0bb;
+  border-radius: 10px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231d6840' d='M1.2 1.4 6 6.2l4.8-4.8'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: #173d2a;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.select:hover { border-color: #8fbf98; background-color: #fbfffa; }
+.select:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 2px; border-color: #1d6840; }

@@ -5,6 +5,8 @@ import { resolveContentKey } from '../../../../../lib/article/articleLinks'
 import { getD1 } from '../../../../../lib/db/d1'
 import { readThroughEdgeCache } from '../../../../../lib/db/edgeCache.mjs'
 import { readingVisitorName } from '../../../../../lib/auth/readingVisitorIdentity.mjs'
+import { readerAccountUserId, readerUnlockAdminHref } from '../../../../../lib/admin/readerAccountAdmin.mjs'
+import { getUnlockCountsForUsers } from '../../../../../lib/ledger/points.js'
 import { cumulativeAnalyticsWindow, equalComparisonWindow } from '../../../../../lib/site/analyticsSources.mjs'
 
 export const runtime = 'edge'
@@ -55,6 +57,15 @@ async function buildReaderDetail(db, { key, days, cumulative }) {
   }
 
   const type = readerRow.visitor_type || 'anonymous'
+  const accountUserId = readerAccountUserId({ key, type })
+  let unlockCount = 0
+  let lastUnlockAt = null
+  if (accountUserId) {
+    const unlocks = await getUnlockCountsForUsers(db, [accountUserId])
+    unlockCount = Number(unlocks[accountUserId]?.unlockCount) || 0
+    lastUnlockAt = unlocks[accountUserId]?.lastUnlockAt || null
+  }
+
   return {
     status: 'ok',
     generatedAt: now,
@@ -68,6 +79,10 @@ async function buildReaderDetail(db, { key, days, cumulative }) {
       contentCount: Number(readerRow.content_count) || 0,
       firstSeen: Number(readerRow.first_seen) || 0,
       lastSeen: Number(readerRow.last_seen) || 0,
+      accountUserId,
+      unlockCount,
+      lastUnlockAt,
+      unlockAdminHref: readerUnlockAdminHref(accountUserId),
     },
     content: contentRows.map((row) => {
       const resolved = resolveContentKey(row.category, row.slug, metadata)

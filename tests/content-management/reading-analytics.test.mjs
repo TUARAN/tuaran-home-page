@@ -108,8 +108,11 @@ test('active readers expand into a per-reader detail behind the owner guard', ()
   assert.match(readerDetailRouteSource, /quality = 'qualified'/)
   assert.match(readerDetailRouteSource, /first_seen/)
   assert.match(readerDetailRouteSource, /readingVisitorName/)
+  assert.match(readerDetailRouteSource, /getUnlockCountsForUsers/)
+  assert.match(readerDetailRouteSource, /unlockAdminHref/)
   assert.match(analyticsDashboardSource, /content-weekly\/reader/)
   assert.match(analyticsDashboardSource, /toggleReader/)
+  assert.match(analyticsDashboardSource, /查看解锁记录/)
 })
 
 test('engagement feedback excludes in-site bot comments from both the list and totals', () => {

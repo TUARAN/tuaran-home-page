@@ -69,10 +69,57 @@ const RECOMMENDATION_ICONS = {
 
 const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['systems', 'community', 'ranbi', 'about'].includes(channel.key))
 
-function RecommendationLink({ item, onNavigate }) {
+function MobileDrawerChevron({ className = '' }) {
+  return (
+    <IconChevronRight
+      size={16}
+      stroke={1.75}
+      className={['site-mobile-drawer-chevron shrink-0', className].filter(Boolean).join(' ')}
+      aria-hidden="true"
+    />
+  )
+}
+
+function MobileDrawerBlock({ title, children, className = '', ariaLabel }) {
+  return (
+    <section
+      className={['site-mobile-card site-mobile-drawer-block overflow-hidden rounded-2xl border', className].filter(Boolean).join(' ')}
+      aria-label={ariaLabel}
+    >
+      {title ? (
+        <p className="site-mobile-drawer-block-title border-b border-[var(--site-line)] px-3.5 py-2.5">
+          {title}
+        </p>
+      ) : null}
+      {children}
+    </section>
+  )
+}
+
+function RecommendationLink({ item, onNavigate, variant }) {
   const { locale } = useLocale()
   const toneClass = item.tone === 'book' ? 'site-header-pick-book' : item.tone === 'shop' ? 'site-header-pick-shop' : 'site-header-pick-green'
   const icon = item.icon ? RECOMMENDATION_ICONS[item.icon] : null
+  const label = pick(locale, item.label, item.labelEn)
+  if (variant === 'drawer') {
+    return (
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        className={`site-mobile-drawer-row site-mobile-drawer-pick site-mobile-drawer-pick-${item.tone || 'green'}`}
+        data-analytics-event="entry_click"
+        data-analytics-surface="global_nav_recommendation"
+        data-analytics-destination-kind={item.kind}
+        data-analytics-destination-id={item.href}
+      >
+        <span className="flex min-w-0 items-center gap-2.5">
+          {icon ? <span className="site-mobile-drawer-pick-icon" aria-hidden="true">{icon}</span> : <span className="site-mobile-drawer-pick-dot" aria-hidden="true" />}
+          <span className="truncate">{label}</span>
+        </span>
+        <MobileDrawerChevron />
+      </Link>
+    )
+  }
   return <Link
     href={item.href}
     onClick={onNavigate}
@@ -83,7 +130,7 @@ function RecommendationLink({ item, onNavigate }) {
     data-analytics-destination-id={item.href}
   >
     {icon ? <span className="site-header-pick-badge" aria-hidden="true">{icon}</span> : null}
-    <span>{pick(locale, item.label, item.labelEn)}</span>
+    <span>{label}</span>
   </Link>
 }
 
@@ -377,32 +424,31 @@ function AuthorityDrawerLinks({ pathname, onNavigate }) {
   const hubHref = SITE_AUTHORITY_SUMMARY.href || SITE_AUTHORITY_LINKS[0]?.href || '/topics/ai-agents'
   const isActive = SITE_AUTHORITY_LINKS.some((item) => isAuthorityLinkActive(item, pathname))
   return (
-    <Link
-      href={hubHref}
-      onClick={onNavigate}
-      aria-current={isActive ? 'page' : undefined}
-      className={[
-        'site-mobile-card site-mobile-authority-hub mb-3 flex items-center justify-between gap-3 overflow-hidden rounded-2xl border px-4 py-3.5 no-underline',
-        isActive ? 'is-active' : '',
-      ].join(' ')}
-      data-analytics-event="entry_click"
-      data-analytics-surface="global_nav"
-      data-analytics-destination-kind="page"
-      data-analytics-destination-id={hubHref}
-    >
-      <span className="min-w-0">
-        <span className="site-menu-desc mb-1 block font-mono text-[10px] uppercase tracking-[0.18em]">
-          {navLabel(SITE_AUTHORITY_SUMMARY, locale)}
+    <MobileDrawerBlock title={navLabel(SITE_AUTHORITY_SUMMARY, locale)} ariaLabel={pick(locale, '主线专题', 'Core topics')}>
+      <Link
+        href={hubHref}
+        onClick={onNavigate}
+        aria-current={isActive ? 'page' : undefined}
+        className={[
+          'site-mobile-drawer-row site-mobile-drawer-feature',
+          isActive ? 'is-active' : '',
+        ].join(' ')}
+        data-analytics-event="entry_click"
+        data-analytics-surface="global_nav"
+        data-analytics-destination-kind="page"
+        data-analytics-destination-id={hubHref}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="site-mobile-drawer-row-primary block leading-snug">
+            {pick(locale, '浏览主线专题目录', 'Browse core topic hubs')}
+          </span>
+          <span className="site-mobile-drawer-muted mt-0.5 block text-[12px] leading-5">
+            {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
+          </span>
         </span>
-        <span className="site-menu-title block text-[14px] font-semibold leading-snug">
-          {pick(locale, '浏览主线专题目录', 'Browse core topic hubs')}
-        </span>
-        <span className="site-mobile-drawer-muted mt-1 block text-[12px] leading-5">
-          {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
-        </span>
-      </span>
-      <span className="shrink-0 font-mono text-[15px] opacity-70" aria-hidden="true">→</span>
-    </Link>
+        <MobileDrawerChevron />
+      </Link>
+    </MobileDrawerBlock>
   )
 }
 
@@ -742,9 +788,9 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
     )
   }
 
-  return (
-    <div className={shell}>
-      <div className="site-dropdown-strip border-b border-[#332d26] px-3.5 py-3">
+  const accountBlock = (
+    <>
+      <div className="site-mobile-drawer-account-head border-b border-[var(--site-line)] px-3.5 py-3">
         <div className="flex items-center justify-between gap-3">
           <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
           <NotificationBadge count={unread} />
@@ -753,9 +799,9 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
       {!loading && user ? (
         <div>
           {hasActivity ? (
-            <div className="border-b border-[#332d26] px-2 py-2">
-              <div className="mb-1.5 flex items-center justify-between px-1.5">
-                <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
+            <div className="border-b border-[var(--site-line)] px-2.5 py-2.5">
+              <div className="mb-1.5 flex items-center justify-between px-1">
+                <p className="site-mobile-drawer-block-title mb-0 normal-case tracking-[0.08em]">
                   {pick(locale, '最近互动', 'Recent activity')}
                 </p>
                 <NotificationBadge count={unread} />
@@ -768,62 +814,55 @@ function MobileAccountPanel({ account, pathname, onNavigate, embedded = false })
               />
             </div>
           ) : null}
-          <div className="px-1.5 py-1.5">
+          <div className="site-mobile-drawer-account-links">
             {showAdminLink ? (
               <Link
                 href={SITE_ADMIN_NAV_LINK.href}
                 onClick={onNavigate}
-                className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
+                className="site-mobile-drawer-row"
               >
                 <span>{navLabel(SITE_ADMIN_NAV_LINK, locale)}</span>
-                <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+                <MobileDrawerChevron />
               </Link>
             ) : null}
-            <Link
-              href="/account"
-              onClick={onNavigate}
-              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
-            >
+            <Link href="/account" onClick={onNavigate} className="site-mobile-drawer-row">
               <span>{pick(locale, '账号中心', 'Account center')}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+              <MobileDrawerChevron />
             </Link>
-            <Link
-              href="/community"
-              onClick={onNavigate}
-              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
-            >
+            <Link href="/community" onClick={onNavigate} className="site-mobile-drawer-row">
               <span>{pick(locale, '交流广场', 'Community')}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+              <MobileDrawerChevron />
             </Link>
-            <Link
-              href="/messages"
-              onClick={onNavigate}
-              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
-            >
+            <Link href="/messages" onClick={onNavigate} className="site-mobile-drawer-row">
               <span>{pick(locale, '消息', 'Messages')}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+              <MobileDrawerChevron />
             </Link>
-            <Link
-              href="/resources/rss"
-              onClick={onNavigate}
-              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
-            >
-              <span className="flex items-center gap-2">
+            <Link href="/resources/rss" onClick={onNavigate} className="site-mobile-drawer-row">
+              <span className="flex min-w-0 items-center gap-2">
                 {pick(locale, 'RSS 阅读', 'RSS reader')}
-                {hasRssUpdates ? <span className="h-2 w-2 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
+                {hasRssUpdates ? <span className="h-2 w-2 shrink-0 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
               </span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+              <MobileDrawerChevron />
             </Link>
-          <a
-            href={logoutHref}
-            className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
-          >
-            <span>{pick(locale, '退出登录', 'Sign out')}</span>
-            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
-          </a>
+            <a href={logoutHref} className="site-mobile-drawer-row site-mobile-drawer-row-muted">
+              <span className="flex items-center gap-2">
+                <IconLogout size={17} stroke={1.65} aria-hidden="true" />
+                <span>{pick(locale, '退出登录', 'Sign out')}</span>
+              </span>
+            </a>
           </div>
         </div>
       ) : null}
+    </>
+  )
+
+  if (embedded) {
+    return accountBlock
+  }
+
+  return (
+    <div className={shell}>
+      {accountBlock}
     </div>
   )
 }
@@ -1051,93 +1090,122 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 xl:hidden',
+          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-3.5 py-4 transition-transform duration-200 xl:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
-        {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-3 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
-        <section className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={pick(locale, '频道入口', 'Channels')}>
-          <p className="site-mobile-section-label border-b border-[var(--site-line)] px-3.5 py-2.5">
-            {pick(locale, '频道', 'Channels')}
-          </p>
-          <nav aria-label={pick(locale, '频道入口', 'Channels')} className="site-mobile-quick-nav">
-            {MOBILE_PRIMARY_CHANNELS.map((channel) => (
+        <div className="site-mobile-drawer-stack">
+          {pathname === '/' ? (
+            <MobileDrawerBlock ariaLabel={pick(locale, '搜索', 'Search')}>
               <Link
-                key={channel.key}
-                href={channel.href}
+                href="/search"
+                className="site-mobile-drawer-row site-mobile-drawer-search"
                 onClick={() => setMobileMenuOpen(false)}
-                aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
-                className={`site-mobile-quick-link ${channel.match(pathname, searchParams) ? 'is-active' : ''}`}
-                data-analytics-event="entry_click"
-                data-analytics-surface="global_nav"
-                data-analytics-destination-kind="page"
-                data-analytics-destination-id={channel.href}
               >
-                {navLabel(channel, locale)}
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 opacity-80">
+                    <circle cx="9" cy="9" r="5.25" stroke="currentColor" strokeWidth="1.65" />
+                    <path d="M13.2 13.2 17 17" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
+                  </svg>
+                  <span className="site-mobile-drawer-muted text-[13.5px] font-medium">
+                    {pick(locale, '搜索页面和内容', 'Search pages and content')}
+                  </span>
+                </span>
+                <MobileDrawerChevron />
               </Link>
-            ))}
-          </nav>
-          <div className="site-mobile-shortcut-row border-t border-[var(--site-line)]">
-            {SITE_CONTENT_SHORTCUTS.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
-                className={`site-mobile-shortcut-chip ${item.match(pathname, searchParams) ? 'is-active' : ''}`}
-                data-analytics-event="entry_click"
-                data-analytics-surface="global_nav"
-                data-analytics-destination-kind={item.key === 'resources' ? 'resource' : 'page'}
-                data-analytics-destination-id={item.href}
-              >
-                {navLabel(item, locale)}
-              </Link>
-            ))}
-          </div>
-        </section>
-        <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-        <details className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={pick(locale, '显示设置', 'Display settings')}>
-          <summary className="site-mobile-drawer-summary flex cursor-pointer list-none items-center justify-between px-3.5 py-3 text-[13.5px] font-medium [&::-webkit-details-marker]:hidden">
-            <span className="flex items-center gap-2.5">
-              <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
-              <span>{pick(locale, '显示设置', 'Display settings')}</span>
-            </span>
-            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70" aria-hidden="true">＋</span>
-          </summary>
-          <div className="border-t border-[var(--site-line)] px-3 pb-3 pt-3">
-            <SiteSettingsControls />
-          </div>
-        </details>
-        <section className="site-mobile-card overflow-hidden rounded-2xl border" aria-label={pick(locale, '账户与推荐', 'Account & picks')}>
-          <MobileAccountPanel
-            account={account}
-            pathname={pathname}
-            embedded
-            onNavigate={() => setMobileMenuOpen(false)}
-          />
-          {!installed ? (
-            <button
-              type="button"
-              className="site-menu-item site-mobile-account-link flex w-full items-center justify-between border-t border-[var(--site-line)] font-medium"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                openInstallGuide()
-              }}
-            >
-              <span className="flex items-center gap-2.5">
-                <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
-                <span>{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
-              </span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
-            </button>
+            </MobileDrawerBlock>
           ) : null}
-          <div className="border-t border-[var(--site-line)] px-3 py-3" aria-label={pick(locale, '推荐', 'Picks')}>
-            <p className="site-mobile-section-label mb-2">{pick(locale, '推荐', 'PICKS')}</p>
-            <div className="site-mobile-picks grid grid-cols-2 gap-2">
-              {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
+          <MobileDrawerBlock title={pick(locale, '频道', 'Channels')} ariaLabel={pick(locale, '频道入口', 'Channels')}>
+            <nav aria-label={pick(locale, '频道入口', 'Channels')} className="site-mobile-quick-nav">
+              {MOBILE_PRIMARY_CHANNELS.map((channel) => (
+                <Link
+                  key={channel.key}
+                  href={channel.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
+                  className={`site-mobile-quick-link site-mobile-drawer-row ${channel.match(pathname, searchParams) ? 'is-active' : ''}`}
+                  data-analytics-event="entry_click"
+                  data-analytics-surface="global_nav"
+                  data-analytics-destination-kind="page"
+                  data-analytics-destination-id={channel.href}
+                >
+                  <span>{navLabel(channel, locale)}</span>
+                  <MobileDrawerChevron />
+                </Link>
+              ))}
+            </nav>
+            <div className="site-mobile-shortcut-row border-t border-[var(--site-line)]">
+              {SITE_CONTENT_SHORTCUTS.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
+                  className={`site-mobile-shortcut-chip site-mobile-drawer-row ${item.match(pathname, searchParams) ? 'is-active' : ''}`}
+                  data-analytics-event="entry_click"
+                  data-analytics-surface="global_nav"
+                  data-analytics-destination-kind={item.key === 'resources' ? 'resource' : 'page'}
+                  data-analytics-destination-id={item.href}
+                >
+                  <span>{navLabel(item, locale)}</span>
+                  <MobileDrawerChevron />
+                </Link>
+              ))}
             </div>
-          </div>
-        </section>
+          </MobileDrawerBlock>
+          <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
+          <details className="site-mobile-card site-mobile-drawer-block site-mobile-drawer-settings overflow-hidden rounded-2xl border" aria-label={pick(locale, '显示设置', 'Display settings')}>
+            <summary className="site-mobile-drawer-row site-mobile-drawer-summary cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center gap-2.5">
+                <IconAdjustmentsHorizontal size={18} stroke={1.7} aria-hidden="true" />
+                <span>{pick(locale, '显示设置', 'Display settings')}</span>
+              </span>
+              <MobileDrawerChevron className="site-mobile-drawer-settings-chevron" />
+            </summary>
+            <div className="border-t border-[var(--site-line)] px-3.5 pb-3.5 pt-3">
+              <SiteSettingsControls />
+            </div>
+          </details>
+          <MobileDrawerBlock ariaLabel={pick(locale, '账户与推荐', 'Account & picks')}>
+            <MobileAccountPanel
+              account={account}
+              pathname={pathname}
+              embedded
+              onNavigate={() => setMobileMenuOpen(false)}
+            />
+            {!installed ? (
+              <button
+                type="button"
+                className="site-mobile-drawer-row border-t border-[var(--site-line)]"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  openInstallGuide()
+                }}
+              >
+                <span className="flex items-center gap-2.5">
+                  <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
+                  <span>{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
+                </span>
+                <MobileDrawerChevron />
+              </button>
+            ) : null}
+            <div className="border-t border-[var(--site-line)]" aria-label={pick(locale, '推荐', 'Picks')}>
+              <p className="site-mobile-drawer-block-title border-b border-[var(--site-line)] px-3.5 py-2.5">
+                {pick(locale, '推荐', 'Picks')}
+              </p>
+              <div className="site-mobile-picks">
+                {HEADER_RECOMMENDATIONS.map((item) => (
+                  <RecommendationLink
+                    key={item.href}
+                    item={item}
+                    variant="drawer"
+                    onNavigate={() => setMobileMenuOpen(false)}
+                  />
+                ))}
+              </div>
+            </div>
+          </MobileDrawerBlock>
+        </div>
       </div>
     </>
   )

@@ -384,7 +384,7 @@ function AudiencePanel({ data, loading, days = 7 }) {
           <div className="mt-3 grid grid-cols-3 gap-2">{breakdown.map((row) => <div key={row.type}><p className="text-[10px] text-[#8f9187] dark:text-gray-600">{AUDIENCE_LABELS[row.type] || row.type}</p><p className="mt-0.5 text-sm font-semibold text-[#171611] dark:text-gray-100">{row.uv} <span className="text-[10px] font-normal text-[#9a9b92]">UV</span></p></div>)}</div>
         </div>
       ) : <EmptyState title="暂无受众数据" description="新访问会区分登录用户、稳定游客和匿名访客。" />}
-      {visitors.length ? <div><h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.13em] text-[#8f9187] dark:text-gray-600">活跃读者</h3><ol className="divide-y divide-[#ecece5] dark:divide-[#202a37]">{visitors.slice(0, 8).map((visitor) => <li key={visitor.key || visitor.name}><button type="button" onClick={() => toggleReader(visitor)} aria-expanded={openKey === visitor.key} className="flex w-full items-center justify-between gap-3 rounded-lg py-2.5 text-left transition-colors hover:bg-[#f4f4ee] dark:hover:bg-[#182230]"><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-[#171611] dark:text-gray-100">{visitor.name}</span><span className="mt-0.5 block text-[10px] text-[#9a9b92] dark:text-gray-600">{AUDIENCE_LABELS[visitor.type] || visitor.type} · {visitor.contentCount} 篇 · {formatDateTime(visitor.lastSeen)}</span></span><span className="flex shrink-0 items-center gap-2"><span className="text-xs font-semibold">{visitor.pv} <span className="font-normal text-[#9a9b92]">PV</span></span><span className={`text-[#9a9b92] transition-transform ${openKey === visitor.key ? 'rotate-180' : ''}`}>▾</span></span></button>{openKey === visitor.key ? <div className="pb-3 pt-1">{detailLoading ? <p className="text-[11px] text-[#9a9b92]">正在加载阅读明细…</p> : detailError ? <p className="text-[11px] text-rose-600">读取失败：{detailError}</p> : detail?.reader ? (<div><p className="text-[11px] text-[#77796f] dark:text-gray-500">该周期 {number(detail.reader.pv)} PV · {detail.reader.contentCount} 篇 · 首次 {formatDateTime(detail.reader.firstSeen)} · 最近 {formatDateTime(detail.reader.lastSeen)}</p>
+      {visitors.length ? <div><h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.13em] text-[#8f9187] dark:text-gray-600">活跃读者</h3><ol className="divide-y divide-[#ecece5] dark:divide-[#202a37]">{visitors.slice(0, 8).map((visitor) => <li key={visitor.key || visitor.name}><button type="button" onClick={() => toggleReader(visitor)} aria-expanded={openKey === visitor.key} className="flex w-full items-center justify-between gap-3 rounded-lg py-2.5 text-left transition-colors hover:bg-[#f4f4ee] dark:hover:bg-[#182230]"><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-[#171611] dark:text-gray-100">{visitor.name}</span><span className="mt-0.5 block text-[10px] text-[#9a9b92] dark:text-gray-600">{AUDIENCE_LABELS[visitor.type] || visitor.type} · {visitor.contentCount} 篇{visitor.todayUnlockCount != null && days === 1 ? ` · 今日解锁 ${visitor.todayUnlockCount} 篇` : ''} · {formatDateTime(visitor.lastSeen)}</span></span><span className="flex shrink-0 items-center gap-2"><span className="text-xs font-semibold">{visitor.pv} <span className="font-normal text-[#9a9b92]">PV</span></span><span className={`text-[#9a9b92] transition-transform ${openKey === visitor.key ? 'rotate-180' : ''}`}>▾</span></span></button>{openKey === visitor.key ? <div className="pb-3 pt-1">{detailLoading ? <p className="text-[11px] text-[#9a9b92]">正在加载阅读明细…</p> : detailError ? <p className="text-[11px] text-rose-600">读取失败：{detailError}</p> : detail?.reader ? (<div><p className="text-[11px] text-[#77796f] dark:text-gray-500">该周期 {number(detail.reader.pv)} PV · {detail.reader.contentCount} 篇 · 首次 {formatDateTime(detail.reader.firstSeen)} · 最近 {formatDateTime(detail.reader.lastSeen)}</p>
                     {detail.reader.accountUserId ? (
                       <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#77796f] dark:text-gray-500">
                         <span>累计解锁 <strong className="font-semibold text-[#171611] dark:text-gray-100">{number(detail.reader.unlockCount)}</strong> 项</span>
@@ -442,8 +442,16 @@ function LikedContentList({ likes, loading }) {
   )
 }
 
+function initialDaysFromSearch() {
+  if (typeof window === 'undefined') return 7
+  const requested = new URLSearchParams(window.location.search).get('days')
+  if (requested === 'all') return 'all'
+  const n = Number(requested)
+  return PERIODS.some((item) => item.days === n) ? n : 7
+}
+
 export default function ContentWeeklyClient() {
-  const [days, setDays] = useState(7)
+  const [days, setDays] = useState(initialDaysFromSearch)
   const [view, setView] = useState('overview')
 
   useEffect(() => {
@@ -484,6 +492,10 @@ export default function ContentWeeklyClient() {
   const changePeriod = useCallback((nextDays) => {
     if (nextDays === days) return
     setDays(nextDays)
+    const params = new URLSearchParams(window.location.search)
+    params.set('days', String(nextDays))
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`
+    window.history.replaceState(null, '', nextUrl)
   }, [days])
 
   const deleteComment = useCallback(async (comment) => {

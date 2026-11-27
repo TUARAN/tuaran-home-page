@@ -8,17 +8,13 @@ import { readingVisitorName } from '../../../../../lib/auth/readingVisitorIdenti
 import { readerAccountUserId, readerUnlockAdminHref } from '../../../../../lib/admin/readerAccountAdmin.mjs'
 import { getUnlockCountsForUsers } from '../../../../../lib/ledger/points.js'
 import { cumulativeAnalyticsWindow, equalComparisonWindow } from '../../../../../lib/site/analyticsSources.mjs'
+import { visitorKeySql } from '../../../../../lib/admin/readingTodayAnalytics.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const ALLOWED_DAYS = new Set([1, 7, 30, 90])
 const CONTENT_LIMIT = 50
-
-// 与 content-weekly 主接口保持同一读者归一口径：登录用户按 user_id 聚合，游客按 visitor_hash 聚合。
-function visitorKeySql() {
-  return `CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END`
-}
 
 // 读者明细是后台按需展开的二级视图。同一位读者在 60 秒内重复展开时，
 // 不必再把它在统计窗口内的全部阅读事件扫一遍。

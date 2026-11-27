@@ -153,7 +153,8 @@ function TodayReaderRankList({ rows, loading }) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12px] font-medium text-[#3f4039] dark:text-gray-200">{row.name}</p>
             <p className="mt-0.5 truncate text-[10.5px] text-[#929487] dark:text-gray-500">
-              {readerTypeLabels[row.type] || row.type} · {row.contentCount} 篇 · {formatRankTime(row.lastSeen)}
+              {readerTypeLabels[row.type] || row.type} · {row.contentCount} 篇
+              {row.todayUnlockCount != null ? ` · 解锁 ${row.todayUnlockCount} 篇` : ''} · {formatRankTime(row.lastSeen)}
             </p>
           </div>
           <div className="shrink-0 text-right text-[11px] tabular-nums">
@@ -380,8 +381,8 @@ export default function AdminDashboardClient() {
 
         <div className="grid grid-cols-2 border-t border-[#e6e7df] dark:border-[#1b2430] md:grid-cols-5">
           <DashboardMetric index={0} label="注册用户" value={users?.count != null ? users.count : '—'} sub="全部登录账号" icon="users" href="/admin/users" />
-          <DashboardMetric index={1} label="今日阅读" value={pv?.today != null ? pv.today : '—'} sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '有效阅读'} icon="analytics" href="/admin/content-weekly#reading" />
-          <DashboardMetric index={2} label="今日用户" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" href="/admin/content-weekly#reading" />
+          <DashboardMetric index={1} label="今日阅读" value={pv?.today != null ? pv.today : '—'} sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '有效阅读'} icon="analytics" href="/admin/content-weekly?days=1#reading" />
+          <DashboardMetric index={2} label="今日用户" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" href="/admin/content-weekly?days=1#reading" />
           <DashboardMetric index={3} label="D1 数据库" value={dbValue(db)} sub={dbSub(db)} icon="database" tone={dbTone(db?.status)} href="/admin/db" />
           <DashboardMetric index={4} label="自动化" value={ops?.label || '—'} sub={ops?.latencyMs != null ? `${ops.latencyMs}ms 响应` : '运行台账'} icon="ops" tone={opsTone(ops?.status)} href="/admin/ops" />
         </div>
@@ -398,10 +399,10 @@ export default function AdminDashboardClient() {
             </p>
           </div>
           <Link
-            href="/admin/content-weekly"
+            href="/admin/content-weekly?days=1#reading"
             className="text-[11px] text-[#67695d] hover:text-[#15140f] dark:text-gray-400 dark:hover:text-gray-100"
           >
-            内容周报详情
+            内容日报详情
           </Link>
         </header>
 

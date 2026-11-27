@@ -92,7 +92,8 @@ test('admin analytics centralizes source roles and live integrations', () => {
 })
 
 test('content analytics defaults to the recent seven-day period', () => {
-  assert.match(analyticsDashboardSource, /const \[days, setDays\] = useState\(7\)/)
+  assert.match(analyticsDashboardSource, /initialDaysFromSearch/)
+  assert.match(analyticsDashboardSource, /\{ days: 1, label: '今日' \}/)
 })
 
 test('admin analytics exposes a true cumulative history range', () => {
@@ -104,7 +105,7 @@ test('admin analytics exposes a true cumulative history range', () => {
 
 test('active readers expand into a per-reader detail behind the owner guard', () => {
   assert.match(readerDetailRouteSource, /getOwnerOrReject/)
-  assert.match(readerDetailRouteSource, /CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END/)
+  assert.match(readerDetailRouteSource, /visitorKeySql/)
   assert.match(readerDetailRouteSource, /quality = 'qualified'/)
   assert.match(readerDetailRouteSource, /first_seen/)
   assert.match(readerDetailRouteSource, /readingVisitorName/)

@@ -5,8 +5,8 @@ import { resolveArticleKey, resolveContentKey } from '../../../../lib/article/ar
 import { getD1 } from '../../../../lib/db/d1'
 import { readThroughEdgeCache } from '../../../../lib/db/edgeCache.mjs'
 import { CONTENT_TYPE_GROUP } from '../../../../lib/content/contentRegistry'
-import { readingVisitorName } from '../../../../lib/auth/readingVisitorIdentity.mjs'
-import { cumulativeAnalyticsWindow, equalComparisonWindow } from '../../../../lib/site/analyticsSources.mjs'
+import { cumulativeAnalyticsWindow, equalComparisonWindow, shanghaiDayStartMs } from '../../../../lib/site/analyticsSources.mjs'
+import { loadTodayQualifiedReadingSnapshot, mapReadingVisitor, visitorKeySql } from '../../../../lib/admin/readingTodayAnalytics.mjs'
 import { READER_USER_PREFIX } from '../../../../lib/automation/engagementBot'
 
 export const runtime = 'edge'
@@ -24,8 +24,7 @@ const ALLOWED_DAYS = new Set([1, 7, 30, 90])
 const LIMIT = 12
 
 function shanghaiDayStart(now) {
-  const local = new Date(now + SHANGHAI_TZ_OFFSET_MS)
-  return Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - SHANGHAI_TZ_OFFSET_MS
+  return shanghaiDayStartMs(now)
 }
 
 function formatShanghaiDay(dayStart) {
@@ -43,10 +42,6 @@ function buildSeries(rows, start, days) {
     const dayKey = Math.floor((dayStart + SHANGHAI_TZ_OFFSET_MS) / DAY_MS)
     return { ...formatShanghaiDay(dayStart), dayStart, pv: values.get(dayKey) || 0 }
   })
-}
-
-function visitorKeySql() {
-  return `CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END`
 }
 
 function typeRows(rows) {
@@ -112,10 +107,6 @@ async function buildWeeklyAnalytics(db, { days, cumulative }) {
     sourceRows,
     audienceRows,
     visitorRows,
-    todayOverview,
-    todayContentRows,
-    todaySourceRows,
-    todayVisitorRows,
     likeTotal,
     likeRows,
     commentRows,
@@ -183,29 +174,6 @@ async function buildWeeklyAnalytics(db, { days, cumulative }) {
        GROUP BY visitor_key ORDER BY pv DESC, last_seen DESC LIMIT ?3`,
     ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
     db.prepare(
-      `SELECT COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
-       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2`,
-    ).bind(todayStart, now).first(),
-    db.prepare(
-      `SELECT category, slug, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv, 0 AS previous_pv
-       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-       GROUP BY category, slug ORDER BY pv DESC, uv DESC LIMIT ?3`,
-    ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
-    db.prepare(
-      `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
-         COUNT(DISTINCT ${visitorKey}) AS uv
-       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-       GROUP BY source, medium, campaign, referrer_host ORDER BY pv DESC LIMIT 8`,
-    ).bind(todayStart, now).all().then((r) => r.results || []),
-    db.prepare(
-      `SELECT ${visitorKey} AS visitor_key,
-         MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
-         MAX(user_name) AS user_name, COUNT(*) AS pv,
-         COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
-       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-       GROUP BY visitor_key ORDER BY last_seen DESC LIMIT ?3`,
-    ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
-    db.prepare(
       `SELECT
          SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
          SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
@@ -243,7 +211,7 @@ async function buildWeeklyAnalytics(db, { days, cumulative }) {
 
   const archived = await readContentCatalog()
   const metadata = new Map(archived.entries.map((entry) => [entry.contentKey, { title: entry.title, href: entry.href }]))
-  const keys = [...contentRows, ...todayContentRows].map((row) => ['companies', 'topics', 'people'].includes(row.category) ? `research:${row.category}:${row.slug}` : `${row.category}:${row.slug}`)
+  const keys = contentRows.map((row) => ['companies', 'topics', 'people'].includes(row.category) ? `research:${row.category}:${row.slug}` : `${row.category}:${row.slug}`)
   keys.push(...likeRows.map((row) => row.article_key), ...commentRows.map((row) => row.article_key))
   for (let offset = 0; offset < keys.length; offset += 100) {
     for (const [key, value] of await loadContentKeyMeta(db, keys.slice(offset, offset + 100))) metadata.set(key, value)
@@ -260,19 +228,13 @@ async function buildWeeklyAnalytics(db, { days, cumulative }) {
     pv: Number(row.pv) || 0,
     uv: Number(row.uv) || 0,
   })
-  const mapVisitor = (row) => {
-    const key = row.visitor_key || ''
-    const type = row.visitor_type || 'anonymous'
-    return {
-      key,
-      type,
-      provider: row.user_provider || '',
-      name: readingVisitorName({ visitorType: type, visitorKey: key, userName: row.user_name || '' }),
-      pv: Number(row.pv) || 0,
-      contentCount: Number(row.content_count) || 0,
-      lastSeen: Number(row.last_seen) || 0,
-    }
-  }
+  const todaySnapshot = await loadTodayQualifiedReadingSnapshot(db, {
+    now,
+    todayStartMs: todayStart,
+    contentLimit: LIMIT,
+    visitorLimit: LIMIT,
+    sourceLimit: 8,
+  })
   const likes = likeRows.map((row) => {
     const resolved = resolveArticleKey(row.article_key, metadata)
     const total = Number(row.total) || 0
@@ -314,14 +276,14 @@ async function buildWeeklyAnalytics(db, { days, cumulative }) {
     sources: sourceRows.map(mapSource),
     audience: {
       breakdown: audienceRows.map((row) => ({ type: row.visitor_type || 'anonymous', pv: Number(row.pv) || 0, uv: Number(row.uv) || 0 })),
-      visitors: visitorRows.map(mapVisitor),
+      visitors: days === 1 && !cumulative ? todaySnapshot.visitors : visitorRows.map((row) => mapReadingVisitor(row)),
     },
     today: {
-      pv: Number(todayOverview?.pv) || 0,
-      uv: Number(todayOverview?.uv) || 0,
-      topContent: resolveReadRows(todayContentRows, metadata),
-      sources: todaySourceRows.map(mapSource),
-      visitors: todayVisitorRows.map(mapVisitor),
+      pv: todaySnapshot.pv,
+      uv: todaySnapshot.uv,
+      topContent: todaySnapshot.topContent,
+      sources: todaySnapshot.sources,
+      visitors: todaySnapshot.visitors,
     },
     likes: { total: Number(likeTotal?.total) || 0, previousTotal: Number(likeTotal?.previous_total) || 0, top: likes },
     comments: {

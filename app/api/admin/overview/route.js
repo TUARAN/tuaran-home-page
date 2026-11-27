@@ -6,6 +6,7 @@ import { listSiteUsers } from '../../../../lib/auth/userDirectory'
 import { getD1QuickStatus } from '../../../../lib/admin/dbAdmin'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/research/researchStyleTemplates'
 import { loadOverviewTodayRankings } from '../../../../lib/admin/overviewTodayRankings.mjs'
+import { shanghaiDayStartMs } from '../../../../lib/site/analyticsSources.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -19,13 +20,6 @@ export const dynamic = 'force-dynamic'
  * 只用到用户数。走这个分支时不再执行 research_pv_hits 的三条聚合
  * （表约 1.5 万行，每次切页面白扫一遍），只做一次 site_users 的 COUNT。
  */
-
-const SHANGHAI_TZ_OFFSET_MS = 8 * 60 * 60 * 1000
-
-function startOfShanghaiTodayMs(now = Date.now()) {
-  const local = new Date(now + SHANGHAI_TZ_OFFSET_MS)
-  return Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - SHANGHAI_TZ_OFFSET_MS
-}
 
 function activeStyleSummary() {
   const active = [...RESEARCH_STYLE_TEMPLATES].find((t) => t.status === 'active')
@@ -81,7 +75,7 @@ export async function GET(req) {
 
   try {
     const payload = await readThroughEdgeCache(
-      `admin:overview:${startOfShanghaiTodayMs()}`,
+      `admin:overview:${shanghaiDayStartMs()}`,
       60,
       async () => {
         const [users, dbSnap, pvTotalRow, pvTodayRow, uvRow] = await Promise.all([
@@ -90,7 +84,7 @@ export async function GET(req) {
           db.prepare("SELECT COUNT(*) AS total FROM research_pv_hits WHERE quality = 'qualified'").first().catch(() => null),
           db
             .prepare("SELECT COUNT(*) AS today FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1")
-            .bind(startOfShanghaiTodayMs())
+            .bind(shanghaiDayStartMs())
             .first()
             .catch(() => null),
           db
@@ -103,7 +97,7 @@ export async function GET(req) {
                  END) AS today
                FROM research_pv_hits WHERE quality = 'qualified'`
             )
-            .bind(startOfShanghaiTodayMs())
+            .bind(shanghaiDayStartMs())
             .first()
             .catch(() => null),
         ])
@@ -117,7 +111,7 @@ export async function GET(req) {
           lastSeenAt: u.lastSeenAt,
         }))
 
-        const todayStart = startOfShanghaiTodayMs()
+        const todayStart = shanghaiDayStartMs()
         const todayRankings = await loadOverviewTodayRankings(db, todayStart)
 
         return {

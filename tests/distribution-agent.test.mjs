@@ -17,7 +17,7 @@ test('平台注册表 id 唯一，手册只覆盖已登记平台', () => {
 })
 
 test('每条手册字段完整', () => {
-  assert.deepEqual(DISTRIBUTION_AGENT_PLATFORM_IDS, ['juejin', 'csdn'])
+  assert.deepEqual(DISTRIBUTION_AGENT_PLATFORM_IDS, ['juejin', 'csdn', 'twitter', 'xiaohongshu', 'zhihu', 'toutiao'])
   for (const [id, playbook] of Object.entries(DISTRIBUTION_PLAYBOOKS)) {
     assert.match(playbook.verifiedAt, /^\d{4}-\d{2}-\d{2}$/, id)
     for (const key of ['entry', 'login', 'verify', 'success']) assert.ok(playbook[key], `${id}.${key}`)
@@ -73,6 +73,10 @@ test('任务提示词默认覆盖全部有手册的平台', () => {
   const prompt = buildDistributionTaskPrompt({ title: 't', url: 'u', markdown: 'body' })
   assert.ok(prompt.includes('- 掘金（`juejin`）'))
   assert.ok(prompt.includes('- CSDN（`csdn`）'))
+  assert.ok(prompt.includes('- X（`twitter`）'))
+  assert.ok(prompt.includes('- 小红书（`xiaohongshu`）'))
+  assert.ok(prompt.includes('- 知乎（`zhihu`）'))
+  assert.ok(prompt.includes('- 头条（`toutiao`）'))
   assert.ok(prompt.includes('```markdown\nbody\n```'))
 })
 

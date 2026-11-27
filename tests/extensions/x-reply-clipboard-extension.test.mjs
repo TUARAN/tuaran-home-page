@@ -412,7 +412,7 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("workbenchBridge\.js", "leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js", "agentPlanner\.js", "taskEngine\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("workbenchBridge\.js", "interactionAgentPool\.js", "kolMarketSources\.js", "marketProfile\.js", "leaderboard\.js", "kolRoster\.js"/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -5815,6 +5815,7 @@ test('daily KOL roster uses qualified home authors, stays fixed today, and falls
     .map((handle, index) => post(handle, 400 - index * 25))
   assert.equal(kol.qualifyingDailyPost(post('low', 99), today), null)
   assert.equal(kol.qualifyingDailyPost(post('english', 400, 20, 'English only'), today), null)
+  assert.equal(kol.qualifyingDailyPost(post('english', 400, 20, 'English only'), today, 'en')?.handle, 'english')
   assert.equal(kol.qualifyingDailyPost({ ...post('repeat', 400), repost: true }, today), null)
   const sparse = kol.collectDailyCandidates(null, 'myaccount', posts.slice(0, 4), today)
   assert.equal(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).source, 'leaderboard')
@@ -8057,7 +8058,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'interactionAgentPool.js', 'marketProfile.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'workbenchCollector.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'agentPlanner.js', 'agentChat.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'kolMarketSources.js', 'leaderboard.js', 'interactionAgentPool.js', 'marketProfile.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'workbenchCollector.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'agentPlanner.js', 'agentChat.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms', 'unlimitedStorage'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -12552,6 +12553,11 @@ test('each KOL task batch avoids the previous batch and keeps a custom list inta
     }),
     ['disc_a', 'disc_b', 'disc_c', 'disc_d', 'disc_e']
   )
+  const zhBuiltin = kol.poolHandles(0, 'zh').slice(0, 3)
+  const mixedBoard = [...zhBuiltin, 'karpathy', 'sama']
+  const stripped = kol.filterHandlesForMarket(mixedBoard, 'en')
+  assert.deepEqual(stripped, ['karpathy', 'sama'])
+  assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: mixedBoard, market: 'en' }), stripped)
   const resumed = kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha'], createdAt: 5 })
   assert.deepEqual(resumed.order, ['alpha', 'beta'])
   assert.deepEqual(resumed.visited, ['alpha'])
@@ -12568,14 +12574,17 @@ test('each KOL task batch avoids the previous batch and keeps a custom list inta
 test('the panel shows the live target-follow list and a visible KOL roster status', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const statusText = source.match(/  function kolRosterStatusText\(decision\) \{[\s\S]*?\n  \}/)?.[0]
-  const rosterStatus = source.match(/  function targetFollowRosterStatus\(\) \{[\s\S]*?\n  \}/)?.[0]
+  const rosterStatus = source.match(/  function targetFollowRosterStatus\([\s\S]*?\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(statusText && rosterStatus)
   const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
-  vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
+  vm.runInContext(`${statusText}\n${rosterStatus}\nfunction kolLeaderboardMarket() { return globalThis.__kolMarket || 'zh'; }\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus\nglobalThis.__kolMarket = 'zh'`, context)
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  assert.equal(context.followStatus(seeds, seeds), '')
-  assert.equal(context.followStatus(seeds, []), '')
-  assert.equal(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), '')
+  assert.match(context.followStatus(seeds, seeds), /五个源头/)
+  assert.match(context.followStatus(seeds, []), /五个源头/)
+  assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /五个源头/)
+  context.__kolMarket = 'en'
+  assert.match(context.followStatus([], ['karpathy', 'sama']), /英文市场/)
+  context.__kolMarket = 'zh'
   assert.doesNotMatch(source, /每次任务直接换成五个新人；这一页还有可关注的人就先关注，人都关注过了就换下一个。/)
   assert.doesNotMatch(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /@fresh_a|crazypig9y/)
   assert.doesNotMatch(source, /还没有换批/)
@@ -12660,18 +12669,51 @@ test('exhausted follow-back does not idle-rescan its own followers list', async 
     reset: (mode) => { state.running = true; state.mode = mode },
     emit: () => {}, waitForSharedCooldown: async () => true,
     rateLimitVisible: () => false, automationWarningVisible: () => false,
-    visibleRows: () => [],
-    scrollForward: async () => ({ progressed: false, atBottom: true, items: [] }),
+    followersPageEmpty: () => false,
+    followBackEmptyStopReason: () => (state.followedBack > 0
+      ? `粉丝列表没有新的可回关对象，本次已回关 ${state.followedBack} 人`
+      : '粉丝列表没有可回关对象，本次结束'),
+    followingRetryButton: () => null,
+    visibleRows: () => [{ handle: 'seen', candidate: false }],
+    scrollForward: async () => ({ progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }),
     sleepActive: async (ms) => { waits.push(ms) },
     window: { scrollTo: () => { scrollsToTop += 1 } },
+    MANUAL_LIST_EMPTY_LIMIT: 12, MANUAL_LIST_RETRY_LIMIT: 3,
     FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, RESCAN_INTERVAL_MS: 30 * 60 * 1000,
     SCROLL_DELAY_MS: 450,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   const result = await context.runTest('followBack', () => {})
-  assert.match(result.error, /粉丝列表已检查，等待下次回关/)
+  assert.match(result.error, /粉丝列表没有可回关对象，本次结束/)
   assert.equal(scrollsToTop, 0)
   assert.ok(!waits.includes(30 * 60 * 1000))
+  assert.equal(state.running, false)
+})
+
+test('follow-back stops immediately when X shows an empty followers list', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const state = { running: false, stopping: false, mode: '', followedBack: 0, sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0, cooldownUntil: 0 }
+  let scrolls = 0
+  const context = vm.createContext({
+    state,
+    isFollowingPage: () => false, isFollowersPage: () => true, listReady: () => true,
+    targetFollowHandleFromPath: () => '', loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    followersPageEmpty: () => true,
+    followBackEmptyStopReason: () => '粉丝列表为空，没有可回关的粉丝，本次结束',
+    visibleRows: () => [],
+    scrollForward: async () => { scrolls += 1; return { progressed: false, atBottom: true, items: [] } },
+    sleepActive: async () => {},
+    FOLLOW_DAILY_LIMIT: 400,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('followBack', () => {})
+  assert.match(result.error, /粉丝列表为空，没有可回关的粉丝/)
+  assert.equal(scrolls, 0)
   assert.equal(state.running, false)
 })
 

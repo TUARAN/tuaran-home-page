@@ -13,7 +13,7 @@
 | 市场 | 账号池 | 默认行为 |
 | --- | --- | --- |
 | `zh` | `X_INTERACTION_AGENT_POOL`（现有五个账号均已标记 `market: zh`） | 与改版前一致：关注要求资料含汉字；评论/点赞不额外筛帖文语言 |
-| `en` | `X_INTERACTION_AGENT_POOL_EN`（新英文号只加在此） | 关注要求资料为英文（有拉丁字母且无 CJK）；评论首页/大V/评论回复跳过 CJK 帖文；AI 全英文 prompt/user 话术；含 CJK 的生成结果拒绝发送 |
+| `en` | `X_INTERACTION_AGENT_POOL_EN`（新英文号只加在此） | 关注要求资料为英文（有拉丁字母且无 CJK）；评论首页/大V/评论回复跳过 CJK 帖文；AI 全英文 prompt/user 话术；含 CJK 的生成结果拒绝发送；发帖任务为 **EN发帖**（`poster-en`），从 Hacker News / BBC 等英文源取材，不走知乎/头条热点；**评论大V / 关注候选** 不走 xbangdan 中文榜，优先当天英文首页发现，回退 `lib/interaction/kolSources.js` 的英文内置组（改后跑 `npm run interaction:sync-kol-sources`） |
 
 不在任一侧池内的登录账号：`resolveMarket` 回退为 `zh`（兼容私人号沿用中文规则）。
 
@@ -35,5 +35,5 @@
 ## 暂不做
 
 - 英文版独立扩展 ID 或单独站点入口（仍同一插件）。
-- 英文发帖 / 热点全文案包（下一阶段）。
-- 英文评论大 V 内置名单（空池前需站长自定名单或发现逻辑）。
+- 英文区第三方公开榜单 API（当前 EN 榜为空，只靠发现 + 内置组；后续可接独立英文榜 URL）。
+- 英文长文 / 卡片精品帖（`poster-premium` 等中文形态在 EN 账号侧隐藏）。

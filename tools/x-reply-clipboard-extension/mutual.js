@@ -153,6 +153,27 @@
     return isFollowersPath(window.location.pathname);
   }
 
+  const FOLLOWERS_EMPTY_RE = /(?:Looking for followers\?|When someone follows this account|还没有(?:人)?关注你|期待你的第一位粉丝|当你有人关注|Gain more followers|希望获得更多关注)/iu;
+
+  function followersPageEmpty() {
+    if (!isFollowersPage()) return false;
+    const main = document.querySelector('[data-testid="primaryColumn"]');
+    if (!main) return false;
+    const emptyNode = main.querySelector('[data-testid="emptyState"]');
+    if (emptyNode) {
+      const rect = emptyNode.getBoundingClientRect?.() || { width: 0, height: 0 };
+      if (rect.width > 0 && rect.height > 0) return true;
+    }
+    const sample = textOf(main).slice(0, 1600);
+    return FOLLOWERS_EMPTY_RE.test(sample);
+  }
+
+  function followBackEmptyStopReason() {
+    return state.followedBack > 0
+      ? `粉丝列表没有新的可回关对象，本次已回关 ${state.followedBack} 人`
+      : "粉丝列表为空，没有可回关的粉丝，本次结束";
+  }
+
   function currentAccountHandle() {
     const account = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
     const match = textOf(account).match(USER_HANDLE_RE);
@@ -206,7 +227,7 @@
   async function loadTargetFollowHandles() {
     try {
       const stored = await followStorage().get(TARGET_FOLLOW_HANDLES_KEY);
-      TARGET_FOLLOW_HANDLES = withoutRetiredTargets(normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]));
+      TARGET_FOLLOW_HANDLES = filterTargetSources(withoutRetiredTargets(normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY])));
     } catch (error) {
       TARGET_FOLLOW_HANDLES = [];
     }
@@ -214,7 +235,7 @@
   }
 
   async function saveTargetFollowHandles(value) {
-    TARGET_FOLLOW_HANDLES = normalizeTargetFollowHandles(value);
+    TARGET_FOLLOW_HANDLES = filterTargetSources(normalizeTargetFollowHandles(value));
     try {
       await followStorage().set({ [TARGET_FOLLOW_HANDLES_KEY]: TARGET_FOLLOW_HANDLES });
     } catch (error) {
@@ -328,13 +349,27 @@
     return (Array.isArray(handles) ? handles : []).map(cleanHandle).filter(Boolean);
   }
 
+  function targetFollowMarket() {
+    const handle = currentAccountHandle();
+    return globalThis.XrcKolMarketSources?.kolMarketForHandle?.(handle)
+      || (globalThis.XrcInteractionAgentPool?.isEnglishMarket?.(handle) ? "en" : "zh");
+  }
+
+  function filterTargetSources(handles) {
+    const roster = globalThis.XrcKolRoster;
+    return roster?.filterHandlesForMarket
+      ? roster.filterHandlesForMarket(handles, targetFollowMarket())
+      : (Array.isArray(handles) ? handles : []);
+  }
+
   function planTargetTaskBatch(pool, task, size = TARGET_BATCH_SIZE, sources = []) {
+    const filteredSources = filterTargetSources(sources);
     const locked = task?.locked && Array.isArray(task.batch) && task.batch.length;
     if (locked) {
-      const handles = withoutRetiredTargets(task.batch);
+      const handles = filterTargetSources(withoutRetiredTargets(task.batch));
       if (handles.length) return { handles, changed: false };
     }
-    return selectTargetBatch(pool, { size, sources });
+    return selectTargetBatch(pool, { size, sources: filteredSources });
   }
 
   function publishTargetBatch(handles, upcoming = []) {
@@ -366,7 +401,7 @@
   }
 
   function applyTargetBatch(handles) {
-    const current = handles.map(cleanHandle).filter(Boolean);
+    const current = filterTargetSources(handles.map(cleanHandle).filter(Boolean));
     if (!current.length) return "";
     TARGET_FOLLOW_HANDLES = current;
     targetPool = normalizeTargetPool(targetPool);
@@ -383,12 +418,23 @@
 
   async function beginTargetTask() {
     await loadTargetPool();
-    const saved = readTargetTask();
+    let saved = readTargetTask();
+    const kolMarket = targetFollowMarket();
+    if (saved?.locked && Array.isArray(saved.batch)) {
+      const sanitized = filterTargetSources(withoutRetiredTargets(saved.batch));
+      if (sanitized.length !== saved.batch.length || (kolMarket === "en" && !sanitized.length)) {
+        writeTargetTask({ locked: false, batch: [], next: [] });
+        saved = null;
+      } else if (sanitized.length < saved.batch.length) {
+        saved = { ...saved, batch: sanitized };
+        writeTargetTask(saved);
+      }
+    }
     const board = leaderboard?.loadHandles
-      ? await Promise.race([
-        leaderboard.loadHandles(),
+      ? filterTargetSources(await Promise.race([
+        leaderboard.loadHandles({ market: kolMarket }),
         new Promise((resolve) => setTimeout(() => resolve([]), 4000))
-      ])
+      ]))
       : [];
     let planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, board);
     if (!(planned.handles || []).map(cleanHandle).filter(Boolean).length) {
@@ -404,19 +450,24 @@
         custom: false,
         boardHandles: board,
         discoveryHandles: discovered,
+        market: kolMarket,
         now: Date.now()
       }) || [];
       planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, pool);
     }
     if (planned.changed === false && saved?.locked) {
-      const locked = planned.handles.map(cleanHandle).filter(Boolean);
+      const locked = filterTargetSources(planned.handles.map(cleanHandle).filter(Boolean));
       if (locked.length) {
         TARGET_FOLLOW_HANDLES = locked;
         publishTargetBatch(locked, saved.next || []);
         return locked;
       }
     }
-    const handles = planned.handles.map(cleanHandle).filter(Boolean);
+    const handles = filterTargetSources(planned.handles.map(cleanHandle).filter(Boolean));
+    if (!handles.length && kolMarket === "en") {
+      writeTargetTask({ locked: false, batch: [], next: [] });
+      return [];
+    }
     applyTargetBatch(handles);
     writeTargetTask({ locked: true, batch: handles, next: [] });
     try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
@@ -1425,6 +1476,15 @@
       emit("已停止；共享暂停时间仍会保留");
       return true;
     }
+    if (mode === "followBack" && followersPageEmpty()) {
+      state.running = false;
+      state.stopping = false;
+      state.mode = "";
+      const reason = followBackEmptyStopReason();
+      emit(reason);
+      emit();
+      return { error: reason };
+    }
     let stalled = 0;
     let sourceIdleSince = 0;
     let sourceFollowed = false;
@@ -1486,7 +1546,33 @@
       }
       if (cleaning && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
+      if (mode === "followBack" && followersPageEmpty()) {
+        stopReason = followBackEmptyStopReason();
+        break followLoop;
+      }
       if (mode === "targetFollow" && typeof noteSeenTargetSources === "function") noteSeenTargetSources(items.map((item) => item.handle));
+      if (mode === "followBack" && !items.length && !followersPageEmpty()) {
+        const retry = followingRetryButton();
+        if (retry) {
+          if (listRetryAttempts >= MANUAL_LIST_RETRY_LIMIT) {
+            stopReason = `粉丝列表仍显示 Retry，重试 ${listRetryAttempts} 次后结束`;
+            break followLoop;
+          }
+          listRetryAttempts += 1;
+          emit(`粉丝列表加载失败，正在点击 Retry（${listRetryAttempts}/${MANUAL_LIST_RETRY_LIMIT}）`);
+          retry.click();
+          await sleepActive(1500);
+          continue;
+        }
+        emptyListChecks += 1;
+        if (emptyListChecks >= MANUAL_LIST_EMPTY_LIMIT) {
+          stopReason = "粉丝列表暂未加载，本次结束";
+          break followLoop;
+        }
+        emit(`粉丝列表还在加载（${emptyListChecks}/${MANUAL_LIST_EMPTY_LIMIT}）`);
+        await sleepActive(1200);
+        continue;
+      }
       if (manualUnfollow) {
         const retry = followingRetryButton();
         if (retry) {
@@ -1585,7 +1671,11 @@
         continue;
       }
 
-      emit("当前屏没有可处理账号，继续向下查找");
+      if (mode === "followBack" && followersPageEmpty()) {
+        stopReason = followBackEmptyStopReason();
+        break followLoop;
+      }
+      emit(mode === "followBack" && !items.length ? "当前列表没有可回关的粉丝" : "当前屏没有可处理账号，继续向下查找");
       const seenFollowerRows = observedSourceHandles.size > 0 || items.length > 0;
       const retryVisible = mode === "targetFollow" && typeof followingRetryButton === "function" && Boolean(followingRetryButton());
       if (retryVisible) {
@@ -1637,7 +1727,9 @@
           break;
         }
         if (mode === "followBack") {
-          stopReason = "粉丝列表已检查，等待下次回关";
+          stopReason = state.followedBack > 0
+            ? `粉丝列表已检查，本次已回关 ${state.followedBack} 人`
+            : "粉丝列表没有可回关对象，本次结束";
           break;
         }
         if (manualUnfollow) {
@@ -1714,6 +1806,7 @@
     isFollowersPath,
     isFollowingPage,
     isFollowersPage,
+    followersPageEmpty,
     loadTargetFollowHandles,
     saveTargetFollowHandles,
     normalizeTargetFollowHandles,

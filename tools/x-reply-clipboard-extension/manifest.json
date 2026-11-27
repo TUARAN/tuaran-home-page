@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X 大互动智能体",
-  "version": "5.9.38",
+  "version": "5.9.43",
 
   "description": "在 Chrome 本地运行，按任务状态调度 X 评论、点赞、关注管理和定时发帖。",
   "icons": {
@@ -37,6 +37,7 @@
     "https://www.toutiao.com/*",
     "https://www.zhihu.com/*",
     "https://hn.algolia.com/*",
+    "https://feeds.bbci.co.uk/*",
     "https://pbs.twimg.com/*",
     "https://api.ipify.org/*",
     "https://cloudflare.com/*"
@@ -93,6 +94,7 @@
         "postImage.js",
         "vendor/xhs-textcard/bundle.js",
         "poster.js",
+        "kolMarketSources.js",
         "leaderboard.js",
         "interactionAgentPool.js",
         "marketProfile.js",

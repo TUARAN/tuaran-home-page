@@ -2,12 +2,28 @@
   "use strict";
 
   // 关注候选和评论大V的自动人选优先从外部榜单读取。
-  // 榜单为空时，两边都由调用方回退到当天发现或内置组；本模块只负责榜单解析与抽批。
-  const CACHE_KEY = "xrcLeaderboardCache";
+  // zh：xbangdan；en 暂无第三方英文榜，返回空由调用方走英文发现 + 内置组。
   const CACHE_MS = 6 * 60 * 60 * 1000;
+  const CACHE_KEY = "xrcLeaderboardCache";
   const BOARDS = Object.freeze([
     Object.freeze({ id: "xbangdan-accounts", url: "https://xbangdan.com/accounts/" })
   ]);
+
+  function normalizeMarket(value) {
+    return globalThis.XrcKolMarketSources?.normalizeKolMarket?.(value)
+      || (String(value || "").toLowerCase() === "en" ? "en" : "zh");
+  }
+
+  function cacheKeyForMarket(market = "zh") {
+    return globalThis.XrcKolMarketSources?.cacheKey?.(market)
+      || (normalizeMarket(market) === "en" ? "xrcLeaderboardCacheEn" : CACHE_KEY);
+  }
+
+  function boardsForMarket(market = "zh") {
+    const boards = globalThis.XrcKolMarketSources?.boards?.(market);
+    if (Array.isArray(boards)) return boards;
+    return normalizeMarket(market) === "en" ? [] : BOARDS;
+  }
   const RESERVED = new Set([
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
@@ -84,11 +100,12 @@
     return { handles: chosen, changed, reused };
   }
 
-  async function readCache(storage) {
+  async function readCache(storage, market = "zh") {
     if (!storage?.get) return null;
+    const cacheKey = cacheKeyForMarket(market);
     try {
-      const stored = await storage.get(CACHE_KEY);
-      const row = stored?.[CACHE_KEY];
+      const stored = await storage.get(cacheKey);
+      const row = stored?.[cacheKey];
       const handles = parseLeaderboardHandles(row?.handles);
       if (!handles.length) return null;
       return { handles, at: Number(row.at) || 0 };
@@ -97,13 +114,24 @@
     }
   }
 
-  async function loadHandles({ force = false, now = Date.now(), storage = root.chrome?.storage?.local, fetchImpl = root.fetch } = {}) {
-    const cached = await readCache(storage);
-    if (!force && cached && now - cached.at < CACHE_MS) return cached.handles.slice();
+  async function loadHandles({ force = false, market = "zh", now = Date.now(), storage = root.chrome?.storage?.local, fetchImpl = root.fetch } = {}) {
+    const resolvedMarket = normalizeMarket(market);
+    const cacheKey = cacheKeyForMarket(resolvedMarket);
+    const boards = boardsForMarket(resolvedMarket);
+    const cached = await readCache(storage, resolvedMarket);
+    if (!force && cached && now - cached.at < CACHE_MS) {
+      const fresh = cached.handles.slice();
+      return globalThis.XrcKolRoster?.filterHandlesForMarket
+        ? globalThis.XrcKolRoster.filterHandlesForMarket(fresh, resolvedMarket)
+        : fresh;
+    }
     const fetched = [];
     const seen = new Set();
+    if (!boards.length) {
+      return cached ? withoutRetired(cached.handles) : [];
+    }
     if (typeof fetchImpl === "function") {
-      for (const board of BOARDS) {
+      for (const board of boards) {
         try {
           const response = await Promise.race([
             fetchImpl(board.url, { credentials: "omit", cache: "no-store" }),
@@ -123,14 +151,20 @@
       }
     }
     if (fetched.length) {
+      const saved = globalThis.XrcKolRoster?.filterHandlesForMarket
+        ? globalThis.XrcKolRoster.filterHandlesForMarket(withoutRetired(fetched), resolvedMarket)
+        : withoutRetired(fetched);
       if (storage?.set) {
         try {
-          await storage.set({ [CACHE_KEY]: { handles: fetched, at: now, boards: BOARDS.map((board) => board.id) } });
+          await storage.set({ [cacheKey]: { handles: saved, at: now, boards: boards.map((board) => board.id), market: resolvedMarket } });
         } catch (error) {}
       }
-      return withoutRetired(fetched);
+      return saved;
     }
-    return cached ? withoutRetired(cached.handles) : [];
+    const cachedHandles = cached ? withoutRetired(cached.handles) : [];
+    return globalThis.XrcKolRoster?.filterHandlesForMarket
+      ? globalThis.XrcKolRoster.filterHandlesForMarket(cachedHandles, resolvedMarket)
+      : cachedHandles;
   }
 
   const api = {
@@ -141,7 +175,10 @@
     isRetiredHandle,
     withoutRetired,
     selectBatch,
-    loadHandles
+    loadHandles,
+    normalizeMarket,
+    cacheKeyForMarket,
+    boardsForMarket
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   root.XrcLeaderboard = api;

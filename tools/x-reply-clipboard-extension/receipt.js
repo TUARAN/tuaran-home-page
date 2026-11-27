@@ -243,7 +243,7 @@
       row.targetKeys = [...row.targetKeys, targetKey].slice(-500);
     }
     row.counts[metric] = Math.max(0, Number(row.counts[metric]) || 0) + 1;
-    const taskMode = event.task === "tweet-post" ? ({ premium: "poster-premium", x: "poster-x" }[event.postKind] || "poster") : TASK_MODES[event.task];
+    const taskMode = event.task === "tweet-post" ? ({ premium: "poster-premium", x: "poster-x", en: "poster-en" }[event.postKind] || "poster") : TASK_MODES[event.task];
     if (taskMode) {
       row.taskCounts = row.taskCounts && typeof row.taskCounts === "object" ? row.taskCounts : {};
       row.taskCounts[taskMode] = Math.max(0, Number(row.taskCounts[taskMode]) || 0) + 1;

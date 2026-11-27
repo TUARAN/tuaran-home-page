@@ -8,6 +8,8 @@
   const POST_KIND_PREMIUM = "premium";
   const POST_KIND_X = "x";
   const POST_KIND_MUTUAL = "mutual";
+  const POST_KIND_EN = "en";
+  const EN_NEWS_SOURCES = /^(?:hn|bbcworld|bbctech):/u;
   const MUTUAL_TAGS = "#浇朋友 #互关 #蓝朋友";
   const CARD_DAILY_QUOTAS = Object.freeze([1, 3, 5, 10]);
   const DEFAULT_CARD_DAILY_QUOTA = 3;
@@ -45,6 +47,7 @@
     if (kind === POST_KIND_PREMIUM) return "xrc-ai-poster-premium";
     if (kind === POST_KIND_X) return "xrc-ai-poster-x";
     if (kind === POST_KIND_MUTUAL) return "xrc-ai-poster-mutual";
+    if (kind === POST_KIND_EN) return "xrc-ai-poster-en";
     return "xrc-ai-poster";
   }
 
@@ -52,6 +55,7 @@
     if (kind === POST_KIND_PREMIUM) return "xrcPosterPublishListPremium";
     if (kind === POST_KIND_X) return "xrcPosterPublishListX";
     if (kind === POST_KIND_MUTUAL) return "xrcPosterPublishListMutual";
+    if (kind === POST_KIND_EN) return "xrcPosterPublishListEn";
     return "xrcPosterPublishList";
   }
 
@@ -87,6 +91,7 @@
     if (value === "xhs") return POST_KIND_PREMIUM;
     if (value === POST_KIND_X) return POST_KIND_X;
     if (value === POST_KIND_MUTUAL) return POST_KIND_MUTUAL;
+    if (value === POST_KIND_EN) return POST_KIND_EN;
     return POST_KIND_NORMAL;
   }
 
@@ -95,6 +100,10 @@
     if (kind === POST_KIND_X) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
     if (kind === POST_KIND_PREMIUM) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
     if (kind === POST_KIND_MUTUAL) return { mediaMode: "text", lengthMode: "regular" };
+    if (kind === POST_KIND_EN) {
+      const enDraw = random();
+      return { mediaMode: "text", lengthMode: enDraw < 0.4 ? "compact" : "regular" };
+    }
     const draw = random();
     if (draw < 0.9) return { mediaMode: "text", lengthMode: "compact" };
     return { mediaMode: "text", lengthMode: "regular" };
@@ -108,7 +117,7 @@
       : item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
       ? "compact"
       : item?.lengthMode === "regular" ? "regular" : fallback.lengthMode;
-    const mediaMode = kind === POST_KIND_NORMAL || kind === POST_KIND_MUTUAL ? "text" : kind === POST_KIND_X || kind === POST_KIND_PREMIUM
+    const mediaMode = kind === POST_KIND_NORMAL || kind === POST_KIND_MUTUAL || kind === POST_KIND_EN ? "text" : kind === POST_KIND_X || kind === POST_KIND_PREMIUM
       ? "image"
       : item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
     return {
@@ -160,6 +169,7 @@
     if (kind === POST_KIND_PREMIUM) return `待命。卡片发帖每天 ${premiumDailyLimit()} 条，按 ${cardSlotTimes().join(" / ")}（北京时间）发布，每条都是文字卡片。`;
     if (kind === POST_KIND_MUTUAL) return "待命。互关发帖每次任务发 1 条纯文字短帖，围绕交朋友、互相关注、互相问候和互相评论，末尾固定带三个标签。";
     if (kind === POST_KIND_X) return "待命。X 主题发帖每次任务只发 1 张文字卡片。题材围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company。";
+    if (kind === POST_KIND_EN) return "待命。EN发帖从 Hacker News、BBC 等英文源取材，每次任务发 1 条纯英文短帖。";
     return "待命。热点发帖每次任务只准备并发送 1 条；发完进入下一次排班倒计时，高峰等待较短。";
   }
 
@@ -516,6 +526,18 @@
       .trim();
   }
 
+  function formatEnPost(value) {
+    const lines = preserveLines(value)
+      .replace(/[$＄][A-Za-z][A-Za-z0-9]{0,20}/gu, "")
+      .split("\n")
+      .map((line) => line.replace(/[ \t]{2,}/g, " ").trim())
+      .filter(Boolean)
+      .slice(0, 6);
+  let body = lines.join("\n\n").trim();
+  if (Array.from(body).length > 260) body = Array.from(body).slice(0, 260).join("").trim();
+    return body;
+  }
+
   function formatShortPost(value) {
     const original = preserveLines(value).split("\n").filter(Boolean);
     const totalLength = Array.from(original.join("")).length;
@@ -668,7 +690,11 @@
   }
 
   function keepSourceItem(item) {
-    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme|mutual):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
+    if (!item?.text || isSubscriptionPromotion(item.text)) return false;
+    if (state.postKind === POST_KIND_EN) {
+      return item.sourceType === "news" && EN_NEWS_SOURCES.test(String(item.id || "")) && globalThis.XrcMarketProfile?.textMatchesEnglishMarket?.(item.text) !== false;
+    }
+    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme|mutual):/u.test(String(item.id || "")));
   }
 
   const EVERGREEN_TOPIC_ITEMS = [
@@ -760,7 +786,7 @@
         reject(new Error("改写只在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason, lengthMode, postKind: state.postKind }, (response) => {
+      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason, lengthMode, postKind: state.postKind, interactionMarket: state.postKind === POST_KIND_EN ? "en" : "zh" }, (response) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接改写服务"));
@@ -902,9 +928,35 @@
     return state.publishQueue.length;
   }
 
+  async function collectEnNewsBatch() {
+    const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
+    emit(`正在准备本批 ${batchTarget} 条 EN 发帖稿…`);
+    rewriteServiceError = "";
+    rewriteRejections = [];
+    const used = readUsedSourceIds();
+    const errors = [];
+    let result;
+    try {
+      result = await requestNewsSources("en");
+    } catch (error) {
+      throw new Error(`英文热点来源读取失败：${error?.message || "未知错误"}`);
+    }
+    errors.push(...(result.errors || []));
+    const items = shuffleNewsItems(result.items.filter((entry) => keepSourceItem(entry)).filter((entry) => !used.has(entry.id)));
+    state.sourceQueue = items.slice(0, Math.max(batchTarget * 2, 12));
+    if (state.sourceQueue.length) await buildPublishList(batchTarget);
+    if (!state.publishQueue.length && !state.stopping) {
+      const rejected = [...new Set(rewriteRejections)].slice(-5).join("；");
+      throw new Error(`本轮未写出 EN 发帖稿${rejected ? `；未通过：${rejected}` : ""}${errors.length ? `；来源：${errors.slice(0, 3).join("；")}` : ""}${state.lastError ? `；改写：${state.lastError}` : ""}`);
+    }
+    state.lastError = "";
+    return state.publishQueue.length;
+  }
+
   async function collectNewsFallback() {
     if (state.postKind === POST_KIND_MUTUAL) return collectMutualBatch();
     if (state.postKind === POST_KIND_X) return collectXThemeBatch();
+    if (state.postKind === POST_KIND_EN) return collectEnNewsBatch();
     const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
     emit(`正在准备本批 ${batchTarget} 条待发稿…`);
     rewriteServiceError = "";
@@ -983,14 +1035,20 @@
           if (result.skip) {
             reason = item.source === "mutual" ? "模型未返回互关草稿" : item.source === "xtheme" ? "模型未返回 X 主题草稿" : item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
           } else {
-            const rewritten = simplifyPostRhetoric(result.post);
+            const rewritten = state.postKind === POST_KIND_EN ? formatEnPost(result.post) : simplifyPostRhetoric(result.post);
             text = state.postKind === POST_KIND_MUTUAL
               ? formatMutualPost(rewritten)
               : state.postKind === POST_KIND_X
               ? formatXThemePost(rewritten)
+              : state.postKind === POST_KIND_EN
+              ? rewritten
               : (postFormat.lengthMode === "compact" ? formatCompactPost : formatModelPost)(rewritten);
             topic = String(result.topic || item.text).trim().slice(0, 60);
-            if (!text) reason = state.postKind === POST_KIND_MUTUAL ? "正文为空或含承诺话术" : "模型未返回正文";
+            if (state.postKind === POST_KIND_EN && globalThis.XrcMarketProfile?.textHasCjk?.(text)) {
+              reason = "正文含 CJK，未通过 EN 发帖门禁";
+              text = "";
+            }
+            if (!text && !reason) reason = state.postKind === POST_KIND_MUTUAL ? "正文为空或含承诺话术" : "模型未返回正文";
           }
         }
       } catch (error) {
@@ -1030,7 +1088,7 @@
   function readUsedSourceIds() {
     const published = new Set(history.published.map((item) => String(item.sourceId || "")).filter(Boolean));
     const queued = new Set(state.publishQueue.map((item) => String(item.id || "")).filter(Boolean));
-    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme|mutual):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
+    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme|mutual|hn|bbcworld|bbctech):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
   }
 
   async function rememberUsedSourceId(id) {
@@ -1046,11 +1104,11 @@
   }
 
   function sourceLabel(source) {
-    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎", xtheme: "X主题", mutual: "互关" }[source] || "热点";
+    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎", xtheme: "X主题", mutual: "互关", hn: "Hacker News", bbcworld: "BBC World", bbctech: "BBC Tech" }[source] || "热点";
   }
 
   function publishedKind(item) {
-    if (item?.postKind === POST_KIND_PREMIUM || item?.postKind === POST_KIND_X || item?.postKind === POST_KIND_MUTUAL || item?.postKind === POST_KIND_NORMAL) return item.postKind;
+    if (item?.postKind === POST_KIND_PREMIUM || item?.postKind === POST_KIND_X || item?.postKind === POST_KIND_MUTUAL || item?.postKind === POST_KIND_NORMAL || item?.postKind === POST_KIND_EN) return item.postKind;
     if (item?.source === "mutual") return POST_KIND_MUTUAL;
     if (item?.source === "xtheme") return POST_KIND_X;
     return POST_KIND_NORMAL;
@@ -1107,7 +1165,7 @@
     if (!shouldCollect()) return state.publishQueue.length;
     if (!state.stopping) await collectNewsFallback();
     if (state.stopping) return state.publishQueue.length;
-    if (!state.publishQueue.length) throw new Error(state.postKind === POST_KIND_MUTUAL ? "互关短帖没有形成可发草稿" : state.postKind === POST_KIND_X ? "X 主题没有形成可发草稿" : "热点没有形成可发草稿");
+    if (!state.publishQueue.length) throw new Error(state.postKind === POST_KIND_MUTUAL ? "互关短帖没有形成可发草稿" : state.postKind === POST_KIND_X ? "X 主题没有形成可发草稿" : state.postKind === POST_KIND_EN ? "EN 发帖没有形成可发草稿" : "热点没有形成可发草稿");
     state.lastError = "";
     await savePublishList();
     await leaveFor("/home", `待发 ${state.publishQueue.length} 条，回到首页发送`);
@@ -1770,7 +1828,7 @@
     } else {
       state.running = true;
       state.stopping = false;
-      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备卡片待发列表" : state.postKind === POST_KIND_MUTUAL ? "正在准备互关短帖" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : "正在准备待发列表";
+      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备卡片待发列表" : state.postKind === POST_KIND_MUTUAL ? "正在准备互关短帖" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : state.postKind === POST_KIND_EN ? "正在准备 EN 发帖稿" : "正在准备待发列表";
       state.count = 0;
       state.errors = 0;
       state.startedAt = Date.now();
@@ -1907,6 +1965,9 @@
     POST_KIND_PREMIUM,
     POST_KIND_X,
     POST_KIND_MUTUAL,
+    POST_KIND_EN,
+    formatEnPost,
+    collectEnNewsBatch,
     formatMutualPost,
     PREMIUM_DAILY_LIMIT,
     PREMIUM_SLOT_TIMES,

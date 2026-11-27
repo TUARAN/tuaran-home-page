@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { IconBallpen } from '@tabler/icons-react'
+import { detectPayClientModeInBrowser } from '../../../lib/pay/clientMode.mjs'
+import { redirectH5PayIfNeeded } from '../../../lib/pay/payAfterCreate.browser.mjs'
+import PayGatewayCheckout from '../components/PayGatewayCheckout'
 
 function safeJson(res) {
   return res
@@ -125,6 +128,7 @@ export default function SignatureEditionCard({ slug, title }) {
           resourceKey: `signature:${slug}`,
           title: `《${title}》亲笔签名版`,
           returnTo,
+          clientMode: detectPayClientModeInBrowser(),
         }),
       })
       const data = await safeJson(res)
@@ -147,6 +151,7 @@ export default function SignatureEditionCard({ slug, title }) {
       }
       setOrder(data)
       setPhase('qr')
+      redirectH5PayIfNeeded(data)
     } catch (e) {
       setPhase('error')
       setMessage(String(e?.message || e))
@@ -294,43 +299,18 @@ export default function SignatureEditionCard({ slug, title }) {
         ) : phase === 'qr' && order ? (
           <>
             <div className="flex flex-col items-center gap-2">
-              {order.qrCode ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={order.qrCode}
-                  alt="支付二维码"
-                  width={170}
-                  height={170}
-                  className="rounded-lg border border-[#d9c6ae] bg-white p-2 dark:border-[#6b5140]"
-                />
-              ) : (
-                <a
-                  href={order.payUrl}
-                  className="rounded-full bg-[#a8452a] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#8f3a22]"
-                >
-                  打开支付页
-                </a>
-              )}
-              <p className="text-xs text-[#7a6647] dark:text-[#cba878]">
-                微信扫码支付 ¥{order.amountLabel || fenLabel(edition.salePriceFen)}，支付成功后填写收货信息
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => checkStatus(order.orderNo)}
-                  disabled={checking}
-                  className="rounded-full border border-[#c98a3d] bg-white px-4 py-1.5 text-xs font-medium text-[#8c5a1e] hover:bg-[#fff8ec] disabled:opacity-60 dark:border-[#8a6a3a] dark:bg-[#33291e] dark:text-[#eebb7a]"
-                >
-                  {checking ? '正在查询…' : '我已支付，刷新状态'}
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelOrder}
-                  className="rounded-full px-3 py-1.5 text-xs text-[#9b8a68] hover:text-[#8c5a1e] dark:text-[#a08a68]"
-                >
-                  取消
-                </button>
-              </div>
+              <PayGatewayCheckout
+                order={order}
+                amountLabel={order.amountLabel || fenLabel(edition.salePriceFen)}
+                checking={checking}
+                onRefresh={() => checkStatus(order.orderNo)}
+                onCancel={cancelOrder}
+                qrClassName="rounded-lg border border-[#d9c6ae] bg-white p-2 dark:border-[#6b5140]"
+                h5LinkClassName="rounded-full bg-[#a8452a] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#8f3a22]"
+                noteClassName="text-xs text-[#7a6647] dark:text-[#cba878]"
+                h5Note="手机端将跳转到微信完成支付，支付成功后返回本页填写收货信息"
+                webNote={`微信扫码支付 ¥${order.amountLabel || fenLabel(edition.salePriceFen)}，支付成功后填写收货信息`}
+              />
               {refreshNote ? (
                 <p className="text-xs text-[#9b8a68] dark:text-[#a08a68]">{refreshNote}</p>
               ) : null}

@@ -1,6 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { detectPayClientModeInBrowser } from '../../../lib/pay/clientMode.mjs'
+import { redirectH5PayIfNeeded } from '../../../lib/pay/payAfterCreate.browser.mjs'
+import PayGatewayCheckout from './PayGatewayCheckout'
 
 function safeJson(res) {
   return res
@@ -120,7 +123,7 @@ export default function PayUnlockPanel({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ resourceKey, returnTo }),
+        body: JSON.stringify({ resourceKey, returnTo, clientMode: detectPayClientModeInBrowser() }),
       })
       const data = await safeJson(res)
       if (res.status === 401) {
@@ -146,6 +149,7 @@ export default function PayUnlockPanel({
       }
       setOrder(data)
       setPhase('qr')
+      redirectH5PayIfNeeded(data)
     } catch (e) {
       setPhase('error')
       setMessage(String(e?.message || e))
@@ -245,55 +249,25 @@ export default function PayUnlockPanel({
           </p>
 
           {phase === 'qr' && order ? (
-            <div className="mt-4 flex flex-col items-center gap-2">
-              {order.qrCode ? (
-                // 网关返回的是二维码图片地址，PC 端由本站本地展示
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={order.qrCode}
-                  alt="支付二维码"
-                  width={180}
-                  height={180}
-                  className="rounded-lg border border-[#e2d9c4] bg-white p-2 dark:border-amber-900/40"
-                />
-              ) : (
-                <a
-                  href={order.payUrl}
-                  className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-6 py-2 text-sm font-medium text-white hover:bg-[#6a4f19]"
-                >
-                  打开支付页
-                </a>
-              )}
-              <p className="text-xs text-[#8a7a55] dark:text-amber-300/80">
-                微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功后本页自动解锁
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => checkStatus(order.orderNo)}
-                  disabled={checking}
-                  className="rounded-full border border-[#caa86a] bg-white px-4 py-1.5 text-xs font-medium text-[#7a5b1e] hover:bg-[#fffdf7] disabled:opacity-60 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-                >
-                  {checking ? '正在查询…' : '我已支付，刷新状态'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    stopPolling()
-                    setPhase('idle')
-                    setOrder(null)
-                    setRefreshNote('')
-                  }}
-                  className="rounded-full px-3 py-1.5 text-xs text-[#8a7a55] hover:text-[#7a5b1e] dark:text-amber-300/70"
-                >
-                  取消
-                </button>
-              </div>
+            <div className="mt-4">
+              <PayGatewayCheckout
+                order={order}
+                amountLabel={order.amountLabel || fenLabel(priceFen)}
+                checking={checking}
+                onRefresh={() => checkStatus(order.orderNo)}
+                onCancel={() => {
+                  stopPolling()
+                  setPhase('idle')
+                  setOrder(null)
+                  setRefreshNote('')
+                }}
+              />
               {refreshNote ? (
-                <p className="text-xs text-[#8a7a55] dark:text-amber-300/80">{refreshNote}</p>
+                <p className="mt-2 text-center text-xs text-[#8a7a55] dark:text-amber-300/80">{refreshNote}</p>
               ) : null}
-              <p className="text-[11px] text-[#a8966f] dark:text-amber-300/60">
+              <p className="mt-2 text-center text-[11px] text-[#a8966f] dark:text-amber-300/60">
                 订单号 {order.orderNo}
+                {order.clientModeLabel ? ` · ${order.clientModeLabel}` : ''}
               </p>
             </div>
           ) : (

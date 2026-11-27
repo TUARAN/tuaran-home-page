@@ -358,6 +358,20 @@ export default function PayConsole() {
     },
     { key: 'status', header: '状态', render: (row) => <StatusCell status={row.status} /> },
     {
+      key: 'client_mode',
+      header: '终端',
+      render: (row) => {
+        const mode = String(row.client_mode || '').toLowerCase()
+        const label = mode === 'h5' ? 'H5' : mode === 'web' ? 'Web' : '—'
+        const title = mode === 'h5' ? '手机跳转 url' : mode === 'web' ? 'PC 展示 url_qrcode' : '未记录'
+        return (
+          <span className="text-[12px] text-[#82847a] dark:text-gray-500" title={title}>
+            {label}
+          </span>
+        )
+      },
+    },
+    {
       key: 'notify',
       header: '回调',
       render: (row) => (
@@ -550,6 +564,17 @@ export default function PayConsole() {
                   <dt className="text-[#82847a] dark:text-gray-500">金额 / 渠道</dt>
                   <dd className="mt-0.5">
                     {fenToYuan(detailOrder.amount_fen)} · {detailOrder.channel}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#82847a] dark:text-gray-500">下单终端</dt>
+                  <dd className="mt-0.5">
+                    {(() => {
+                      const mode = String(detailOrder.client_mode || '').toLowerCase()
+                      if (mode === 'h5') return 'H5（手机跳转 url）'
+                      if (mode === 'web') return 'Web（PC 扫码 url_qrcode）'
+                      return '—'
+                    })()}
                   </dd>
                 </div>
                 <div>

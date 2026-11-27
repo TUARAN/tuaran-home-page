@@ -75,3 +75,12 @@ test('任务提示词默认覆盖全部有手册的平台', () => {
   assert.ok(prompt.includes('- CSDN（`csdn`）'))
   assert.ok(prompt.includes('```markdown\nbody\n```'))
 })
+
+test('离线任务去掉与标题重复的首条 H1', () => {
+  const prompt = buildDistributionTaskPrompt({
+    title: 't',
+    url: `${SITE_ORIGIN}/articles/x`,
+    markdown: '# t\n\nbody',
+  })
+  assert.ok(prompt.includes('```markdown\nbody\n```'))
+})

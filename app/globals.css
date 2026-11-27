@@ -6151,6 +6151,12 @@
     text-transform: uppercase;
   }
 
+  .site-mobile-drawer-search-field .site-search-mobile {
+    display: block;
+    width: 100%;
+    flex: none;
+  }
+
   .site-mobile-drawer-stack {
     display: flex;
     flex-direction: column;

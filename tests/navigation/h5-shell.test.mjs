@@ -46,6 +46,36 @@ test('site chrome mounts the mobile tab bar and add-to-home guide', () => {
   assert.match(manifestSource, /"short_name": "2aran"/)
 })
 
+function mobileDrawerStack(source) {
+  const start = source.indexOf('site-mobile-drawer-stack')
+  assert.ok(start > 0, 'missing mobile drawer stack')
+  const end = source.indexOf('</div>\n      </div>\n    </>', start)
+  assert.ok(end > start, 'missing mobile drawer end')
+  return source.slice(start, end)
+}
+
+test('H5 drawer orders search, account, picks, channels, core topics, settings, and RSS', () => {
+  const drawer = mobileDrawerStack(headerSource)
+  const markers = [
+    'site-mobile-drawer-search-field',
+    '<SiteSearch mobile',
+    '<MobileAccountPanel',
+    'HEADER_RECOMMENDATIONS.map',
+    "pick(locale, '频道', 'Channels')",
+    '<AuthorityDrawerLinks',
+    '<SiteSettingsControls',
+    '<MobileDrawerRssBlock',
+  ]
+  let last = -1
+  for (const marker of markers) {
+    const idx = drawer.indexOf(marker)
+    assert.ok(idx > last, `expected ${marker} later in the drawer`)
+    last = idx
+  }
+  const accountPanel = headerSource.match(/function MobileAccountPanel[\s\S]*?^}/m)?.[0] ?? ''
+  assert.doesNotMatch(accountPanel, /href="\/resources\/rss"/)
+})
+
 test('H5 folds display settings into the drawer and keeps a home Codex reset entry', () => {
   // 右上角 < xl 不再单独摆设置图标；桌面 xl 区块仍保留 SettingsButton
   assert.doesNotMatch(headerSource, /<div className="xl:hidden"><SettingsButton \/>/)

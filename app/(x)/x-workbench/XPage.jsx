@@ -14,10 +14,16 @@ export default function XPage({ active, title, intro, meta, tone = 'green', afte
       <ManualPaper tone={tone}>
         <PageContainer width="standard" className={`${s.page} ${className}`}>
           <header className={s.head}>
-            {group ? <p className={s.kicker}>{group.label}</p> : null}
-            <h1 className={s.title}>{title}</h1>
-            {intro ? <p className={s.intro}>{intro}</p> : null}
-            {meta ? <div className={s.meta}>{meta}</div> : null}
+            <div className={s.headRow}>
+              {group ? <p className={s.kicker}>{group.label}</p> : null}
+              <h1 className={s.title}>{title}</h1>
+            </div>
+            {intro || meta ? (
+              <div className={s.headRowSub}>
+                {intro ? <p className={s.intro}>{intro}</p> : null}
+                {meta ? <div className={s.meta}>{meta}</div> : null}
+              </div>
+            ) : null}
           </header>
           {children}
           {prev || next ? (

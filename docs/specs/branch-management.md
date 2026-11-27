@@ -7,9 +7,9 @@
 ## 基本模型
 
 - 只有一条长期分支：`main`。不建 `develop`、`release` 等长期分支。
-- 所有改动走短命分支，PR 经 squash 合回 `main`，分支寿命以天计。
+- 所有改动走短命分支，PR 默认经 **merge commit** 合回 `main`（GitHub：**Create a merge commit**），分支寿命以天计。站长当次明确要求时再 squash。
 - **开工隔离**：任务在独立 worktree 里写文件、提交、推送；不在主工作区直接写文件或提交。主仓（`.git` 为目录）执行 `npm run worktree:add -- <类型> <任务名>`，会 `worktree add` 并把卫星目录的 `node_modules` 链到主仓那一份。等价原语：`git worktree add -b <类型>/<任务名> <路径> origin/main`，再加 `npm run worktree:link-deps`（在卫星目录）。主工作区常被多个智能体共享，在其中 `checkout` 新分支不算隔离——目录相同，他人未提交改动仍混在一起。`pre-commit` 钩子拒绝主工作区的任何提交；站长明确要求在主工作区直接提交的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
-- 合入 `main` 是否触发 Cloudflare Pages 生产构建，看 squash 提交说明是否以 `[CF-Pages-Skip]` 开头。规则见「预览与部署」。合并动作只由站长发出。助手不 squash、不 merge。
+- 合入 `main` 是否触发 Cloudflare Pages 生产构建，看 **merge commit 说明** 是否以 `[CF-Pages-Skip]` 开头。规则见「预览与部署」。合并动作只由站长发出。助手不 merge。
 - 非琐碎改动不直接推 `main`。
 
 ## 预览与部署
@@ -17,9 +17,9 @@
 Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]` 开头。Pages 略过该次预览或部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
 
 - 只有需要站长看过官方预览再说「合」的页面改动，才触发预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。
-- **文章类改动不走预览**：`research/` 调研 Markdown、内容稿与文章数据都由固定模板渲染，改动只落在内容层。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」即可直接 squash，不生成也不等待 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 与后台发布审批，预览构建替代不了这些。预览只保留给页面结构、样式、组件、运行时和接口改动。
+- **文章类改动不走预览**：`research/` 调研 Markdown、内容稿与文章数据都由固定模板渲染，改动只落在内容层。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」即可用 merge commit 合 PR，不生成也不等待 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 与后台发布审批，预览构建替代不了这些。预览只保留给页面结构、样式、组件、运行时和接口改动。
 - 纯文档、进度说明、中间变基、同分支连推：提交说明以 `[CF-Pages-Skip]` 开头。同分支上只有那一次需要站长看的页面提交不加标记。
-- 合入 `main` 后同一标记继续生效。squash 说明以 `[CF-Pages-Skip]` 开头的提交，不作为完整的预览式生产部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。
+- 合入 `main` 后同一标记继续生效。merge commit 说明以 `[CF-Pages-Skip]` 开头时，不作为完整的预览式生产部署。需要站长看过再合的页面改动，merge 说明不加该标记，合入后才走生产构建。
 - 不改 Cloudflare 控制台，也不另造跳过机制。步骤见 [Issue 优先工作流](../runbooks/issue-first-workflow.md) 的「预览、内容与合并」。
 
 ## 命名
@@ -43,7 +43,7 @@ Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]`
 
 1. 从最新的 `main` 开分支。
 2. 在分支上提交，推送，开 PR。PR 正文按 Issue 优先工作流写 `Closes #N` 或 `Related: #N`。
-3. CI 通过后等站长说“合”，再 squash 合并。合并前的分支线由 GitHub 的 `refs/pull/<N>/head` 保留，不另打标签（见下文「合并后追溯」）。
+3. CI 通过后等站长说“合”，再用 **Create a merge commit** 合并（见下文「合并方式」）。合并前的分支线由 GitHub 的 `refs/pull/<N>/head` 保留，不另打标签（见下文「合并后追溯」）。
 4. 合并后当天清理：远端分支由 GitHub 自动删除，本地分支和 worktree 由本机清理。
 5. 分支超过 7 天没有新提交：要么推进，要么按“归档”处理后删除。
 
@@ -57,9 +57,16 @@ Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]`
 
 超过上限时，先清理再开新分支。
 
+## 合并方式
+
+- **默认**：GitHub PR 用 **Create a merge commit**。`main` 图谱里保留分支合流点，SourceTree / Git Graph 能看出「哪条线并进了 main」。
+- **merge commit 说明**：沿用 PR 标题与正文要点；`[CF-Pages-Skip]`、多行 `Closes #N` 写在 **merge commit 说明** 里（GitHub 合并时可编辑），以便 Pages 与 Issue 关闭逻辑与原先一致。
+- **例外**：站长当次明确说 squash 时仍可用 squash；历史已 squash 的 PR 不必改述。
+- **与 rebase merge 的区别**：不用 **Rebase and merge**（会改写分支提交哈希）；需要保留分支上的逐笔提交记录时用 merge commit，不要 rebase 进 `main`。
+
 ## 合并后清理
 
-本仓库使用 squash 合并，`git branch --merged` 认不出已合并的分支，改用“远端已删除”判断：
+默认 merge commit 后，可用 `git branch --merged main` 辅助判断已合分支；远端删除后仍可用 “gone” 兜底：
 
 ```bash
 git fetch --prune
@@ -83,7 +90,7 @@ worktree 里有未提交文件时 git 会拒绝。先用 `git -C <路径> status
 
 ## 合并后追溯
 
-本仓库 squash 合并后，`main` 历史呈一条线，分支名会从 SourceTree 等工具的图谱里消失。GitHub 为每个 PR 永久保留 `refs/pull/<N>/head`，指向 PR 分支的最后一次提交；远端分支删除后这个引用仍在。经 PR 合并的分支线以它为准，合并前后都不另打标签。
+merge commit 合入后，`main` 图谱保留 **合流提交** 与分支上的逐笔提交；SourceTree 等工具通常能直接看到「已合并」的分支线。GitHub 仍为每个 PR 永久保留 `refs/pull/<N>/head`，指向 PR 分支的最后一次提交；远端分支删除后这个引用仍在。需要对照 PR 上的原始提交序列时以它为准，合并前后都不另打标签。
 
 需要在本机重新看某条已合并的分支线：
 
@@ -169,7 +176,7 @@ Git worktree **共享** `.git/objects`，但 **`node_modules` 不进 Git**，不
 ## 不做的事
 
 - 不引入 GitFlow 或 release 分支。
-- 不对个人站强制多人 review。站长在 squash 前确认即是 review。
+- 不对个人站强制多人 review。站长在 merge 前确认即是 review。
 - 不用 `git push --force` 改写 `main`。
 - 不在 `main` 上直接提交非琐碎改动。
 

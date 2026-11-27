@@ -92,12 +92,12 @@
 - 打分诊标签。不得跳过。带 `needs:design`、`needs:decision` 或 `needs:assets` 时停在 Issue。
 - 只有 `priority:now` 且没有上述 `needs:*` 时才开 PR。
 - 例外：纯笔误、修复已经变红的 CI、站长当次明确说「直接改」或「别开 Issue」。
-- 助手不 squash、不 merge。站长说「合」之后才 squash。
+- 助手不 merge。站长说「合」之后用 **Create a merge commit** 合入 PR；仅当站长当次明确要求 squash 时才用 squash。
 
 ## Git 发布规则
 
 - **开工隔离（强制）**：任何代码、配置或文档改动，先在独立 worktree 的短分支上开工，不在主工作区直接写文件或提交。主仓（`.git` 为目录）用 `npm run worktree:add -- <类型> <任务名>` 创建卫星并链主仓 `node_modules`；数量上限、任务型 worktree 与按智能体占坑的槽位见 `docs/specs/branch-management.md`「Worktree：任务型与智能体槽位」与「依赖与磁盘」。**卫星 worktree 禁止 `npm install` / `npm ci`**；缺依赖只在主仓安装。主工作区由多个智能体共享，在其中 `checkout` 新分支**不算隔离**——目录相同，他人未提交改动仍混在一起。`pre-commit` 钩子拒绝主工作区的任何提交，并在卫星拒绝实体 `node_modules`。站长明确要求在主工作区直接提交的小改动用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。云端 VM 的 clone 不带本机钩子配置，仍须按本条自觉开工。
-- 分支命名、数量上限、合并后清理与归档，以 `docs/specs/branch-management.md` 为准（后台 `/admin/branch-rules`）。squash 合并后的分支线由 GitHub `refs/pull/<N>/head` 追溯，不打标签；没有 PR 的搁置分支推到 `refs/archive/<名称>` 归档。标签只用于发布与版本。
+- 分支命名、数量上限、合并后清理与归档，以 `docs/specs/branch-management.md` 为准（后台 `/admin/branch-rules`）。默认用 merge commit 合 PR，图谱与 `git branch --merged` 可保留分支合流关系；分支线上的逐笔提交由 GitHub `refs/pull/<N>/head` 追溯，不打标签。没有 PR 的搁置分支推到 `refs/archive/<名称>` 归档。标签只用于发布与版本。
 - 用户说“push”时，只提交当前任务范围内的改动并推送当前分支；如果当前分支是 `main`，就直接推送 `main`。不要因此自动创建分支或 Pull Request。
 - 用户说“开 PR”或“建分支”时，按任务类型选前缀，创建 `<类型>/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。前缀白名单与选型见 `docs/specs/branch-management.md`。
 - 非琐碎需求即使站长说「开 PR」，也先完成「Issue 优先」里的 Issue 和分诊，除非命中该节的例外。
@@ -108,16 +108,16 @@
 
 只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。
 
-- **文章类改动不走预览**：`research/` 调研 Markdown、内容稿与文章数据由固定模板渲染，改动只在内容层。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」即可直接 squash，不等 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 与后台发布审批；预览只留给页面结构、样式、组件、运行时和接口改动。
+- **文章类改动不走预览**：`research/` 调研 Markdown、内容稿与文章数据由固定模板渲染，改动只在内容层。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」即可用 merge commit 合 PR，不等 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 与后台发布审批；预览只留给页面结构、样式、组件、运行时和接口改动。
 - 纯文档、进度说明、中间变基、同分支连推：提交说明以 `[CF-Pages-Skip]` 开头，跳过 Pages 预览和部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
-- 合入 `main` 后看同一标记。squash 提交说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。
+- 合入 `main` 后看同一标记。merge commit 说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署。需要站长看过再合的页面改动，merge 说明不加该标记，合入后才走生产构建。
 - 跳过方式只有提交说明开头的 `[CF-Pages-Skip]`。不另造标记，不改 `wrangler.toml`、GitHub Actions、钩子或 Cloudflare 控制台。
 - 细则见 `docs/runbooks/issue-first-workflow.md` 的「预览、内容与合并」和 `docs/specs/branch-management.md`。
 
-未听到站长说「合」之前，不 squash、不合并、不发布。
+未听到站长说「合」之前，不合并、不发布。
 
 ## Codex 协助署名
 
 - Codex 实质参与编写、且由 Codex 创建的提交，在提交说明末尾留空行后添加 `Co-authored-by: Codex <noreply@openai.com>`。仅审阅、解释、检索或运行检查时不添加；不得把其他工具的工作记到 Codex 名下。
 - 作者仍使用站长的 Git 身份。该尾注用于 GitHub 提交页展示共同作者，不改变作者归属。
-- 创建 PR 时核对提交尾注；站长 squash 合并时，在最终提交说明中保留该尾注，GitHub 才能在合并后的提交页继续显示。已合并的历史提交不改写。
+- 创建 PR 时核对提交尾注；站长用 merge commit 合 PR 时，在 **merge commit 说明** 中保留该尾注（或确保分支末笔提交已带尾注），GitHub 才能在合并记录里继续显示。已合并的历史提交不改写。

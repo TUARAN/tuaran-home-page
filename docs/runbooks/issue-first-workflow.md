@@ -14,7 +14,7 @@
 4. 打分诊标签。类型至少一个，优先级恰好一个。规则见「分诊标签」。
 5. `priority:now` 且没有任何 `needs:*`：开 PR。正文按「关闭关键词」列出每条 `Closes #N` 或 `Related: #N`，并套用 `.github/pull_request_template.md`。
 6. 带 `needs:design`、`needs:decision` 或 `needs:assets`：停在 Issue。把缺什么写进评论。不直接开 PR。`priority:now` 不能压过 `needs:*`；now 只表示阻塞一解除就开工。
-7. 站长说「合」之后才 squash。在那之前助手不 squash、不 merge。需要站长看过官方预览再说「合」的页面改动，先看对应 Cloudflare Pages 项目的官方预览；纯文档、进度说明、中间变基和同分支连推以 `[CF-Pages-Skip]` 跳过预览。内容稿可以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
+7. 站长说「合」之后用 **Create a merge commit** 合 PR；在那之前助手不 merge。需要站长看过官方预览再说「合」的页面改动，先看对应 Cloudflare Pages 项目的官方预览；纯文档、进度说明、中间变基和同分支连推以 `[CF-Pages-Skip]` 跳过预览。内容稿可以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
 
 本地 Codex 与聊天助手同时在场时，落地路径见「本地 Codex 与助手协同」。
 
@@ -30,7 +30,7 @@
 2. 打上至少一个 `type:*`、恰好一个 `priority:*`。缺设计、决策或素材时，再打对应的 `needs:*`。
 3. `priority:now` 且没有任何 `needs:*`：在本地改完，开 PR，正文写 `Closes #N`。
 4. 在该 Issue 下评论，或在聊天里告诉助手：「Codex 已本地落地 #N」，并附上 PR 链接。
-5. 之后只审阅这条 PR。站长说「合」之后，由开发助手按「预览、内容与合并」squash。不为同一条 Issue 再启动云端代理，也不另开第二条 PR。
+5. 之后只审阅这条 PR。站长说「合」之后，由开发助手按「预览、内容与合并」用 merge commit 合入。不为同一条 Issue 再启动云端代理，也不另开第二条 PR。
 
 **路径 B：站长在聊天里交给助手**
 
@@ -44,16 +44,16 @@
 
 **合并**
 
-合并策略不随路径改变。需要站长看过官方预览再说「合」的页面改动，先看对应 Cloudflare Pages 项目的官方预览，站长说「合」之后才 squash。纯文档、进度说明、中间变基和同分支连推不打预览。内容稿可以以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
+合并策略不随路径改变。需要站长看过官方预览再说「合」的页面改动，先看对应 Cloudflare Pages 项目的官方预览，站长说「合」之后用 merge commit 合 PR。纯文档、进度说明、中间变基和同分支连推不打预览。内容稿可以以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
 
 **分工**
 
 | 角色 | 职责 |
 | --- | --- |
 | Issues 助手 | 去重、分诊、补标签 |
-| 开发助手 | 开 PR；站长说「合」之后 squash 合并 |
+| 开发助手 | 开 PR；站长说「合」之后 **Create a merge commit** 合并 |
 
-开 PR 和 squash 由开发助手做。开发助手在站长说「合」之前不 squash、不 merge。
+开 PR 与合 PR 由开发助手做（合并方式为 merge commit，除非站长当次要求 squash）。开发助手在站长说「合」之前不 merge。
 
 ## 关闭关键词
 
@@ -115,21 +115,21 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 
 - 分支只包含这些 Issue 范围内的改动。站长本机说「开 PR」时，分支名用 `<任务类型>/<简短任务名>`，前缀按改动性质从 `feat/`、`fix/`、`research/`、`content/`、`chore/` 里选。云端代理使用当次指定的分支模板。
 - 标题说明这次解决的问题。正文按模板写：问题（链到 Issue）、改了什么、没改什么、验证、每条已完成 Issue 的 `Closes #N`、仍应打开的 `Related: #N`、这次是否要官方预览后再合。关键词见「关闭关键词」。
-- 纯文档、进度说明、中间变基、同分支连推的提交说明以 `[CF-Pages-Skip]` 开头，跳过 Cloudflare Pages 预览和部署。合入 `main` 的 squash 说明同样以该标记开头时，不作为完整的预览式生产部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。只有需要站长看过官方预览再说「合」的页面改动才不加这个标记。细则见「预览、内容与合并」。
+- 纯文档、进度说明、中间变基、同分支连推的提交说明以 `[CF-Pages-Skip]` 开头，跳过 Cloudflare Pages 预览和部署。合入 `main` 时 **merge commit 说明** 以该标记开头则不作为完整的预览式生产部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。只有需要站长看过官方预览再说「合」的页面改动才不加这个标记。细则见「预览、内容与合并」。
 
 ## 预览、内容与合并
 
-只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。这类改动先留在 PR 上，那一次需要看的提交不加 `[CF-Pages-Skip]`。推送后从对应项目的 Preview 取得 `*.pages.dev` 链接，写进 PR。站长看过预览再说「合」。预览链接还没有时，PR 保持打开，不 squash。
+只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。这类改动先留在 PR 上，那一次需要看的提交不加 `[CF-Pages-Skip]`。推送后从对应项目的 Preview 取得 `*.pages.dev` 链接，写进 PR。站长看过预览再说「合」。预览链接还没有时，PR 保持打开，不合并。
 
-文章类改动不走预览：`research/` 调研 Markdown、内容稿与文章数据都由固定模板渲染，改动只落在内容层，预览页看不出内容层面的问题。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」就直接 squash，不生成也不等待 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 和后台发布审批。页面结构、样式、组件、运行时和接口改动仍按下面的预览流程走。
+文章类改动不走预览：`research/` 调研 Markdown、内容稿与文章数据都由固定模板渲染，改动只落在内容层，预览页看不出内容层面的问题。这类提交一律以 `[CF-Pages-Skip]` 开头，CI 通过、站长说「合」就用 merge commit 合 PR，不生成也不等待 `*.pages.dev` 预览。内容验收靠正文人工复核、`npm run research:style-audit` 和后台发布审批。页面结构、样式、组件、运行时和接口改动仍按下面的预览流程走。
 
 纯文档、进度说明、中间变基、同分支连推不打预览。这些提交说明以 `[CF-Pages-Skip]` 开头，Pages 略过该次预览和部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。同分支上，只有需要站长看过新的官方预览再说「合」的那一次页面提交不加标记；进度说明、中间变基和其余连推都加标记，避免每次推送再排队一次构建。
 
-合入 `main` 后，Pages 看 squash 提交说明开头的同一标记。说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署，Pages 略过该次部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。跳过方式只有这一个标记。不改 Cloudflare 控制台，也不另造跳过机制。
+合入 `main` 后，Pages 看 **merge commit 说明** 开头的同一标记。说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署，Pages 略过该次部署。需要站长看过再合的页面改动，merge 说明不加该标记，合入后才走生产构建。跳过方式只有这一个标记。不改 Cloudflare 控制台，也不另造跳过机制。
 
 内容稿可以以 `review_ready: false` 进入 Git。助手不把该字段改成 `true`，也不调用后台发布或审批接口。`review_ready` 标记人工复核是否完成，不代替发布动作。调研的创作正本、后台审批和 72 小时待审批写入 D1 的规则，以 [research/README.md](../../research/README.md) 和 [content-storage-rollout.md](content-storage-rollout.md) 为准。未得到站长「合」之前，内容稿留在 PR 上，不直接推 `main`，避免启动那段计时。普通文章仍只通过 `/admin/articles` 或对应管理 API 发布。
 
-站长说「合」之后直接 squash 合并。合并前的分支线由 GitHub 的 `refs/pull/<N>/head` 保留，不另打标签，见 [分支管理规范](../specs/branch-management.md) 的「合并后追溯」。助手不自行合并，也不改用普通 merge 收口。
+站长说「合」之后用 GitHub **Create a merge commit** 合入（除非当次明确要求 squash）。合并前的分支线由 GitHub 的 `refs/pull/<N>/head` 保留，不另打标签，见 [分支管理规范](../specs/branch-management.md) 的「合并方式」「合并后追溯」。助手不自行合并，也不用 **Rebase and merge** 改写提交历史。
 
 ## 模板
 

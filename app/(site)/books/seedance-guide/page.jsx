@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { IconArrowRight, IconExternalLink } from '@tabler/icons-react'
+import { IconExternalLink } from '@tabler/icons-react'
 
 import PageContainer from '../../components/PageContainer'
 import MoreBooks from '../MoreBooks'
@@ -36,10 +36,7 @@ export default function SeedanceGuidePage() {
           <p className="mb-3 text-sm text-slate-500">{book.year} · {book.type} · {book.status}</p>
           <h1 className="mb-4 text-3xl font-bold leading-tight text-slate-900 dark:text-white">{book.title}</h1>
           <p className="mb-5 text-base text-slate-600 dark:text-slate-300">{book.author} {book.authorship} · {book.publisher}</p>
-          <p className="mb-6 max-w-2xl text-[15px] leading-8 text-slate-700 dark:text-slate-200">{book.description}</p>
-          <a href="#buy" className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800">
-            查看购书渠道 <IconArrowRight size={18} aria-hidden="true" />
-          </a>
+          <p className="mb-0 max-w-2xl text-[15px] leading-8 text-slate-700 dark:text-slate-200">{book.description}</p>
         </div>
         <Image src={book.image} alt="《Seedance：电影级AI视频创作指南》图书封面" width={370} height={574} className="h-auto w-full max-w-[260px] rounded-xl shadow-lg" priority />
       </section>

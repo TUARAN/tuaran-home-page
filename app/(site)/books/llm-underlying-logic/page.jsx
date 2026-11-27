@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { IconArrowRight, IconBook2, IconExternalLink } from '@tabler/icons-react'
+import { IconBook2, IconExternalLink } from '@tabler/icons-react'
 
 import MoreBooks from '../MoreBooks'
 import SignatureEditionCard from '../SignatureEditionCard'
@@ -80,7 +80,6 @@ export default function LlmUnderlyingLogicBookPage() {
                 <span className="mt-1 block text-[16px] font-bold text-[#2c231d] dark:text-[#f9eee2]">{book.publisher}</span>
               </div>
             </div>
-            <a href="#buy" className="inline-flex items-center gap-2 rounded-xl bg-[#a84c12] px-6 py-3.5 text-[15px] font-semibold text-white no-underline shadow-[0_10px_25px_rgba(168,76,18,0.22)] transition hover:-translate-y-0.5 hover:bg-[#8f3d0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a84c12]">查看购书渠道 <IconArrowRight size={18} aria-hidden="true" /></a>
           </div>
           <div className="mx-auto w-full max-w-[310px] overflow-hidden rounded-2xl border border-white/80 bg-white shadow-[0_25px_65px_rgba(68,44,22,0.2)] dark:border-[#5c4e45] dark:bg-[#2b2521]">
             <Image src={book.image} alt="《AI大模型的底层逻辑》图书封面，作者涂阿燃" width={1536} height={1536} sizes="(max-width: 768px) 80vw, 310px" className="h-auto w-full" priority />
@@ -88,7 +87,7 @@ export default function LlmUnderlyingLogicBookPage() {
         </div>
       </section>
 
-      <section id="buy" className="scroll-mt-28 rounded-[24px] border border-[#e0d2c1] bg-[#fffaf3] px-5 py-6 dark:border-[#46392e] dark:bg-[#201b18] md:px-7 md:py-6" aria-labelledby="buy-heading">
+      <section id="buy" className="scroll-mt-28 mt-8 rounded-[24px] border border-[#e0d2c1] bg-[#fffaf3] px-5 py-6 dark:border-[#46392e] dark:bg-[#201b18] md:mt-10 md:px-7 md:py-6" aria-labelledby="buy-heading">
         <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.2em] text-[#ad693c] dark:text-[#e4a66c]">Find the book</p>
         <h2 id="buy-heading" className="mb-3 font-serif text-[27px] font-semibold text-[#2c2924] dark:text-gray-100">购书渠道</h2>
         <p className="mb-6 max-w-[46rem] text-[14px] leading-7 text-[#6c675f] dark:text-gray-300">选择常用平台搜索本书，具体上架与库存以平台结果为准。下单前请核对书名、作者和 ISBN {isbn}。</p>

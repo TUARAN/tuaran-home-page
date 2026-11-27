@@ -1,4 +1,7 @@
+import Link from 'next/link'
+
 import PageContainer from '../components/PageContainer'
+import TrafficSourceNotice from './TrafficSourceNotice'
 
 const UMAMI_SHARE_URL = 'https://cloud.umami.is/share/3mOsBgzrmb9wY8bI'
 
@@ -41,7 +44,7 @@ export const dynamic = 'force-static'
 
 export const metadata = {
   title: '访问统计',
-  description: '涂阿燃（tuaran）的站点访问统计面板（Umami）。',
+  description: '涂阿燃（tuaran）的站点访问统计：Umami 全站浏览与站内有效阅读口径说明。',
   keywords: ['涂阿燃', 'tuaran', '访问统计', 'Umami', '网站分析', '网络日志'],
   alternates: {
     canonical: '/traffic',
@@ -64,6 +67,8 @@ export default function TrafficPage() {
         </div>
       </header>
 
+      <TrafficSourceNotice />
+
       <section aria-labelledby="traffic-panel-title" className="mb-12">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#777] dark:text-gray-400">
           <h2 id="traffic-panel-title" className="font-normal">数据面板由 Umami 提供</h2>
@@ -82,6 +87,28 @@ export default function TrafficPage() {
           loading="lazy"
           className="block h-[80vh] min-h-[640px] w-full rounded-xl border border-[#e5dfe9] dark:border-gray-800"
         />
+      </section>
+
+      <section id="qualified-reads" aria-labelledby="qualified-reads-title" className="mb-12 scroll-mt-24">
+        <h2 id="qualified-reads-title" className="text-lg font-semibold text-[#28232d] dark:text-gray-100">
+          站内有效阅读（自建 D1）
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#666] dark:text-gray-300">
+          当 Umami 外部统计不可用（例如 Cloud 月度 event 额度用尽）时，页脚改示这一口径：白名单内容页在前台
+          <strong className="font-semibold text-[#444] dark:text-gray-200"> 可见且活跃满 8 秒</strong>
+          后，由浏览器上报记入 <code className="text-[13px]">research_pv_hits</code>，同一读者同一内容同一小时最多记 1 次。
+          数字覆盖调研与登记过的文章/资源页，<strong className="font-semibold">不是全站每一次打开</strong>。
+        </p>
+        <ul className="mt-3 max-w-3xl list-disc space-y-2 pl-5 text-sm leading-7 text-[#666] dark:text-gray-300">
+          <li>页脚「有效阅读 / 7 日有效阅读 / 7 日读者」来自此表汇总。</li>
+          <li>单篇累计次数字段见内容目录与文末互动区（同一套 beacon）。</li>
+          <li>Umami 恢复后，页脚自动回到「总浏览 / 7 日 PV / 7 日 UV」。</li>
+        </ul>
+        <p className="mt-4 text-sm">
+          <Link href="/articles" className="font-medium text-[#444] underline decoration-[#ccc] underline-offset-4 hover:text-[#111] dark:text-gray-200 dark:decoration-gray-600">
+            在内容目录查看各篇阅读数 →
+          </Link>
+        </p>
       </section>
 
       <section aria-labelledby="start-metrics-title" className="border-t border-[#eee] pt-10 dark:border-gray-800">

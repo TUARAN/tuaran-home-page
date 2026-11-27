@@ -70,9 +70,11 @@ test('public footer traffic uses umami share stats without owner auth', () => {
   assert.doesNotMatch(siteTrafficStatsRouteSource, /getOwnerOrReject/)
   assert.match(siteFooterTrafficSource, /\/api\/site-traffic-stats/)
   assert.match(siteFooterTrafficSource, /总浏览/)
+  assert.match(siteFooterTrafficSource, /有效阅读/)
   assert.match(siteFooterTrafficSource, /7 日 UV/)
   assert.match(siteFooterTrafficSource, /prominent/)
   assert.match(siteFooterTrafficSource, /mt-1\.5 flex flex-wrap items-baseline gap-x-4/)
+  assert.match(siteFooterTrafficSource, /\/traffic#qualified-reads/)
 })
 
 test('admin analytics centralizes source roles and live integrations', () => {

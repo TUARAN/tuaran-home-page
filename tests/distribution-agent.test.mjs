@@ -17,7 +17,16 @@ test('平台注册表 id 唯一，手册只覆盖已登记平台', () => {
 })
 
 test('每条手册字段完整', () => {
-  assert.deepEqual(DISTRIBUTION_AGENT_PLATFORM_IDS, ['juejin', 'csdn', 'twitter', 'xiaohongshu', 'zhihu', 'toutiao'])
+  assert.deepEqual(DISTRIBUTION_AGENT_PLATFORM_IDS, [
+    'juejin',
+    'csdn',
+    'twitter',
+    'xiaohongshu',
+    'zhihu',
+    'toutiao',
+    '51cto',
+    'weibo',
+  ])
   for (const [id, playbook] of Object.entries(DISTRIBUTION_PLAYBOOKS)) {
     assert.match(playbook.verifiedAt, /^\d{4}-\d{2}-\d{2}$/, id)
     for (const key of ['entry', 'login', 'verify', 'success']) assert.ok(playbook[key], `${id}.${key}`)
@@ -93,7 +102,10 @@ test('任务提示词默认覆盖全部有手册的平台', () => {
   assert.ok(prompt.includes('- 小红书（`xiaohongshu`）'))
   assert.ok(prompt.includes('- 知乎（`zhihu`）'))
   assert.ok(prompt.includes('- 头条（`toutiao`）'))
-  assert.ok(prompt.includes('```markdown\nbody\n```'))
+  assert.ok(prompt.includes('- 51CTO（`51cto`）'))
+  assert.ok(prompt.includes('- 微博（`weibo`）'))
+  assert.match(prompt, /```markdown\n> 涂阿燃 ·[\s\S]*\nbody\n```/)
+  assert.ok(prompt.includes('## 作者介绍 HTML（富文本平台先粘这段，再粘站内正文）'))
 })
 
 test('离线任务去掉与标题重复的首条 H1', () => {
@@ -102,5 +114,5 @@ test('离线任务去掉与标题重复的首条 H1', () => {
     url: `${SITE_ORIGIN}/articles/x`,
     markdown: '# t\n\nbody',
   })
-  assert.ok(prompt.includes('```markdown\nbody\n```'))
+  assert.match(prompt, /```markdown\n> 涂阿燃 ·[\s\S]*\nbody\n```/)
 })

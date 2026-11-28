@@ -2,6 +2,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { AVATAR_PATH } from '../../../lib/auth/avatar'
+import {
+  AUTHOR_ALLIANCE_URL,
+  AUTHOR_INTRO_MARKDOWN,
+  AUTHOR_LIBRARY_URL,
+  AUTHOR_LINE_1,
+  AUTHOR_LINE_2_TAIL,
+  AUTHOR_SITE_URL,
+} from '../../../lib/site/authorIntroMarkdown.js'
 
 /**
  * 作者介绍：站内两行（身份 · 经历与实践）；分发三行（另加关注与合作引流）
@@ -9,9 +17,14 @@ import { AVATAR_PATH } from '../../../lib/auth/avatar'
  * - AUTHOR_INTRO_MARKDOWN：智能体分发复制时在 H1 后插入三行 blockquote
  */
 
-export const AUTHOR_SITE_URL = 'https://2aran.com'
-export const AUTHOR_LIBRARY_URL = 'https://2aran.com/resources/books'
-export const AUTHOR_ALLIANCE_URL = 'https://blogger-alliance.cn/'
+export {
+  AUTHOR_ALLIANCE_URL,
+  AUTHOR_INTRO_MARKDOWN,
+  AUTHOR_LIBRARY_URL,
+  AUTHOR_LINE_1,
+  AUTHOR_LINE_2_TAIL,
+  AUTHOR_SITE_URL,
+} from '../../../lib/site/authorIntroMarkdown.js'
 
 const authorOutboundClass = 'research-author-profile-link font-medium no-underline'
 
@@ -22,28 +35,6 @@ function AuthorOutboundLink({ href, children }) {
     </a>
   )
 }
-
-export const AUTHOR_LINE_1 =
-  '涂阿燃 · 前端与智能体工程师 · 技术作者 · 社区 KOL，粉丝 5 万+'
-
-export const AUTHOR_LINE_2_TAIL =
-  '，深度参与开源社区与智能体工程实践，全面拥抱 AI 与去中心化。'
-
-export const AUTHOR_LINE_2 =
-  `持续出版多部技术作品${AUTHOR_LINE_2_TAIL}`
-
-export const AUTHOR_LINE_2_MARKDOWN =
-  `持续出版多部[技术作品](${AUTHOR_LIBRARY_URL})${AUTHOR_LINE_2_TAIL}`
-
-export const AUTHOR_LINE_3 =
-  `更多请关注个人网络日志 ${AUTHOR_SITE_URL}；推广合作在博主联盟。`
-
-export const AUTHOR_LINE_3_MARKDOWN =
-  `更多请关注个人[网络日志](${AUTHOR_SITE_URL})；推广合作在[博主联盟](${AUTHOR_ALLIANCE_URL})。`
-
-export const AUTHOR_INTRO_MARKDOWN = `> ${AUTHOR_LINE_1}
-> ${AUTHOR_LINE_2_MARKDOWN}
-> ${AUTHOR_LINE_3_MARKDOWN}`
 
 export function AuthorByline() {
   return (

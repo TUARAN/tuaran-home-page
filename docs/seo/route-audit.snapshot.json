@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 251,
-    "redirects": 23,
+    "routes": 252,
+    "redirects": 24,
     "private": 62,
     "registeredStatic": 121,
     "indexable": 142,
     "canonical": 162,
-    "openGraph": 95,
-    "jsonLd": 70,
+    "openGraph": 96,
+    "jsonLd": 71,
     "errors": 9,
-    "warnings": 138
+    "warnings": 136
   },
   "routes": [
     {
@@ -3631,6 +3631,22 @@
       }
     },
     {
+      "path": "/tools/aran-distributor",
+      "file": "app/(site)/tools/aran-distributor/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/tools/auto-commit",
       "file": "app/(site)/tools/auto-commit/page.jsx",
       "kind": "static",
@@ -3815,15 +3831,14 @@
     {
       "path": "/tools/syncblog-publisher",
       "file": "app/(site)/tools/syncblog-publisher/page.jsx",
-      "kind": "static",
+      "kind": "redirect",
+      "redirect": "/tools/aran-distributor",
       "registered": true,
-      "indexable": true,
+      "indexable": false,
       "sitemap": true,
       "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "/tools/syncblog-publisher"
-        ],
+        "canonical": false,
+        "canonicalValues": [],
         "noindex": "inherited",
         "openGraph": false,
         "jsonLd": false,
@@ -4910,13 +4925,6 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
-      "id": "jsonld.missing:/tools/syncblog-publisher",
-      "rule": "jsonld.missing",
-      "route": "/tools/syncblog-publisher",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
       "id": "jsonld.missing:/tools/syncblog-publisher/docs",
       "rule": "jsonld.missing",
       "route": "/tools/syncblog-publisher/docs",
@@ -5291,13 +5299,6 @@
       "id": "og.missing:/tools/short-link",
       "rule": "og.missing",
       "route": "/tools/short-link",
-      "severity": "warning",
-      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
-    },
-    {
-      "id": "og.missing:/tools/syncblog-publisher",
-      "rule": "og.missing",
-      "route": "/tools/syncblog-publisher",
       "severity": "warning",
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },

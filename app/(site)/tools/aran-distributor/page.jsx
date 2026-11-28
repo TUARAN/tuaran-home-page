@@ -8,11 +8,33 @@ import { distributionPlatformShortLabel } from '../../../../lib/distribution/pla
 
 export const dynamic = 'force-static'
 
+const PAGE_PATH = '/tools/aran-distributor'
+const PAGE_URL = `https://2aran.com${PAGE_PATH}`
+const TITLE = '阿燃分发智能体｜本机多平台发文'
+const DESCRIPTION =
+  '用 ego lite 浏览器与本机 AI（Cursor、Codex、Claude Code）把公开文章或自备 Markdown 发到你的掘金、CSDN、X、小红书、知乎、头条账号。'
+
 export const metadata = {
-  title: '阿燃分发智能体｜本机多平台发文',
-  description:
-    '用 ego lite 浏览器与本机 AI（Cursor、Codex、Claude Code）把公开文章或自备 Markdown 发到你的掘金、CSDN、X、小红书、知乎、头条账号。',
-  alternates: { canonical: '/tools/aran-distributor' },
+  title: TITLE,
+  description: DESCRIPTION,
+  keywords: ['阿燃分发智能体', '2aran-distributor', 'ego lite', '多平台分发', 'Skill', '2aran'],
+  alternates: { canonical: PAGE_PATH },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: PAGE_PATH,
+    type: 'website',
+  },
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: TITLE,
+  description: DESCRIPTION,
+  url: PAGE_URL,
+  inLanguage: 'zh-CN',
+  isAccessibleForFree: true,
 }
 
 const card = 'rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900'
@@ -21,6 +43,7 @@ const platformLine = DISTRIBUTION_AGENT_PLATFORM_IDS.map((id) => distributionPla
 export default function AranDistributorPage() {
   return (
     <PageContainer className="min-h-screen py-10 text-slate-900 dark:text-slate-100">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <nav aria-label="面包屑" className="text-sm text-slate-500">
         <Link href="/tools" className="hover:underline">
           工具与下载

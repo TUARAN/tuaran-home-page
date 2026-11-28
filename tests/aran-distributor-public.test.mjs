@@ -13,6 +13,8 @@ test('阿燃分发智能体公开页与文章访客按钮', async () => {
   assert.match(landing, /阿燃分发智能体/)
   assert.match(landing, /\/skill-center\/2aran-distributor/)
   assert.match(landing, /legacy-plugin/)
+  assert.match(landing, /openGraph/)
+  assert.match(landing, /application\/ld\+json/)
   assert.match(guestButton, /buildGuestDistributionTaskPrompt/)
   assert.match(published, /ArticleGuestDistributeButton/)
 })

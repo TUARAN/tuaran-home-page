@@ -90,8 +90,11 @@ export function markdownFromNode(node, sourceUrl, depth = 0) {
   if (tag === 'table') return tableMarkdown(node, sourceUrl, depth)
   if (/^h[1-6]$/.test(tag)) return `\n\n${'#'.repeat(Number(tag.slice(1)))} ${cleanText(children())}\n\n`
   if (tag === 'blockquote') {
-    const content = cleanText(children()).split('\n').map((line) => `> ${line}`).join('\n')
-    return `\n\n${content}\n\n`
+    const paragraphs = Array.from(node.querySelectorAll(':scope > p'))
+    const content = paragraphs.length
+      ? paragraphs.map((para) => `> ${cleanText(para.textContent || '')}`).join('\n\n')
+      : cleanText(children()).split('\n').filter(Boolean).map((line) => `> ${line}`).join('\n\n')
+    return content ? `\n\n${content}\n\n` : ''
   }
   if (tag === 'li') {
     const ordered = node.parentElement?.tagName === 'OL'

@@ -1,10 +1,10 @@
 ---
 name: 2aran-distributor
 description: >
-  阿燃分发智能体（2aran-distributor）。用 ego lite 把 2aran.com 或自备 Markdown 发到掘金、CSDN、X、小红书、知乎、今日头条等外部平台。
+  阿燃分发智能体（2aran-distributor）。用 ego lite 把 2aran.com 或自备 Markdown 发到掘金、CSDN、X、小红书、知乎、今日头条、51CTO、微博等外部平台。
   Use when: 用户粘贴「2aran 分发任务」或「自备账号」分发任务，或要求把文章同步到自己的内容平台账号。
 metadata:
-  version: "1.4.2"
+  version: "1.4.6"
 ---
 
 # 2aran-distributor
@@ -13,7 +13,7 @@ metadata:
 
 ## 开工前
 
-- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.2`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
+- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.6`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
 - 任务列出的平台在下方没有手册时，先问任务创建者：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
 - 按任务里的平台顺序逐个处理：一个平台发布并核对完，再开始下一个。
 
@@ -33,11 +33,11 @@ metadata:
 
 ## 内容处理
 
-- 正文使用任务里的 Markdown 原文，保留图片、代码块、引用和标题层级；开头的作者署名行保留。
+- 正文使用任务里的 Markdown 原文，保留图片、代码块、引用和标题层级；开头的作者署名为三行 blockquote，段与段之间有空行（建任务已预处理）。建任务时已将「适用范围」等边界说明引用挪到文末（紧贴「信息来源」节之前），与站内文章页一致，外发不要再抄回文首；不要把三行作者介绍合并成一段。
 - 平台编辑页有独立「标题」输入框时：标题只填该输入框，正文不得再保留与标题相同的首条 `#` 标题（建任务时已去掉；若仍出现，发布前先删掉）。
 - 正文里指代站点的「本站」改成「我的个人站」，其他内容不改写。
 - 掘金：站内图床（2aran.com）与预览「转存失败」/裂图必须走「下载 → 编辑器上传 → 替换 Markdown 链接」；含 `<figure>`/`<svg>` 的 HTML 需截图或导出 PNG 后上传替换，不能只粘贴原始 HTML。详见掘金手册「图床替换」。
-- 富文本编辑器（X、小红书、知乎、今日头条）不认 Markdown：打开任务 `url` 的站内原文，用 evaluate 取 `article.prose-tuaran`（或 `main article`）的 HTML，删掉目录、导航、按钮和与标题重复的 h1，把图片和链接改成绝对地址，再用 `page.keyboard.paste({ text, html })` 粘贴进正文；各平台还要做的转换见手册。
+- 站内 TL;DR 旁的作者介绍不在 `article.prose-tuaran` 里。掘金/CSDN/51CTO 用任务 `markdown` 文首三行作者 blockquote；富文本平台（X、小红书、知乎、今日头条、微博头条）须先粘任务 JSON 的 `authorIntroHtml`（或 skill 里等价的作者介绍 HTML），再粘从站内原文 evaluate 得到的正文 HTML，两次粘贴都在正文最前、章节 h2 之前。51CTO 优先整篇 Markdown，不行再走 HTML。
 - 标题超过平台字数上限时，取原标题冒号前的部分；仍超出就从原标题里删减，不新编措辞，并记进回报。
 - 文章类型：正文开头注明转译或转载外部原文时，按「翻译」或「转载」发布并填写那个原文链接；否则选「原创」。
 - 摘要按平台字数限制从任务里的摘要压缩，不编造正文没有的信息。
@@ -55,6 +55,8 @@ metadata:
 - 知乎：回报链为 `https://zhuanlan.zhihu.com/p/<id>`，不能带 `/edit`。
 - 头条：仅在 `profile_v4/graphic/articles`（或带「审核中」）出现才可记 reviewing/published；只在 `manage/draft` 则为 draft。
 - 小红书：须在笔记管理「已发布」或「审核中」看到标题匹配项；长文排版页停留不算成功。
+- 51CTO：须在创作中心文章管理出现该标题；勿把 `/blogger/draft/` 编辑链当已发布。
+- 微博：须有个人主页「文章」或已发布列表中的成稿链；`#/draft/` 仅为草稿。
 
 ## 平台手册
 
@@ -151,11 +153,12 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
 - 登录判断：跳到 www.zhihu.com/signin 登录页，就是未登录。
 - 步骤：
   1. 标题填 `textarea[placeholder="请输入标题（最多 100 个字）"]`。
-  2. 正文是 Draft.js（`.public-DraftEditor-content`）：聚焦后直接粘贴站内原文 HTML，不用转换；标题层级、表格、列表、链接都能保留，图片会自动转存到 pic-private.zhihu.com。等图片全部转存后再继续。
-  3. 封面：`page.setInputFiles('input.UploadPicture-input', 路径)` 上传正文第一张图。
-  4. 话题：先点「添加话题」，再鼠标点击「搜索话题...」输入框（不点击就输入不进去），输入关键词后点击输入框下方匹配的结果，最多 3 个。
-  5. 「创作声明」保持「无声明」，要改成原创等声明时按安全规则先问站长；「投稿至问题」和专栏保持默认。
-  6. 点「发布」，按钮显示「发布中…」，约 15 秒后跳转。
+  2. 正文是 Draft.js（`.public-DraftEditor-content`）：聚焦后**先** `page.keyboard.paste({ html: authorIntroHtml })` 粘贴任务 JSON 的三行作者介绍（blockquote），**再**粘贴站内 `article.prose-tuaran` HTML（去重 h1、绝对化图片链）。顺序不能反；作者介绍不在站内正文 DOM 里，漏粘就会缺块。
+  3. 第二次粘贴后核对文首应有三段引用样式作者信息，再核对标题层级、表格、列表与图片；图片会自动转存到 pic-private.zhihu.com，等转存完成后再继续。
+  4. 封面：`page.setInputFiles('input.UploadPicture-input', 路径)` 上传正文第一张图。
+  5. 话题：先点「添加话题」，再鼠标点击「搜索话题...」输入框（不点击就输入不进去），输入关键词后点击输入框下方匹配的结果，最多 3 个。
+  6. 「创作声明」保持「无声明」，要改成原创等声明时按安全规则先问站长；「投稿至问题」和专栏保持默认。
+  7. 点「发布」，按钮显示「发布中…」，约 15 秒后跳转。
 - 核对：发布跳转后 URL 为 `https://zhuanlan.zhihu.com/p/<ID>`（无 `/edit`），打开核对章节标题、表格与图片；仍在 `/write` 或 `/p/<ID>/edit` 则未成稿。
 - 成功标志：任务台 `articleUrl` 必须为 `https://zhuanlan.zhihu.com/p/<ID>`，不带 `/edit`。
 
@@ -174,12 +177,45 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
 - 核对：打开 https://mp.toutiao.com/profile_v4/graphic/articles 按截短后的标题找「审核中」；若无，再查 https://mp.toutiao.com/profile_v4/manage/draft — 仅草稿箱有则为 draft，不能记 published。确认无「首发」误勾选。
 - 成功标志：图文列表出现该文（通常审核中）；`articleUrl` 用列表预览/详情链或后续 `https://www.toutiao.com/item/<ID>`，勿只填 `graphic/publish` 编辑页。
 
+### 51CTO（`51cto`，2026-11-28 实测）
+
+- 入口：https://blog.51cto.com/blogger/publish
+- 登录判断：跳到 blog.51cto.com 登录页，或发文页要求登录，就是未登录。
+- 步骤：
+  1. 悟空编辑器页面：标题填发文页标题输入框；正文用任务 Markdown（无与标题相同的首条 `#` 标题）。优先整篇粘贴 Markdown；若预览不识别再按站内 HTML 规则粘贴。
+  2. 粘贴后核对预览：章节标题、代码块、引用与图片；站内图（2aran.com）若预览裂图，下载后走编辑器上传，替换为 51CTO 图床地址。
+  3. 填写摘要/分类/标签（若有弹窗）：摘要用任务 summary 压缩；标签从站内 tags 就近选，最多按页面限制。
+  4. 原创/转载类声明、邀请码活动弹窗非本任务范围时不要误填；权利声明按安全规则先问站长。
+  5. 点「发布」或「提交审核」（以页面按钮文案为准）。发布后按「核对」在创作中心文章列表找成稿，不凭仍在 `/blogger/publish` 或 `/blogger/draft/` 编辑页记 published。
+- 核对：打开 https://blog.51cto.com/creative-center/manager 在「文章管理」按任务 title 匹配；或打开 `https://blog.51cto.com/blogger/draft/<did>` 仅当手册确认仍为草稿且列表无已发布项时用 `status: draft`。
+- 成功标志：文章管理列表出现该标题且状态为已发布/审核通过；`articleUrl` 填读者链 `https://blog.51cto.com/blogger/article/<id>` 或列表给出的博文链，勿只填 `blogger/publish` 或草稿 edit 链。
+
+### 微博（`weibo`，2026-11-28 实测）
+
+- 入口：https://card.weibo.com/article/v5/editor
+- 登录判断：跳到 weibo.com 登录页，或 card.weibo.com 要求登录，就是未登录。
+- 步骤：
+  1. 头条文章编辑器（v5）：先点「写文章」或进入空白草稿。标题填顶部标题框；导语可填任务 summary 压缩版（可留空）。
+  2. 正文是 TipTap（`.ProseMirror`）：按「富文本编辑器」规则粘贴站内原文 HTML，不直接粘 Markdown。标题层级保留 h2/h3；表格若丢失按手册偏差记录。
+  3. 图片必须落到微博图床：外链或本站图不能指望自动持久化。逐张下载后，在正文对应位置用编辑器上传/粘贴图片（勿仅用 base64 insertHTML）；等编辑器 `img src` 变为 `*.sinaimg.cn` 再继续。
+  4. 封面：上传正文第一张可用图作题图（按页面「文章封面」入口）。
+  5. 「仅粉丝可见全文」「赞赏」「同步新浪看点」等特权/声明项按安全规则先问站长；默认可不开启。
+  6. 正文完成后点「下一步」编辑 accompanying 短微博，再点「发布」（或「定时发」若站长明确要求定时）。仅保存草稿未点发布时只能记 `draft`。
+- 聚焦正文（ProseMirror）：
+
+  ```js
+  document.querySelector('.ProseMirror')?.focus()
+  ```
+
+- 核对：发布后在 https://weibo.com/ 个人主页「文章」列表，或编辑器「已发布」列表，按标题匹配；`#/draft/<id>` 仅草稿不能记 published。打开成稿链核对标题与首段。
+- 成功标志：前台可见头条文章链（形如 `https://weibo.com/ttarticle/p/show?id=...` 或列表给出的文章 URL）；`articleUrl` 填该读者链，勿只填 `card.weibo.com/article/v5/editor#/draft/...`。
+
 ## 自备账号模式
 
 - 任务标明「自备账号（guest）」时走本节；含「任务地址」和「token」的是站长任务台，访客不要混用。
 - 先运行 `ego-browser skill`。创建任务空间时使用任务给出的 `profileId`（默认 SyncBlog），专用于各平台登录态，不要与日常上网 profile 混用。
 - 每个平台先确认已登录；未登录就把任务空间交给任务创建者登录（handOff），对方回复后再继续。
-- 正文默认不含全文：打开任务里的站内原文 URL，按「内容处理」从页面取正文；禁止从第三方镜像粘贴整篇替代原文。
+- 正文默认不含全文：打开任务里的站内原文 URL，按「内容处理」从页面取正文；富文本平台先粘文首作者介绍 HTML（见 skill「内容处理」），再粘正文；禁止从第三方镜像粘贴整篇替代原文。
 - 发布到自己的平台账号；文首或文末保留原文链接。转载或翻译须填原文 URL，权利声明勾选前必须经任务创建者确认。
 - 不要使用他人的 Bearer token，不要调用站长的任务台接口。
 - 安装 skill：打开 https://2aran.com/skill-center/2aran-distributor 下载，或 GET https://2aran.com/api/resources/aran-distributor-skill 保存为 SKILL.md，放入 Cursor / Codex / Claude 的 skills 目录下的 `2aran-distributor/`。
@@ -188,7 +224,7 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
 ## 任务台模式
 
 - 任务给出「任务地址」和「token」时用任务台模式；任务直接带 Markdown 原文时是离线任务，跳过本节，处理完在对话里回报。
-- 领取：`curl -sS -H "Authorization: Bearer <token>" <任务地址>`。返回 JSON：title、url、summary、tags、platformIds、markdown、harnessVersion、results。按 platformIds 的顺序处理，正文用 markdown 字段。
+- 领取：`curl -sS -H "Authorization: Bearer <token>" <任务地址>`。返回 JSON：title、url、summary、tags、platformIds、markdown、`authorIntroHtml`、`harnessVersion、results。Markdown 平台用 markdown；富文本平台先粘 authorIntroHtml，再粘站内正文 HTML。
 - harnessVersion 与本 skill 版本不一致时先停下，请站长更新 skill。
 - results 里已有「published / reviewing / draft」结果的平台不要重复发布，先问站长。
 - 每个平台处理完立刻回报，不要等全部结束。用 heredoc 把 JSON 从标准输入传给 curl，避免引号转义：`curl -sS -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --data-binary @- <任务地址>`，请求体 `{"action":"result","platformId":"juejin","status":"published","articleUrl":"…","notes":"…","playbookDeviation":"…"}`。`articleUrl` 填手册「成功标志」里的公开成稿址；各平台编辑器/compose/drafts 链仅在 `status: draft` 且手册核对确认未成稿时使用。

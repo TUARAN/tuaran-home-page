@@ -77,13 +77,15 @@ test('建任务只存 token 哈希，入参校验', async () => {
 
 test('智能体领取、逐平台回报、收尾后 token 失效', async () => {
   const db = await createD1()
-  const { id, token } = await createDistributionJob(db, ARTICLE, { now: 1_000 })
+  const { id, token } = await createDistributionJob(db, { ...ARTICLE, platformIds: ['juejin', 'csdn'] }, { now: 1_000 })
 
   assert.equal(await claimDistributionJob(db, id, 'f'.repeat(64), 2_000), null)
   const claimed = await claimDistributionJob(db, id, token, 2_000)
   assert.equal(claimed.status, 'claimed')
   assert.deepEqual(claimed.platformIds, ['juejin', 'csdn'])
   assert.ok(claimed.markdown.includes(`](${SITE_ORIGIN}/images/a.png)`))
+  assert.match(claimed.markdown, /^> 涂阿燃 ·/)
+  assert.match(claimed.authorIntroHtml, /<blockquote><p>涂阿燃 ·/)
 
   await assert.rejects(reportDistributionResult(db, id, token, { platformId: 'zhihu', status: 'published' }, 3_000), /PLATFORM_NOT_IN_JOB/)
   await assert.rejects(reportDistributionResult(db, id, token, { platformId: 'juejin', status: 'done' }, 3_000), /INVALID_RESULT_STATUS/)

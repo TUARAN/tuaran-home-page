@@ -192,7 +192,10 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
             ) : null}
           </Section>
 
-          <Section title="2. 选择平台" description="有实测手册的平台才能选；其余平台标「待实测」，补齐手册后自动开放。">
+          <Section
+            title="2. 选择平台"
+            description={`有实测手册的平台才能选（当前 ${READY_PLATFORM_IDS.length} 个）；其余平台标「待实测」，补齐 playbooks.js 后自动开放。`}
+          >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {PLATFORM_ROWS.filter((row) => row.home || row.playbook).map((row) => {
                 const ready = Boolean(row.playbook)

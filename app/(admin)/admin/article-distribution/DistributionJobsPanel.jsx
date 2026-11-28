@@ -259,6 +259,8 @@ export default function DistributionJobsPanel() {
     {
       key: 'title',
       header: '文章',
+      thClassName: 'max-w-0',
+      tdClassName: 'max-w-0',
       render: (job) => {
         const count = deviationCount(job)
         return (
@@ -365,7 +367,7 @@ export default function DistributionJobsPanel() {
             columns={columns}
             rows={visibleJobs}
             rowKey={(job) => job.id}
-            tableClassName="sm:table-fixed sm:min-w-[34rem]"
+            tableClassName="w-full table-fixed max-sm:min-w-0 sm:min-w-[34rem]"
             empty={<p className="m-0 py-6 text-center text-xs text-[#7b7d72] dark:text-gray-500">{jobs.length ? '没有符合筛选的任务。' : '还没有任务。'}</p>}
           />
         ) : null}

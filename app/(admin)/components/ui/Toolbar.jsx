@@ -4,9 +4,9 @@ export default function Toolbar({ left, right, children, className = '' }) {
     return <div className={`flex flex-wrap items-center gap-2 ${className}`}>{children}</div>
   }
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-2 ${className}`}>
-      <div className="flex flex-wrap items-center gap-2">{left}</div>
-      {right ? <div className="flex flex-wrap items-center gap-2">{right}</div> : null}
+    <div className={`flex min-w-0 w-full max-w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${className}`}>
+      <div className="flex min-w-0 w-full max-w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">{left}</div>
+      {right ? <div className="flex min-w-0 w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto">{right}</div> : null}
     </div>
   )
 }

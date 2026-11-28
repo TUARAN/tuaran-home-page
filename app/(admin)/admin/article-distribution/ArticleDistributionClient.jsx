@@ -145,7 +145,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
         <AdminButton
           type="button"
           variant="primary"
-          className="max-sm:h-auto max-sm:w-full max-sm:whitespace-normal max-sm:px-3 max-sm:py-2.5 max-sm:text-center"
+          className="max-sm:h-auto max-sm:w-full max-sm:px-3 max-sm:py-2.5 max-sm:text-center"
           onClick={createJob}
           disabled={loading || !selectedItem || !selectedPlatforms.length}
         >

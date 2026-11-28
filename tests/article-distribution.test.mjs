@@ -31,7 +31,9 @@ test('任务台在窄屏收敛表格与工具条宽度', async () => {
     read('../app/(admin)/components/ui/DataTable.jsx'),
   ])
   assert.match(panel, /hideSm:\s*true/)
+  assert.match(panel, /table-fixed/)
   assert.match(panel, /sm:min-w-\[34rem\]/)
+  assert.match(panel, /tdClassName: 'max-w-0'/)
   assert.match(table, /hideSm/)
   assert.match(table, /max-w-full overflow-x-auto/)
 })

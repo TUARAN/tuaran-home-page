@@ -462,6 +462,9 @@
 }
 
 .admin-data-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   scrollbar-width: thin;
   scrollbar-color: var(--admin-line) transparent;
 }

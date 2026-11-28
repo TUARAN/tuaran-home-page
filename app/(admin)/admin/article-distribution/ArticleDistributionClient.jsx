@@ -142,16 +142,22 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
       title="分发智能体"
       description="把站内文章交给本机智能体，用你自己浏览器里的平台登录态发布；结果逐平台回到这里。"
       actions={(
-        <AdminButton type="button" variant="primary" onClick={createJob} disabled={loading || !selectedItem || !selectedPlatforms.length}>
-          <IconClipboard size={16} /> 建任务并复制领取指令
+        <AdminButton
+          type="button"
+          variant="primary"
+          className="max-sm:h-auto max-sm:w-full max-sm:whitespace-normal max-sm:px-3 max-sm:py-2.5 max-sm:text-center"
+          onClick={createJob}
+          disabled={loading || !selectedItem || !selectedPlatforms.length}
+        >
+          <IconClipboard size={16} className="shrink-0" /> 建任务并复制领取指令
         </AdminButton>
       )}
     >
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
+      <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <div className="space-y-5">
           <Section title="1. 选择站内文章" description="只列已公开的文章与调研。建任务时读取公开页正文，转成 Markdown 存进任务。">
             <form
-              className="mb-4 flex gap-2"
+              className="mb-4 flex flex-col gap-2 sm:flex-row"
               onSubmit={(event) => { event.preventDefault(); loadItems(query) }}
             >
               <label className="relative block min-w-0 flex-1">
@@ -163,7 +169,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
                   className="h-9 w-full rounded-lg border border-[#d8dad0] bg-white pl-9 pr-3 text-sm outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#10161f]"
                 />
               </label>
-              <AdminButton type="submit" disabled={loading}>搜索</AdminButton>
+              <AdminButton type="submit" className="w-full sm:w-auto" disabled={loading}>搜索</AdminButton>
             </form>
             <select
               value={selectedKey}
@@ -224,7 +230,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
               <StatusPill tone="neutral" icon={false}>harness v{HARNESS_VERSION}</StatusPill>
             </div>
             <ol className="mb-0 mt-3 list-decimal space-y-1.5 pl-5 text-[13px] leading-6 text-[#53554d] dark:text-gray-300">
-              <li>在本机仓库根目录执行 <code>{INSTALL_COMMAND}</code>，把 skill 装进 <code>~/.claude/skills</code>。手册或规则更新、版本号变化后再执行一次。</li>
+              <li>在本机仓库根目录执行 <code className="break-all">{INSTALL_COMMAND}</code>，把 skill 装进 <code className="break-all">~/.claude/skills</code>。手册或规则更新、版本号变化后再执行一次。</li>
               <li>打开 ego lite，在里面登录要发的平台。智能体沿用这份浏览器登录态，本站不保存平台 Cookie。</li>
               <li>在这里建任务，把领取指令粘贴给 Claude Desktop 或 Codex。智能体领取正文、逐平台发布，并把文章地址和手册偏差回报到任务台。</li>
             </ol>

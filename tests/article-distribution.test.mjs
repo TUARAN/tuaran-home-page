@@ -22,6 +22,18 @@ test('分发智能体入口在 内容 → 分发与触达，页面不再依赖�
   assert.match(page, /buildDistributionClaimPrompt/)
   assert.match(page, /待实测/)
   assert.match(page, /<DistributionJobsPanel/)
+  assert.match(page, /min-w-0 max-w-full/)
+})
+
+test('任务台在窄屏收敛表格与工具条宽度', async () => {
+  const [panel, table] = await Promise.all([
+    read('../app/(admin)/admin/article-distribution/DistributionJobsPanel.jsx'),
+    read('../app/(admin)/components/ui/DataTable.jsx'),
+  ])
+  assert.match(panel, /hideSm:\s*true/)
+  assert.match(panel, /sm:min-w-\[34rem\]/)
+  assert.match(table, /hideSm/)
+  assert.match(table, /max-w-full overflow-x-auto/)
 })
 
 test('只有带实测手册的平台可以建任务', () => {

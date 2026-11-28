@@ -11,12 +11,12 @@ const COPY = {
   },
 }
 
-export default function TopicDisclaimer({ kind }) {
+export default function TopicDisclaimer({ kind, className = '' }) {
   const copy = COPY[kind]
   if (!copy) return null
   return (
     <aside
-      className="mb-6 rounded-xl border border-[#e4d3b4] bg-[#fff8ec] px-4 py-2 text-[13px] leading-6 text-[#5c4b32] dark:border-[#5a4630] dark:bg-[#241b12] dark:text-[#ead7b8]"
+      className={`rounded-xl border border-[#e4d3b4] bg-[#fff8ec] px-4 py-2 text-[13px] leading-6 text-[#5c4b32] dark:border-[#5a4630] dark:bg-[#241b12] dark:text-[#ead7b8] ${className}`.trim()}
       role="note"
     >
       <p className="mb-0">

@@ -9,7 +9,13 @@ import { getD1 } from '../../../../../../lib/db/d1'
 import { readPaidResourceKeys } from '../../../../../../lib/pay/publicPrices.mjs'
 import { avatarAbsoluteUrl } from '../../../../../../lib/auth/avatar'
 import { buildArticleOgUrl } from '../../../../../../lib/article/articleOg'
-import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
+import {
+  buildResearchMarkdownDocument,
+  extractToc,
+  renderMarkdown,
+  splitResearchEndNotes,
+} from '../../../../../../lib/research/markdown'
+import ResearchBoundaryFootnotes from './ResearchBoundaryFootnotes'
 import { buildResearchShareTitle, isAShareCompanyObservation, isAShareResearchEntry, isCryptoAssetObservation } from '../../../../../../lib/research/shareTitle'
 import { AUTHOR_INTRO_MARKDOWN } from '../../../../components/ArticleAuthorIntro'
 import ArticleDetailHeader from '../../../../components/ArticleDetailHeader'
@@ -111,17 +117,22 @@ export default async function ResearchDetailPage({ params }) {
     : [{ id: assistance || 'claude-code', label: '', content: entry.content }]
   const renderedVariants = isEncrypted || isAShareCompanyList
     ? []
-    : variantList.map((variant, index) => ({
-        id: variant.id,
-        label: variant.label || variant.id,
-        content: variant.content,
-        html: renderMarkdown(variant.content, {
+    : variantList.map((variant, index) => {
+        const rendered = renderMarkdown(variant.content, {
           images: index === 0 ? entry.images || [] : [],
           seed: `${entry.category}:${entry.slug}:${variant.id}`,
           title: entry.title,
-        }),
-        toc: extractToc(variant.content),
-      }))
+        })
+        const { bodyHtml, footnoteHtml } = splitResearchEndNotes(rendered)
+        return {
+          id: variant.id,
+          label: variant.label || variant.id,
+          content: variant.content,
+          html: bodyHtml,
+          footnoteHtml,
+          toc: extractToc(variant.content),
+        }
+      })
   // 一键复制/分发用的 Markdown：标题 + 正文 + 配图（不含 YAML frontmatter）；加密文章不提供
   const markdownDoc = isEncrypted || isAShareCompanyList ? '' : buildResearchMarkdownDocument(entry.content, {
     images: entry.images || [],
@@ -355,8 +366,6 @@ export default async function ResearchDetailPage({ params }) {
         paid={isPaidUnlock}
       />
 
-      <TopicDisclaimer kind={disclaimerKind} />
-
       {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}
 
       {showLifeTrafficTest && !isEncrypted ? <LifeTrafficTest /> : null}
@@ -387,9 +396,14 @@ export default async function ResearchDetailPage({ params }) {
       ) : null}
       <ArticleEngagementPanel articleKey={articleKey} related={related} />
 
+      {!isEncrypted && !isAShareCompanyList ? (
+        <ResearchBoundaryFootnotes variants={renderedVariants} />
+      ) : null}
+
       <div id="comments" className="scroll-mt-24">
         <ArticleComments articleKey={articleKey} />
       </div>
+      <TopicDisclaimer kind={disclaimerKind} className="mt-8" />
       <ArticleFooterCta />
     </div>
   )

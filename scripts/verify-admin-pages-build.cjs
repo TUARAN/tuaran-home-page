@@ -53,6 +53,8 @@ const NON_RUNTIME_API_REFERENCES = new Set([
   // The distribution job panel copies a claim prompt containing this public
   // agent endpoint; the external agent calls it, never the Admin browser.
   '/api/distribution/agent/jobs',
+  // Copied claim prompt also mentions the public-site skill download URL.
+  '/api/resources/aran-distributor-skill',
   '/api/site-status/monitor',
   '/api/subscribe',
 ])

@@ -4,7 +4,7 @@ description: >
   阿燃分发智能体（2aran-distributor）。用 ego lite 把 2aran.com 或自备 Markdown 发到掘金、CSDN、X、小红书、知乎、今日头条等外部平台。
   Use when: 用户粘贴「2aran 分发任务」或「自备账号」分发任务，或要求把文章同步到自己的内容平台账号。
 metadata:
-  version: "1.4.1"
+  version: "1.4.2"
 ---
 
 # 2aran-distributor
@@ -13,7 +13,7 @@ metadata:
 
 ## 开工前
 
-- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.1`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
+- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.2`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
 - 任务列出的平台在下方没有手册时，先问任务创建者：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
 - 按任务里的平台顺序逐个处理：一个平台发布并核对完，再开始下一个。
 
@@ -48,7 +48,13 @@ metadata:
 - 每个平台发布前在预览里核对：标题、图片全部加载、代码块数量、章节标题。
 - 发布后按手册的「核对」和「成功标志」确认结果，不以点过按钮为准。
 - 任务台回报前必须完成该平台手册「核对」；未完成不得 POST `action:result` 为 `published` / `reviewing`。
-- 掘金：编辑器 `.../editor/drafts/<sid>` 与成稿 `article_id` 不同；`articleUrl` 只能是 `https://juejin.cn/post/<article_id>`。发布弹窗仍开着或草稿编辑器仍可访问，不能单独作为失败依据，须用 `creator/home` 或 `query_list` 按任务 title 取成稿链接并打开 `/post/<id>` 核对标题。
+- `articleUrl` 填读者可见的成稿链接（各平台手册「成功标志」）；勿填编辑器、compose、write、publish 发布页或仅草稿箱入口。标题与任务不完全一致时（平台截断标题），按手册用前缀或任务 title 子串在列表里匹配。
+- 掘金：`.../editor/drafts/<sid>` ≠ 成稿 `article_id`；须 `creator/home` 或 `query_list` 取 `/post/<id>`。
+- CSDN：`editor.csdn.net` 仅是编辑页；成稿链在成功页或 `blog.csdn.net` 文章页。
+- X：须出现 `/status/<id>` 或 Articles「Published」列表；勿把 `/compose/articles/edit/<id>` 当已发布。
+- 知乎：回报链为 `https://zhuanlan.zhihu.com/p/<id>`，不能带 `/edit`。
+- 头条：仅在 `profile_v4/graphic/articles`（或带「审核中」）出现才可记 reviewing/published；只在 `manage/draft` 则为 draft。
+- 小红书：须在笔记管理「已发布」或「审核中」看到标题匹配项；长文排版页停留不算成功。
 
 ## 平台手册
 
@@ -95,20 +101,20 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
 - 核对：按任务 title 核对成稿：打开 `https://juejin.cn/creator/home`（勿用已失效的 `creator/content/article`）在列表里匹配标题并取 `/post/<article_id>`；或在当前页 `POST https://api.juejin.cn/content_api/v1/article/query_list`（`user_id` 来自 `GET https://api.juejin.cn/user_api/v1/user/get` 的 `data.user_id`，`sort_type: 2`，`cursor: "0"`）按标题取 `article_id`。再 `goto https://juejin.cn/post/<article_id>` 核对 `h1` 与任务标题一致。不要用 GET `list_by_user`（实测 `err_no: 2`）。
 - 成功标志：创作者首页或个人 `/user/<user_id>/posts` 出现该标题，且 `https://juejin.cn/post/<article_id>` 可打开（`h1` 一致）。任务台 `articleUrl` 必须是该 post 链接；仅当只有草稿编辑器 URL、且上述校验均失败时，才用 `status: draft` 并写编辑器 drafts 链。
 
-### CSDN（`csdn`，2026-11-26 实测）
+### CSDN（`csdn`，2026-11-28 实测）
 
 - 入口：https://editor.csdn.net/md/
 - 登录判断：编辑器跳到 passport.csdn.net 登录页，就是未登录。
 - 步骤：
-  1. 先点「【无标题】」，再填 `input.article-bar__title`。
+  1. 先点「【无标题】」，再填 `input.article-bar__title`。ego-browser 下若标题框或 `pre.editor__inner` 的 `getBoundingClientRect().width === 0`，用 evaluate 给 `input.article-bar__title` 与 `pre.editor__inner` 赋值并 `dispatchEvent(new Event("input", { bubbles: true }))`，不要因 click/fill 超时直接报失败。
   2. 正文区是 contenteditable 的 `pre.editor__inner`：聚焦后全选，用键盘粘贴整篇 Markdown。CSDN 会自动把外链图片转存到 i-blog.csdnimg.cn，等预览里的图片全部加载后再继续。
   3. 点顶部「发布文章」打开弹窗：添加最多 4 个标签；封面选推荐缩略图后，要在「图片编辑」里点「确认上传」；摘要写进摘要文本框（≤256 字）。
   4. 文章类型：原创文章选「原创」。翻译或转载要填写原文链接 `input.text-originallink`；「翻译」开关用 `label.lab-switch:has-text('翻译')` 定位。选「翻译」时还要勾选「原文允许翻译或者本次翻译已经获得原文作者授权」，这一项属于权利声明，按安全规则先问站长。
   5. 最后点弹窗底部的红色按钮 `button.btn-b-red`。顶部工具栏的 `.btn-publish` 是另一个按钮，不要点。
-- 核对：确认页面跳转，并打开「查看文章」链接核对标题和图片。
-- 成功标志：跳到 `mp.csdn.net/mp_blog/creation/success/<文章ID>`；新文章通常先进入审核。
+- 核对：发布后看 URL 是否跳到 `mp.csdn.net/mp_blog/creation/success/<文章ID>`，或打开 `https://mp.csdn.net/mp_blog/manage/article` 按任务 title 找到新文并点「查看文章」；`editor.csdn.net` 仍可打开不能当作未发布依据。
+- 成功标志：成功页或管理列表中的 `https://blog.csdn.net/<账号>/article/details/<文章ID>`（读者链）。任务台 `articleUrl` 填 blog 文章址或 success 页，不填 `editor.csdn.net`。
 
-### X（`twitter`，2026-11-27 实测）
+### X（`twitter`，2026-11-28 实测）
 
 - 入口：https://x.com/compose/articles
 - 登录判断：跳到 x.com/i/flow/login 或出现「Sign in」按钮，就是未登录。
@@ -119,10 +125,10 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
   4. 封面（可选）用 `input[data-testid="fileInput"][multiple]` 上传正文第一张图，裁剪弹窗点「Apply」。
   5. 菜单或弹窗的遮罩会挡住点击：选择器必须只匹配一个元素，被挡时先用 evaluate 算坐标再 `page.mouse.click`。
   6. 点「Publish」，在确认弹窗里再点 `[role="dialog"]` 内的「Publish」。之后弹出的 Boost（付费推广）直接关掉，不付费。
-- 核对：打开个人主页最新帖子，核对文章标题、章节标题、列表和图片。
-- 成功标志：生成 `https://x.com/<账号>/status/<ID>` 的文章帖，发布即公开，无审核。
+- 核对：发布完成后地址应跳到 `https://x.com/<账号>/status/<ID>`，或在 `compose/articles` 的 Published 列表见到该标题；`/compose/articles/edit/<id>` 仅 Draft 不能记 published。
+- 成功标志：任务台 `articleUrl` 填 `/status/<ID>` 完整链；不要用 Articles 草稿 edit 链代替。
 
-### 小红书（`xiaohongshu`，2026-11-27 实测）
+### 小红书（`xiaohongshu`，2026-11-28 实测）
 
 - 入口：https://creator.xiaohongshu.com/publish/publish?from=menu&target=article
 - 登录判断：跳到 creator.xiaohongshu.com/login 登录页，就是未登录。
@@ -136,10 +142,10 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
   7. 话题：在笔记正文末尾输入 `#话题词`，等联想列表出现后按回车，最多 3 个，从站内标签就近匹配。
   8. 「原创声明」属于权利声明，按安全规则先问站长；不要关联活动（误关联时点「取消关联」）。
   9. 点可见的「发布」按钮（用 evaluate 算坐标点击，避免点到 `xhs-publish-btn` 上的其他区域）。
-- 核对：打开笔记管理 https://creator.xiaohongshu.com/new/note-manager，新笔记出现在列表里；笔记 ID 在 `note-card` 的 `data-impression` 的 noteId 里。
-- 成功标志：发布后地址带 `published=true`，笔记管理显示「审核中」；审核通过后地址为 `https://www.xiaohongshu.com/explore/<笔记ID>`。
+- 核对：打开 https://creator.xiaohongshu.com/new/note-manager ，在「审核中」或「已发布」按标题匹配（笔记标题可能被截到 20 字）；长文「一键排版」预览页不算发布成功；noteId 在 `note-card` 的 `data-impression` 里。
+- 成功标志：笔记管理出现该笔记且状态为审核中或已发布；`articleUrl` 优先 `https://www.xiaohongshu.com/explore/<笔记ID>`，审核中若无 explore 链可填笔记管理页并记 `reviewing`；勿填仅停留在发布流程的 URL。
 
-### 知乎（`zhihu`，2026-11-27 实测）
+### 知乎（`zhihu`，2026-11-28 实测）
 
 - 入口：https://zhuanlan.zhihu.com/write
 - 登录判断：跳到 www.zhihu.com/signin 登录页，就是未登录。
@@ -150,10 +156,10 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
   4. 话题：先点「添加话题」，再鼠标点击「搜索话题...」输入框（不点击就输入不进去），输入关键词后点击输入框下方匹配的结果，最多 3 个。
   5. 「创作声明」保持「无声明」，要改成原创等声明时按安全规则先问站长；「投稿至问题」和专栏保持默认。
   6. 点「发布」，按钮显示「发布中…」，约 15 秒后跳转。
-- 核对：打开发布后的文章页，核对章节标题、表格数量和图片。
-- 成功标志：地址从 `/p/<ID>/edit` 变成 `https://zhuanlan.zhihu.com/p/<ID>`，发布即公开。
+- 核对：发布跳转后 URL 为 `https://zhuanlan.zhihu.com/p/<ID>`（无 `/edit`），打开核对章节标题、表格与图片；仍在 `/write` 或 `/p/<ID>/edit` 则未成稿。
+- 成功标志：任务台 `articleUrl` 必须为 `https://zhuanlan.zhihu.com/p/<ID>`，不带 `/edit`。
 
-### 头条（`toutiao`，2026-11-27 实测）
+### 头条（`toutiao`，2026-11-28 实测）
 
 - 入口：https://mp.toutiao.com/profile_v4/graphic/publish
 - 登录判断：跳到 mp.toutiao.com/auth/page/login 登录页，就是未登录。
@@ -164,8 +170,9 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
   4. 封面默认取正文图片，确认有图即可。「投放广告」是必选项，保持默认。
   5. 默认勾选的「头条首发」要取消（文章已在其他平台发布）；「同时发布微头条」不在任务范围内，也要取消。「作品声明」留空，要加声明时按安全规则先问站长。
   6. 点「预览并发布」，在预览页点「确认发布」。
-- 核对：跳到 https://mp.toutiao.com/profile_v4/graphic/articles，新文章在列表里显示「审核中」，且没有「首发」标记；文章 ID（pgc_id）在预览链接里。
-- 成功标志：文章列表显示「审核中」；审核通过后会出现在 `https://www.toutiao.com/item/<ID>`。
+  7. 发布后按「核对」区分：标题在平台上可能被截短（2～30 字），用任务 title 前缀在列表里匹配。
+- 核对：打开 https://mp.toutiao.com/profile_v4/graphic/articles 按截短后的标题找「审核中」；若无，再查 https://mp.toutiao.com/profile_v4/manage/draft — 仅草稿箱有则为 draft，不能记 published。确认无「首发」误勾选。
+- 成功标志：图文列表出现该文（通常审核中）；`articleUrl` 用列表预览/详情链或后续 `https://www.toutiao.com/item/<ID>`，勿只填 `graphic/publish` 编辑页。
 
 ## 自备账号模式
 
@@ -184,7 +191,7 @@ const row = (await res.json()).data?.find((x) => x.article_info?.title === title
 - 领取：`curl -sS -H "Authorization: Bearer <token>" <任务地址>`。返回 JSON：title、url、summary、tags、platformIds、markdown、harnessVersion、results。按 platformIds 的顺序处理，正文用 markdown 字段。
 - harnessVersion 与本 skill 版本不一致时先停下，请站长更新 skill。
 - results 里已有「published / reviewing / draft」结果的平台不要重复发布，先问站长。
-- 每个平台处理完立刻回报，不要等全部结束。用 heredoc 把 JSON 从标准输入传给 curl，避免引号转义：`curl -sS -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --data-binary @- <任务地址>`，请求体 `{"action":"result","platformId":"juejin","status":"published","articleUrl":"…","notes":"…","playbookDeviation":"…"}`。`articleUrl` 填手册「成功标志」里的公开文章址，勿填仅自己可见的编辑页或草稿箱址（掘金 drafts 链仅在 `status: draft` 时使用）。
+- 每个平台处理完立刻回报，不要等全部结束。用 heredoc 把 JSON 从标准输入传给 curl，避免引号转义：`curl -sS -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --data-binary @- <任务地址>`，请求体 `{"action":"result","platformId":"juejin","status":"published","articleUrl":"…","notes":"…","playbookDeviation":"…"}`。`articleUrl` 填手册「成功标志」里的公开成稿址；各平台编辑器/compose/drafts 链仅在 `status: draft` 且手册核对确认未成稿时使用。
 - status 取值：`published`（已发布）、`reviewing`（审核中）、`draft`（草稿）、`failed`（失败）、`skipped`（跳过）。notes 写「问题与处理」，playbookDeviation 写「手册偏差」，没有就写「无」。
 - 全部平台回报后收尾：POST `{"action":"finish"}`。收尾后 token 失效，台账按结果标成完成、部分完成或失败。
 - 接口返回 401 `INVALID_TOKEN` 时 token 已过期或任务已取消：停下，请站长在后台 /admin/article-distribution 重新复制领取指令。

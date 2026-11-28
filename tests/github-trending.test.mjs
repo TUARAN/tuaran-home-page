@@ -224,6 +224,8 @@ test('the trending page keeps a server-rendered compact calendar without client 
   assert.doesNotMatch(page, /['"]use client['"]/)
   assert.match(page, /trendingMonthMatrix/)
   assert.match(page, /aria-label="按月历选日期"/)
+  assert.match(page, /sm:flex-row sm:items-end/)
+  assert.doesNotMatch(page, /mt-5 w-56/)
   // 日历常驻展示，不再折叠，也不保留旧的日期胶囊。
   assert.doesNotMatch(page, /<details|<summary/)
   assert.doesNotMatch(page, /rounded-full border px-3 py-1/)

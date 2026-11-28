@@ -47,7 +47,7 @@ export default function ArticleGuestDistributeButton({
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-1.5 text-xs font-medium text-[var(--site-muted)] transition hover:border-[var(--site-accent)] hover:text-[var(--site-ink)]"
+      className="article-action-button px-3 py-1 text-xs"
       title="复制「自备账号」分发任务：用阿燃分发智能体 + ego lite 发到你的平台账号；不含全文，需打开原文链接"
     >
       <GuestDistributeIcon />

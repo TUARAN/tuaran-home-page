@@ -4,7 +4,7 @@ description: >
   阿燃分发智能体（2aran-distributor）。用 ego lite 把 2aran.com 或自备 Markdown 发到掘金、CSDN、X、小红书、知乎、今日头条等外部平台。
   Use when: 用户粘贴「2aran 分发任务」或「自备账号」分发任务，或要求把文章同步到自己的内容平台账号。
 metadata:
-  version: "1.4.0"
+  version: "1.4.1"
 ---
 
 # 2aran-distributor
@@ -13,7 +13,7 @@ metadata:
 
 ## 开工前
 
-- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.0`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
+- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.1`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
 - 任务列出的平台在下方没有手册时，先问任务创建者：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
 - 按任务里的平台顺序逐个处理：一个平台发布并核对完，再开始下一个。
 
@@ -47,12 +47,14 @@ metadata:
 
 - 每个平台发布前在预览里核对：标题、图片全部加载、代码块数量、章节标题。
 - 发布后按手册的「核对」和「成功标志」确认结果，不以点过按钮为准。
+- 任务台回报前必须完成该平台手册「核对」；未完成不得 POST `action:result` 为 `published` / `reviewing`。
+- 掘金：编辑器 `.../editor/drafts/<sid>` 与成稿 `article_id` 不同；`articleUrl` 只能是 `https://juejin.cn/post/<article_id>`。发布弹窗仍开着或草稿编辑器仍可访问，不能单独作为失败依据，须用 `creator/home` 或 `query_list` 按任务 title 取成稿链接并打开 `/post/<id>` 核对标题。
 
 ## 平台手册
 
 手册里的选择器和代码片段优先使用；失效时自己看页面处理，并记进回报的「手册偏差」。
 
-### 掘金（`juejin`，2026-11-26 实测）
+### 掘金（`juejin`，2026-11-28 实测）
 
 - 入口：https://juejin.cn/editor/drafts/new?v=2
 - 登录判断：页面弹出登录框，或右上角出现「登录」按钮，就是未登录。
@@ -63,14 +65,35 @@ metadata:
   4. HTML/SVG 示意图：掘金不渲染 `<figure>`/`<svg>`。打开任务 `url` 站内原文，对示意图 `page.screenshot({ ... })` 存为 PNG 后按上一步上传，正文改为 `![图注](掘金URL)`；无法截图时删除原始标签，只保留图注文字。
   5. 点「发布」打开弹窗：分类按内容选（技术文章一般选「人工智能」或「前端」）；标签要先聚焦 `.publish-popup input.byte-select__input` 再输入，然后点击匹配的 `.byte-select-option`，最多 3 个；封面选正文第一张可用图；摘要 50–100 字。
   6. 确认弹窗内容后，点弹窗底部的发布按钮。
+  7. 发布后必须按「核对」执行：编辑器 URL 里的 `.../editor/drafts/<id>` 是草稿 sid，不等于成稿 `article_id`；仅凭草稿页仍可打开不得记为已发布。
 - 写入正文（page.evaluate）：
 
   ```js
   document.querySelector('.CodeMirror').CodeMirror.setValue(markdown)
   ```
 
-- 核对：发布后用 `https://api.juejin.cn/content_api/v1/article/list_by_user`（带 credentials）核对文章状态，拿到文章 ID。
-- 成功标志：新文章出现在作者文章列表里；通常先进入审核，文章地址为 `https://juejin.cn/post/<文章ID>`。
+- 核对：创作者首页按标题取成稿链接：
+
+  ```js
+  await page.goto('https://juejin.cn/creator/home', { timeout: 60000 });
+const match = [...document.querySelectorAll('a')].find((a) => a.textContent?.includes(title));
+const articleId = match?.href?.match(/\/post\/(\d+)/)?.[1];
+  ```
+
+- 核对：query_list API（POST，带 Cookie）：
+
+  ```js
+  const res = await fetch('https://api.juejin.cn/content_api/v1/article/query_list', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ user_id, sort_type: 2, cursor: '0' }),
+});
+const row = (await res.json()).data?.find((x) => x.article_info?.title === title);
+  ```
+
+- 核对：按任务 title 核对成稿：打开 `https://juejin.cn/creator/home`（勿用已失效的 `creator/content/article`）在列表里匹配标题并取 `/post/<article_id>`；或在当前页 `POST https://api.juejin.cn/content_api/v1/article/query_list`（`user_id` 来自 `GET https://api.juejin.cn/user_api/v1/user/get` 的 `data.user_id`，`sort_type: 2`，`cursor: "0"`）按标题取 `article_id`。再 `goto https://juejin.cn/post/<article_id>` 核对 `h1` 与任务标题一致。不要用 GET `list_by_user`（实测 `err_no: 2`）。
+- 成功标志：创作者首页或个人 `/user/<user_id>/posts` 出现该标题，且 `https://juejin.cn/post/<article_id>` 可打开（`h1` 一致）。任务台 `articleUrl` 必须是该 post 链接；仅当只有草稿编辑器 URL、且上述校验均失败时，才用 `status: draft` 并写编辑器 drafts 链。
 
 ### CSDN（`csdn`，2026-11-26 实测）
 
@@ -161,7 +184,7 @@ metadata:
 - 领取：`curl -sS -H "Authorization: Bearer <token>" <任务地址>`。返回 JSON：title、url、summary、tags、platformIds、markdown、harnessVersion、results。按 platformIds 的顺序处理，正文用 markdown 字段。
 - harnessVersion 与本 skill 版本不一致时先停下，请站长更新 skill。
 - results 里已有「published / reviewing / draft」结果的平台不要重复发布，先问站长。
-- 每个平台处理完立刻回报，不要等全部结束。用 heredoc 把 JSON 从标准输入传给 curl，避免引号转义：`curl -sS -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --data-binary @- <任务地址>`，请求体 `{"action":"result","platformId":"juejin","status":"published","articleUrl":"…","notes":"…","playbookDeviation":"…"}`。
+- 每个平台处理完立刻回报，不要等全部结束。用 heredoc 把 JSON 从标准输入传给 curl，避免引号转义：`curl -sS -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --data-binary @- <任务地址>`，请求体 `{"action":"result","platformId":"juejin","status":"published","articleUrl":"…","notes":"…","playbookDeviation":"…"}`。`articleUrl` 填手册「成功标志」里的公开文章址，勿填仅自己可见的编辑页或草稿箱址（掘金 drafts 链仅在 `status: draft` 时使用）。
 - status 取值：`published`（已发布）、`reviewing`（审核中）、`draft`（草稿）、`failed`（失败）、`skipped`（跳过）。notes 写「问题与处理」，playbookDeviation 写「手册偏差」，没有就写「无」。
 - 全部平台回报后收尾：POST `{"action":"finish"}`。收尾后 token 失效，台账按结果标成完成、部分完成或失败。
 - 接口返回 401 `INVALID_TOKEN` 时 token 已过期或任务已取消：停下，请站长在后台 /admin/article-distribution 重新复制领取指令。

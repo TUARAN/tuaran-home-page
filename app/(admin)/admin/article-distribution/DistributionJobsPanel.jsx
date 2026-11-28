@@ -84,12 +84,12 @@ function JobDetailDialog({ job, busy, onClose, onAct }) {
   ].filter(([, value]) => value)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="presentation" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-3 sm:items-center sm:p-4" role="presentation" onClick={onClose}>
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="distribution-job-title"
-        className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[#d8dad0] bg-white shadow-2xl dark:border-[#2d3744] dark:bg-[#10161f]"
+        className="flex max-h-[min(100dvh-1.5rem,calc(100vh-2rem))] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[#d8dad0] bg-white shadow-2xl dark:border-[#2d3744] dark:bg-[#10161f]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-3 border-b border-[#e2e3da] px-5 py-4 dark:border-[#1e2733]">
@@ -114,7 +114,7 @@ function JobDetailDialog({ job, busy, onClose, onAct }) {
         </header>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 text-[13px] leading-6 text-[#3f4039] dark:text-gray-200">
-          <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 sm:grid-cols-[auto_1fr_auto_1fr]">
+          <dl className="m-0 grid grid-cols-1 gap-x-4 gap-y-1 min-[480px]:grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto_1fr]">
             {meta.map(([label, value]) => (
               <div key={label} className="contents">
                 <dt className="whitespace-nowrap text-[#82847a] dark:text-gray-500">{label}</dt>
@@ -170,11 +170,11 @@ function JobDetailDialog({ job, busy, onClose, onAct }) {
         </div>
 
         {isActive(job) ? (
-          <footer className="flex justify-end gap-2 border-t border-[#e2e3da] px-5 py-3 dark:border-[#1e2733]">
-            <AdminButton type="button" size="sm" variant="ghost" onClick={() => onAct(job, 'cancel')} disabled={busy}>
+          <footer className="flex flex-col-reverse gap-2 border-t border-[#e2e3da] px-4 py-3 sm:flex-row sm:justify-end sm:px-5 dark:border-[#1e2733]">
+            <AdminButton type="button" size="sm" variant="ghost" className="w-full sm:w-auto" onClick={() => onAct(job, 'cancel')} disabled={busy}>
               <IconX size={15} /> 取消任务
             </AdminButton>
-            <AdminButton type="button" size="sm" onClick={() => onAct(job, 'reissue')} disabled={busy}>
+            <AdminButton type="button" size="sm" className="w-full sm:w-auto max-sm:whitespace-normal" onClick={() => onAct(job, 'reissue')} disabled={busy}>
               <IconClipboard size={15} /> 复制领取指令
             </AdminButton>
           </footer>
@@ -281,6 +281,7 @@ export default function DistributionJobsPanel() {
     {
       key: 'platforms',
       header: '平台',
+      hideSm: true,
       width: '12.5rem',
       render: (job) => {
         const results = new Map(job.results.map((result) => [result.platformId, result]))
@@ -327,15 +328,16 @@ export default function DistributionJobsPanel() {
         </AdminButton>
       )}
     >
-      <div className="space-y-3 text-sm">
+      <div className="min-w-0 space-y-3 text-sm">
         <Toolbar
+          className="min-w-0 w-full"
           left={(
             <>
-              <select aria-label="按状态筛选" className={controlClass} value={filters.status} onChange={(event) => setFilter('status', event.target.value)}>
+              <select aria-label="按状态筛选" className={`${controlClass} w-full min-w-0 sm:w-auto`} value={filters.status} onChange={(event) => setFilter('status', event.target.value)}>
                 <option value="">全部状态</option>
                 {Object.entries(JOB_STATUS).map(([value, { label }]) => <option key={value} value={value}>{label}</option>)}
               </select>
-              <select aria-label="按平台筛选" className={controlClass} value={filters.platform} onChange={(event) => setFilter('platform', event.target.value)}>
+              <select aria-label="按平台筛选" className={`${controlClass} w-full min-w-0 sm:w-auto`} value={filters.platform} onChange={(event) => setFilter('platform', event.target.value)}>
                 <option value="">全部平台</option>
                 {platformOptions.map((platform) => <option key={platform.id} value={platform.id}>{platform.shortLabel}</option>)}
               </select>
@@ -343,7 +345,7 @@ export default function DistributionJobsPanel() {
                 type="search"
                 aria-label="按标题搜索"
                 placeholder="搜索标题、链接或标签"
-                className={`${controlClass} w-44 min-w-0 flex-1 sm:max-w-[14rem]`}
+                className={`${controlClass} w-full min-w-0 sm:w-44 sm:max-w-[14rem]`}
                 value={filters.query}
                 onChange={(event) => setFilter('query', event.target.value)}
               />
@@ -354,7 +356,7 @@ export default function DistributionJobsPanel() {
               ) : null}
             </>
           )}
-          right={<span className="text-[12px] tabular-nums text-[#82847a] dark:text-gray-500">{filtered ? `${visibleJobs.length} / ${jobs.length}` : jobs.length} 个任务</span>}
+          right={<span className="w-full text-[12px] tabular-nums text-[#82847a] sm:w-auto dark:text-gray-500">{filtered ? `${visibleJobs.length} / ${jobs.length}` : jobs.length} 个任务</span>}
         />
         {state.error ? <p className="m-0 text-xs text-rose-600 dark:text-rose-300">{state.error}</p> : null}
         {state.notice ? <p className="m-0 text-xs text-emerald-700 dark:text-emerald-300">{state.notice}</p> : null}
@@ -363,7 +365,7 @@ export default function DistributionJobsPanel() {
             columns={columns}
             rows={visibleJobs}
             rowKey={(job) => job.id}
-            tableClassName="min-w-[34rem] table-fixed"
+            tableClassName="sm:table-fixed sm:min-w-[34rem]"
             empty={<p className="m-0 py-6 text-center text-xs text-[#7b7d72] dark:text-gray-500">{jobs.length ? '没有符合筛选的任务。' : '还没有任务。'}</p>}
           />
         ) : null}

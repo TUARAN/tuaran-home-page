@@ -6,7 +6,7 @@ export default function Section({ title, description, actions, children, classNa
     >
       {title || actions ? (
         <header className="admin-section__header flex min-w-0 flex-wrap items-start justify-between gap-3 border-b px-4 py-3.5 md:px-5">
-          <div className="min-w-0 flex-1 basis-64">
+          <div className="min-w-0 flex-1 basis-full sm:basis-64">
             {title ? (
               <h2 className="admin-section__title font-serif text-[1.05rem] font-semibold">
                 {title}

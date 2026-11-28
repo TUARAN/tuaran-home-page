@@ -9333,6 +9333,14 @@
     margin: 1.85rem 0 0.2rem;
   }
 
+  .research-article-footnotes__prose .research-risk-note {
+    margin-top: 0.35rem;
+  }
+
+  .research-article-footnotes__prose .research-risk-note--end {
+    margin-top: 0.35rem;
+  }
+
   .dark .prose-tuaran .research-risk-note {
     color: #8b9199;
   }

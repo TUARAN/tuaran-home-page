@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-import { renderMarkdown } from '../../../../../../lib/research/markdown'
+import ArticleBoundaryFootnotes from '../../../../components/ArticleBoundaryFootnotes'
+import { renderMarkdown, splitResearchEndNotes } from '../../../../../../lib/research/markdown'
 
 function base64ToBytes(b64) {
   const bin = atob(b64)
@@ -74,8 +75,13 @@ export default function EncryptedArticle({ payload, storageKey }) {
   }
 
   if (markdown) {
+    const rendered = renderMarkdown(markdown)
+    const { bodyHtml, footnoteHtml } = splitResearchEndNotes(rendered)
     return (
-      <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: renderMarkdown(markdown) }} />
+      <>
+        <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+        {footnoteHtml ? <ArticleBoundaryFootnotes html={footnoteHtml} /> : null}
+      </>
     )
   }
 

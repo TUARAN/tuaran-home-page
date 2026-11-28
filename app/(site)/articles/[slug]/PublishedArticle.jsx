@@ -14,7 +14,8 @@ import ArticleFooterCta from '../../components/ArticleFooterCta'
 import RevertToDraftButton from '../../components/RevertToDraftButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { isMarkdownDocument } from '../../../../lib/article/articleDocument.mjs'
-import { extractToc } from '../../../../lib/research/markdown'
+import ArticleBoundaryFootnotes from '../../components/ArticleBoundaryFootnotes'
+import { extractToc, renderMarkdown, splitResearchEndNotes } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/content/contentTaxonomy'
 import { topicDisclaimerKind } from '../../../../lib/content/topicDisclaimers'
 import TopicDisclaimer from '../../components/TopicDisclaimer'
@@ -65,6 +66,10 @@ export default function PublishedArticle({ article, siteUrl }) {
   const articleKey = `article:${article.slug}`
   const proofCredential = getContentProofCredential(articleKey)
   const articleTaxonomy = taxonomyForArticle(article)
+  const markdownFootnoteHtml = isMarkdownDocument(article.content)
+    ? splitResearchEndNotes(renderMarkdown(article.content.markdown)).footnoteHtml
+    : ''
+
   const disclaimerKind = topicDisclaimerKind({
     ...articleTaxonomy,
     title: article.title,
@@ -127,7 +132,6 @@ export default function PublishedArticle({ article, siteUrl }) {
         summaryLabel="TL;DR"
         tags={article.tags}
       />
-      <TopicDisclaimer kind={disclaimerKind} />
       <ArticleReadingLayout
         toc={<ArticleToc items={tocItems} />}
         support={<ArticleSupportCard articleKey={articleKey} />}
@@ -142,9 +146,11 @@ export default function PublishedArticle({ article, siteUrl }) {
         <ArticlePostBody content={article.content} />
       </ArticleReadingLayout>
       <ArticleEngagementPanel articleKey={articleKey} />
+      {markdownFootnoteHtml ? <ArticleBoundaryFootnotes html={markdownFootnoteHtml} /> : null}
       <div id="comments" className="scroll-mt-24">
         <ArticleComments articleKey={articleKey} />
       </div>
+      <TopicDisclaimer kind={disclaimerKind} className="mt-8" />
       <ArticleFooterCta />
     </div>
   )

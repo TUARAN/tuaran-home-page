@@ -15,7 +15,8 @@ import ArticleToc, { ArticleReadingLayout } from '../../components/ArticleToc'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { getPublishedArticlePostBySlug } from '../../../../lib/article/articlePosts'
 import { buildArticleOgUrl } from '../../../../lib/article/articleOg'
-import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
+import { extractToc, renderMarkdown, splitResearchEndNotes } from '../../../../lib/research/markdown'
+import ArticleBoundaryFootnotes from '../../components/ArticleBoundaryFootnotes'
 import { taxonomyForArticle } from '../../../../lib/content/contentTaxonomy'
 import { topicDisclaimerKind } from '../../../../lib/content/topicDisclaimers'
 import TopicDisclaimer from '../../components/TopicDisclaimer'
@@ -240,9 +241,15 @@ export default async function ArticleDetailPage({ params }) {
   const proofCredential = getContentProofCredential(`article:${article.slug}`)
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const articleMarkdown = articleContentToMarkdown(article, articleUrl)
-  const articleMarkdownHtml = article.markdown
-    ? renderMarkdown(normalizeArticleMarkdown(article.markdown), { seed: `article:${article.slug}`, title: article.title })
+  const articleMarkdownRendered = article.markdown
+    ? renderMarkdown(normalizeArticleMarkdown(article.markdown), {
+        seed: `article:${article.slug}`,
+        title: article.title,
+      })
     : ''
+  const { bodyHtml: articleMarkdownHtml, footnoteHtml: articleFootnoteHtml } = articleMarkdownRendered
+    ? splitResearchEndNotes(articleMarkdownRendered)
+    : { bodyHtml: '', footnoteHtml: '' }
   const publishedTime = toIsoDate(article.date)
   const enableDiaryToc = article.slug === 'diary-self-reflection'
   const tocItems = article.markdown ? extractToc(normalizeArticleMarkdown(article.markdown)) : []
@@ -361,8 +368,6 @@ export default async function ArticleDetailPage({ params }) {
         summaryLabel="TL;DR"
         tags={article.tags || []}
       />
-
-      <TopicDisclaimer kind={disclaimerKind} />
 
       <ArticleReadingLayout
         toc={<ArticleToc items={tocItems} title={enableDiaryToc ? '目录' : '文章目录'} />}
@@ -517,9 +522,12 @@ export default async function ArticleDetailPage({ params }) {
       </ArticleReadingLayout>
       <ArticleEngagementPanel articleKey={`article:${article.slug}`} />
 
+      {articleFootnoteHtml ? <ArticleBoundaryFootnotes html={articleFootnoteHtml} /> : null}
+
       <div id="comments" className="scroll-mt-24">
         <ArticleComments articleKey={`article:${article.slug}`} />
       </div>
+      <TopicDisclaimer kind={disclaimerKind} className="mt-8" />
       <ArticleFooterCta />
     </div>
   )

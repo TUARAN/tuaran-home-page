@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { COLLAPSIBLE_NOTE_LABEL_RE, renderMarkdown } from '../../lib/research/markdown.js'
+import { COLLAPSIBLE_NOTE_LABEL_RE, renderMarkdown, splitResearchEndNotes } from '../../lib/research/markdown.js'
 
 test('risk and compliance tips collapse into a one-line details summary', () => {
   const html = renderMarkdown(
@@ -73,6 +73,20 @@ test('risk and compliance notes move to the end of the article', () => {
   assert.doesNotMatch(html, /research-risk-note[\s\S]*<h2[^>]*>结论/)
   assert.match(html, /data-research-note-placement="end"/)
   assert.match(html, /research-risk-note--end/)
+})
+
+test('splitResearchEndNotes extracts boundary notes for the page footer', () => {
+  const html = renderMarkdown([
+    '> 适用范围：讨论的是健康成人在公开场合的急性应激。',
+    '',
+    '## 结论',
+    '',
+    '正文从这里开始。',
+  ].join('\n'))
+  const { bodyHtml, footnoteHtml } = splitResearchEndNotes(html)
+  assert.doesNotMatch(bodyHtml, /research-risk-note/)
+  assert.match(footnoteHtml, /适用范围/)
+  assert.match(bodyHtml, /正文从这里开始/)
 })
 
 test('scope notes also move to the end of the article', () => {

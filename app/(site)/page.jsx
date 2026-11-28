@@ -645,7 +645,7 @@ function ClassicHomePage({ featuredPicks }) {
                     </span>
                   </span>
                 </a>
-                <a
+                <Link
                   href="/tools/aran-distributor"
                   className="classic-home-hero-cta-secondary group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
                 >
@@ -665,7 +665,7 @@ function ClassicHomePage({ featuredPicks }) {
                       <T zh={syncblogSite.desc} en={syncblogSite.descEn} />
                     </span>
                   </span>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

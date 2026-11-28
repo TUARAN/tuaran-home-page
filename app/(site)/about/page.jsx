@@ -201,7 +201,7 @@ const buildingAreas = [
     description: '围绕创作者协作、内容分发和 AI 产品体验，持续建设可用的产品。',
     links: [
       { label: '博主联盟', href: 'https://blogger-alliance.cn/' },
-      { label: 'AI 分发大师', href: 'https://syncblog.2aran.com/' },
+      { label: '阿燃分发智能体', href: '/tools/aran-distributor' },
       { label: '从夯到拉', href: 'https://rank.2aran.com/' },
       { label: '更多项目', href: '/works' },
     ],

@@ -5,6 +5,7 @@ import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleEngagementPanel, { ArticleSupportCard } from '../../components/ArticleEngagementPanel'
 import ArticleToc, { ArticleReadingLayout } from '../../components/ArticleToc'
 import ArticleDistributeButton from '../../components/ArticleDistributeButton'
+import ArticleGuestDistributeButton from '../../components/ArticleGuestDistributeButton'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import ContentProofCard from '../../components/ContentProofCard'
 import ArticleComments from '../../components/ArticleComments'
@@ -103,6 +104,12 @@ export default function PublishedArticle({ article, siteUrl }) {
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
             readerActions={<CopyMarkdownButton markdown={markdown} />}
           >
+            <ArticleGuestDistributeButton
+              title={article.title}
+              url={url}
+              summary={article.summary || article.contentText.slice(0, 160)}
+              tags={article.tags || []}
+            />
             <ArticleDistributeButton
               category="article"
               slug={article.slug}

@@ -18,6 +18,7 @@ import ContentPvBeacon from '../../../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import ArticleEngagementPanel, { ArticleSupportCard } from '../../../../components/ArticleEngagementPanel'
 import ArticleDistributeButton from '../../../../components/ArticleDistributeButton'
+import ArticleGuestDistributeButton from '../../../../components/ArticleGuestDistributeButton'
 import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
 import ContentProofCard from '../../../../components/ContentProofCard'
 import CopyMarkdownButton from './CopyMarkdownButton'
@@ -321,6 +322,12 @@ export default async function ResearchDetailPage({ params }) {
             readerActions={!isAShareCompanyList ? <CopyMarkdownButton markdown={markdownDoc} /> : null}
           >
             {!isAShareCompanyList ? <>
+              <ArticleGuestDistributeButton
+                title={entry.title}
+                url={url}
+                summary={entry.summary || entry.tldr || ''}
+                tags={entry.tags || []}
+              />
               <ArticleDistributeButton
                 category={entry.category}
                 slug={entry.slug}

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, StatusPill } from '../../components/ui'
 const OPTIONS = {
   x: { href: 'https://x.2aran.com/extension', docs: 'https://x.2aran.com/docs', docsLabel: '大互动智能体手册' },
-  'ai-distributor': { href: '/tools/syncblog-publisher', docs: '/tools/syncblog-publisher/docs', docsLabel: '黄皮书' },
+  'ai-distributor': { href: '/tools/aran-distributor', docs: '/tools/syncblog-publisher/docs', docsLabel: '插件黄皮书（存档）' },
 }
 export default function ExtensionPackagePanel({ pluginId }) {
   const [release, setRelease] = useState(null), [error, setError] = useState('')

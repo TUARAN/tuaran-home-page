@@ -7,14 +7,17 @@ const source = await readFile(
   'utf8',
 )
 
-test('author intro is three lines: role, practice, follow and alliance', () => {
+test('author intro: site byline is two lines; distribution markdown keeps third引流 line', () => {
+  const bylineSource = source.match(/export function AuthorByline\(\)[\s\S]*?\n\}/)?.[0] ?? ''
+  assert.doesNotMatch(bylineSource, /网络日志/)
+  assert.doesNotMatch(bylineSource, /博主联盟/)
+  assert.match(source, /AUTHOR_INTRO_MARKDOWN[\s\S]*AUTHOR_LINE_3_MARKDOWN/)
   assert.match(source, /前端与智能体工程师 · 技术作者 · 社区 KOL，粉丝 5 万\+/)
   assert.doesNotMatch(source, /AI 前沿部署工程师/)
   assert.match(source, /持续出版多部\[技术作品\]\(\$\{AUTHOR_LIBRARY_URL\}\)/)
   assert.match(source, /持续出版多部[\s\S]*<AuthorOutboundLink href=\{AUTHOR_LIBRARY_URL\}>技术作品<\/AuthorOutboundLink>/)
   assert.match(source, /更多请关注个人\[网络日志\]\(\$\{AUTHOR_SITE_URL\}\)/)
   assert.match(source, /推广合作在\[博主联盟\]\(\$\{AUTHOR_ALLIANCE_URL\}\)/)
-  assert.match(source, /target="_blank" rel="noopener noreferrer"[\s\S]*网络日志/)
   assert.doesNotMatch(source, /AUTHOR_LIBRARY_HREF/)
   assert.match(source, /深度参与开源社区与智能体工程实践，全面拥抱 AI 与去中心化/)
   assert.doesNotMatch(source, /持续参与开源社区/)

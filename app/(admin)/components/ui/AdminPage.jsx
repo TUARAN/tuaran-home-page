@@ -40,12 +40,12 @@ export default function AdminPage({ title, description, actions, children, compa
               {title}
             </h1>
             {description ? (
-              <p className="admin-page__description mb-0 mt-1.5 max-w-[48rem] text-[13px] leading-6">
+              <p className="admin-page__description mb-0 mt-1.5 max-w-[48rem] break-words text-[13px] leading-6 [overflow-wrap:anywhere]">
                 {description}
               </p>
             ) : null}
           </div>
-          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center gap-2 sm:w-auto">{actions}</div> : null}
         </header>
       ) : null}
       {children}

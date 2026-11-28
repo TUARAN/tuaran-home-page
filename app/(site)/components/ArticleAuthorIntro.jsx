@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { AVATAR_PATH } from '../../../lib/auth/avatar'
 
 /**
- * 作者引流：固定三行（身份 · 经历与实践 · 关注与合作）
- * - <AuthorByline />：页头 TL;DR 旁展示这三行
- * - AUTHOR_INTRO_MARKDOWN：分发复制时在 H1 后插入同内容 blockquote
+ * 作者介绍：站内两行（身份 · 经历与实践）；分发三行（另加关注与合作引流）
+ * - <AuthorByline />：页头 TL;DR 旁仅展示前两行
+ * - AUTHOR_INTRO_MARKDOWN：智能体分发复制时在 H1 后插入三行 blockquote
  */
 
 export const AUTHOR_SITE_URL = 'https://2aran.com'
@@ -74,13 +74,6 @@ export function AuthorByline() {
           持续出版多部
           <AuthorOutboundLink href={AUTHOR_LIBRARY_URL}>技术作品</AuthorOutboundLink>
           {AUTHOR_LINE_2_TAIL}
-        </p>
-        <p className="research-author-muted m-0 text-[11px] leading-5">
-          更多请关注个人
-          <AuthorOutboundLink href={AUTHOR_SITE_URL}>网络日志</AuthorOutboundLink>
-          ；推广合作在
-          <AuthorOutboundLink href={AUTHOR_ALLIANCE_URL}>博主联盟</AuthorOutboundLink>
-          。
         </p>
       </div>
 

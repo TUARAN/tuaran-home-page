@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import ArticleBoundaryFootnotes from '../../../components/ArticleBoundaryFootnotes'
+import ArticleBoundaryFootnotes from '../../../../components/ArticleBoundaryFootnotes'
 
 const VARIANT_EVENT = 'research:variant'
 

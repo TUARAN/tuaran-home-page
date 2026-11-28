@@ -1,23 +1,23 @@
 ---
 name: 2aran-distributor
 description: >
-  2aran 分发智能体。把 2aran.com 的文章用 ego lite 浏览器发布到掘金、CSDN、X、小红书、知乎、今日头条等外部平台。
-  Use when: 用户粘贴「2aran 分发任务」，或要求把站内文章分发、同步、发布到外部内容平台。
+  阿燃分发智能体（2aran-distributor）。用 ego lite 把 2aran.com 或自备 Markdown 发到掘金、CSDN、X、小红书、知乎、今日头条等外部平台。
+  Use when: 用户粘贴「2aran 分发任务」或「自备账号」分发任务，或要求把文章同步到自己的内容平台账号。
 metadata:
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # 2aran-distributor
 
-由 tuaran-home-page 仓库的 `lib/distribution/` 生成，不要直接修改本文件。更新方式：在仓库里运行 `npm run distributor:skill:install`。
+由 2aran.com 的 `lib/distribution/` 生成，不要直接修改本文件。公开下载见站内「阿燃分发智能体」；站长在仓库运行 `npm run distributor:skill:install` 同步到本机。
 
 ## 开工前
 
-- 任务里写明了 harness 版本。本 skill 的版本是 `1.3.0`；两者不一致时先停下，请站长运行 `npm run distributor:skill:install` 更新 skill。
-- 任务列出的平台在下方没有手册时，先问站长：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
+- 任务里写明了 harness 版本。本 skill 的版本是 `1.4.0`；两者不一致时先停下，从站内重新下载 SKILL.md 或请站长更新 skill。
+- 任务列出的平台在下方没有手册时，先问任务创建者：跳过，还是边探索边发布。探索发布时同样遵守全部安全规则，并在回报里给出这个平台的手册草稿（入口、登录判断、步骤、核对、成功标志）。
 - 按任务里的平台顺序逐个处理：一个平台发布并核对完，再开始下一个。
 
-## 浏览器与账号
+## 站长任务台 · 浏览器与账号
 
 - 先运行 `ego-browser skill`，按输出的使用指南操作。
 - 只用 ego lite 的「Aran」账号：创建任务空间时传 `{ profileId: "Profile 1" }`。不要用其他 profile，也不要改用别的浏览器。
@@ -143,6 +143,17 @@ metadata:
   6. 点「预览并发布」，在预览页点「确认发布」。
 - 核对：跳到 https://mp.toutiao.com/profile_v4/graphic/articles，新文章在列表里显示「审核中」，且没有「首发」标记；文章 ID（pgc_id）在预览链接里。
 - 成功标志：文章列表显示「审核中」；审核通过后会出现在 `https://www.toutiao.com/item/<ID>`。
+
+## 自备账号模式
+
+- 任务标明「自备账号（guest）」时走本节；含「任务地址」和「token」的是站长任务台，访客不要混用。
+- 先运行 `ego-browser skill`。创建任务空间时使用任务给出的 `profileId`（默认 SyncBlog），专用于各平台登录态，不要与日常上网 profile 混用。
+- 每个平台先确认已登录；未登录就把任务空间交给任务创建者登录（handOff），对方回复后再继续。
+- 正文默认不含全文：打开任务里的站内原文 URL，按「内容处理」从页面取正文；禁止从第三方镜像粘贴整篇替代原文。
+- 发布到自己的平台账号；文首或文末保留原文链接。转载或翻译须填原文 URL，权利声明勾选前必须经任务创建者确认。
+- 不要使用他人的 Bearer token，不要调用站长的任务台接口。
+- 安装 skill：打开 https://2aran.com/skill-center/2aran-distributor 下载，或 GET https://2aran.com/api/resources/aran-distributor-skill 保存为 SKILL.md，放入 Cursor / Codex / Claude 的 skills 目录下的 `2aran-distributor/`。
+- 全部平台处理完后关闭任务空间（`finish({ keep: [] })`），在对话里按「回报」逐平台说明结果。
 
 ## 任务台模式
 

@@ -39,7 +39,7 @@ const EXTENSION_TASKS = Object.freeze([
     platform: 'multi',
     label: 'AI 分发大师',
     summary: '冻结维护，只修 bug。站内文章发到外部平台改由「分发智能体」执行；这里保留已装插件的设备与回执。',
-    href: '/tools/syncblog-publisher',
+    href: '/tools/aran-distributor',
   },
   {
     id: 'x-assistant',

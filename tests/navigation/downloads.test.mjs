@@ -38,7 +38,7 @@ test('download compatibility exports are derived from the unified tools catalog'
   assert.deepEqual([...hrefs].sort(), [...toolDownloadHrefs].sort())
   assert.equal(getDownloadItemsByType('extension').length, TOOL_ITEMS.filter((item) => item.downloadType === 'extension').length)
   assert.equal(getDownloadItemsByType('desktop').length, TOOL_ITEMS.filter((item) => item.downloadType === 'desktop').length)
-  assert.ok(BROWSER_EXTENSION_WORK_ITEMS.some((item) => item.id === 'syncblog-publisher'))
+  assert.ok(TOOL_ITEMS.some((item) => item.id === 'aran-distributor'))
   assert.ok(DESKTOP_APP_WORK_ITEMS.some((item) => item.id === 'codex-model-switcher'))
   assert.ok(DOWNLOAD_ITEMS.every((item) => item.downloadType && item.downloadStatus))
 })

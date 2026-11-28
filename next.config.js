@@ -142,6 +142,11 @@ const nextConfig = {
       { source: '/checkin', destination: '/ranbi', permanent: false },
       { source: '/checkin/:path*', destination: '/ranbi', permanent: false },
       {
+        source: '/tools/syncblog-publisher',
+        destination: '/tools/aran-distributor',
+        permanent: true,
+      },
+      {
         source: '/publications',
         destination: '/resources/books',
         permanent: true,

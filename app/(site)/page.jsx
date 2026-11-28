@@ -645,11 +645,9 @@ function ClassicHomePage({ featuredPicks }) {
                     </span>
                   </span>
                 </a>
-                <a
-                  href={syncblogSite.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
+                <Link
+                  href="/tools/aran-distributor"
+                  className="classic-home-hero-cta-secondary group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
                 >
                   <span
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
@@ -661,14 +659,13 @@ function ClassicHomePage({ featuredPicks }) {
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
                     <span className="flex items-center gap-1 text-[18px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
-                      <T zh="使用AI分发大师" en="Use SyncBlog" />
-                      <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
+                      <T zh="阿燃分发智能体" en="Aran Distributor" />
                     </span>
                     <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
                       <T zh={syncblogSite.desc} en={syncblogSite.descEn} />
                     </span>
                   </span>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

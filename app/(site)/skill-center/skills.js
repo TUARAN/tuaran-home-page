@@ -4,8 +4,10 @@
 import { RENWEI_WRITING_SKILL } from './renweiWritingSkill'
 import { DREAM_SKIN_REINSTALL_SKILL } from './dreamSkinReinstallSkill'
 import { CODEX_MODEL_SWITCHER_SKILL } from './codexModelSwitcherSkill'
+import { ARAN_DISTRIBUTOR_SKILL } from './aranDistributorSkill'
 
 export const PUBLISHED_SKILLS = [
+  ARAN_DISTRIBUTOR_SKILL,
   CODEX_MODEL_SWITCHER_SKILL,
   DREAM_SKIN_REINSTALL_SKILL,
   {

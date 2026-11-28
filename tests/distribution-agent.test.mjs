@@ -6,7 +6,7 @@ import { AGENT_JOB_MODE_RULES, DISTRIBUTOR_SKILL_NAME, HARNESS_RULES, HARNESS_VE
 import { DISTRIBUTION_AGENT_PLATFORM_IDS, DISTRIBUTION_PLAYBOOKS } from '../lib/distribution/playbooks.js'
 import { DISTRIBUTION_PLATFORMS, distributionPlatformShortLabel, getDistributionPlatform } from '../lib/distribution/platforms.js'
 import { buildDistributorSkill } from '../lib/distribution/skill.js'
-import { buildDistributionTaskPrompt } from '../lib/distribution/taskPrompt.js'
+import { buildDistributionTaskPrompt, buildGuestDistributionTaskPrompt } from '../lib/distribution/taskPrompt.js'
 
 test('平台注册表 id 唯一，手册只覆盖已登记平台', () => {
   const ids = DISTRIBUTION_PLATFORMS.map((platform) => platform.id)
@@ -37,6 +37,7 @@ test('skill 带版本、全部规则和手册', () => {
   }
   assert.ok(skill.includes("document.querySelector('.CodeMirror').CodeMirror.setValue(markdown)"))
   assert.ok(skill.includes('button.btn-b-red'))
+  assert.ok(skill.includes('## 自备账号模式'))
   assert.ok(skill.includes('## 任务台模式'))
   for (const rule of AGENT_JOB_MODE_RULES) assert.ok(skill.includes(rule), rule)
 })
@@ -67,6 +68,21 @@ test('任务提示词只带任务：版本、平台、绝对链接、安全的�
   assert.ok(prompt.includes('](https://example.com)'))
   assert.ok(prompt.includes('`````markdown\n'))
   assert.ok(!prompt.includes('安全规则'), '规则在 skill 里，任务不重复')
+})
+
+test('自备账号任务不含全文 Markdown、含 profile 与原文链', () => {
+  const prompt = buildGuestDistributionTaskPrompt({
+    title: '公开文',
+    url: `${SITE_ORIGIN}/articles/demo`,
+    summary: '摘要',
+    tags: ['AI'],
+  })
+  assert.ok(prompt.includes('自备账号（guest）'))
+  assert.ok(prompt.includes('SyncBlog'))
+  assert.ok(prompt.includes('防全文镜像'))
+  assert.ok(prompt.includes('/api/resources/aran-distributor-skill'))
+  assert.ok(!prompt.includes('## Markdown 原文'))
+  assert.ok(prompt.includes('不要带 Bearer token'))
 })
 
 test('任务提示词默认覆盖全部有手册的平台', () => {

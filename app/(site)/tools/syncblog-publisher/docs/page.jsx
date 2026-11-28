@@ -17,13 +17,16 @@ export default function SyncblogDocsPage() {
     <ManualPaper tone="yellow">
     <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
       <DocsHashNavigation />
-      <nav aria-label="面包屑" className="flex gap-2 text-xs text-[var(--site-muted)]"><Link href="/tools">工具库</Link><span>/</span><Link href="/tools/syncblog-publisher">AI 分发大师</Link><span>/ 黄皮书</span></nav>
+      <nav aria-label="面包屑" className="flex gap-2 text-xs text-[var(--site-muted)]"><Link href="/tools">工具库</Link><span>/</span><Link href="/tools/aran-distributor">阿燃分发智能体</Link><span>/</span><span>插件黄皮书（存档）</span></nav>
+      <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        浏览器插件已停用。现行方案见 <Link href="/tools/aran-distributor" className="font-medium underline">阿燃分发智能体</Link>。
+      </p>
       <header className="mb-8 mt-5 max-w-3xl">
         <p className="font-mono text-xs text-[var(--site-faint)]">AI 分发大师 · v{docs.version} · 更新于 {docs.updated}</p>
         <BookIdentity kind="黄皮书" />
         <h1 className="mt-3 text-3xl font-semibold text-[var(--site-ink)]">{docs.title}</h1>
         <p className="mt-3 leading-7 text-[var(--site-muted)]">{docs.description}</p>
-        <div className="mt-5 flex flex-wrap gap-3 text-sm"><Link href="/tools/syncblog-publisher" className="rounded-full border border-[var(--site-line)] px-4 py-2">返回插件介绍</Link><a href="#quick-start" className="rounded-full border border-[var(--site-line)] px-4 py-2">快速开始</a><a href="#xiaohongshu-manager" className="rounded-full border border-[var(--site-line)] px-4 py-2">笔记管理规则</a></div>
+        <div className="mt-5 flex flex-wrap gap-3 text-sm"><Link href="/tools/aran-distributor" className="rounded-full border border-[var(--site-line)] px-4 py-2">返回分发智能体</Link><a href="#quick-start" className="rounded-full border border-[var(--site-line)] px-4 py-2">快速开始</a><a href="#xiaohongshu-manager" className="rounded-full border border-[var(--site-line)] px-4 py-2">笔记管理规则</a></div>
       </header>
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
         <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start"><BookToc groups={toc} title="目录" caption="按章查阅" /></aside>
